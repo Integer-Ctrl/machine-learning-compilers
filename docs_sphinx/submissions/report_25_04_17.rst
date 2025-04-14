@@ -1,5 +1,5 @@
-Submission 25/04/17
-===================
+Submission 2025-04-17
+=====================
 
 Hello Assembly
 --------------
@@ -13,14 +13,20 @@ Hello Assembly
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **gcc**
+
 * Locate the string "Hello Assembly Language!".
-- line 7
+
+  - line 7
+
 * Identify the instructions that the compilers insert to conform to the procedure call standard.
-- ``stp	x29, x30, [sp, -16]!``
-- ``mov	x29, sp``
-- ``ldp x29, x30, [sp], 16``
+
+  - ``stp x29, x30, [sp, -16]!``
+  - ``mov x29, sp``
+  - ``ldp x29, x30, [sp], 16``
+
 * Identify the function call to libc that prints the string.
-- ``bl	puts`` [branch link](https://developer.arm.com/documentation/dui0379/e/arm-and-thumb-instructions/bl) [puts](https://pubs.opengroup.org/onlinepubs/009695399/functions/puts.html)
+
+  - ``bl puts`` (`branch link <https://developer.arm.com/documentation/dui0379/e/arm-and-thumb-instructions/bl>`_ and `puts <https://pubs.opengroup.org/onlinepubs/009695399/functions/puts.html>`_)
 
 .. code-block:: asm
   :linenos:
@@ -61,14 +67,20 @@ Hello Assembly
 
 
 **clang**
+
 * Locate the string "Hello Assembly Language!".
-- line 31
+
+  - line 31
+
 * Identify the instructions that the compilers insert to conform to the procedure call standard.
-- ``stp	x29, x30, [sp, #-16]!``
-- ``mov	x29, sp``
-- ``ldp	x29, x30, [sp], #16``
+
+  - ``stp x29, x30, [sp, #-16]!``
+  - ``mov x29, sp``
+  - ``ldp x29, x30, [sp], #16``
+
 * Identify the function call to libc that prints the string.
-- ``bl	printf`` [branch link](https://developer.arm.com/documentation/dui0379/e/arm-and-thumb-instructions/bl)
+
+  - ``bl printf`` `branch link <https://developer.arm.com/documentation/dui0379/e/arm-and-thumb-instructions/bl>`_
 
 .. code-block:: asm
   :linenos:
@@ -128,10 +140,15 @@ Assembly Function
 2) Generate the following from ``add_values.o``:
 
 * Hexadecimal dump
+
   - ``od -A x -t x1 add_values.o > add_values.hex``
+
 * Section Headers
+
   - ``readelf -S add_values.o > add_values.relf``
+
 * Disassembly
+
   - ``objdump --syms -S -d add_values.o > add_values.dis``
 
 3) Find the size of the ``.text`` section in the generated output and explain it.
@@ -165,7 +182,7 @@ Assembly Function
     D (mbind), p (processor specific)
 
 
-Size of ``.text``: 0x20 byte or equal 32 byte. ``.text`` corresponds to the size of all instructions. The add_values.s file has 7 instructions in total, each is 4 byte long. Therefore $7 \cdot4$ byte $=32$ byte $=$ 0x20 byte.
+Size of ``.text``: 0x20 byte or equal 32 bytes. ``.text`` corresponds to the size of all instructions. The add_values.s file has 7 instructions in total, each is 4 byte long. Therefore, :math:`7 \cdot4` byte :math:`=32` byte :math:`=` 0x20 byte.
 
 4) Write a C++ driver that calls the ``add_values`` function and illustrate it with an example.
 
