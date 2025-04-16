@@ -188,7 +188,7 @@ Assembly Function
     D (mbind), p (processor specific)
 
 
-Size of ``.text``: 0x20 byte or equal 32 bytes. ``.text`` corresponds to the size of all instructions. The add_values.s file has 7 instructions in total, each is 4 byte long. Therefore, :math:`7 \cdot4` byte :math:`=32` byte :math:`=` 0x20 byte.
+Size of ``.text``: 0x20 byte or equal 32 bytes. ``.text`` corresponds to the size of all instructions. The add_values.s file has 8 instructions in total, each is 4 byte long. Therefore, :math:`8 \cdot4` byte :math:`=32` byte :math:`=` 0x20 byte.
 
 4. Write a C++ driver that calls the ``add_values`` function and illustrate it with an example.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -220,7 +220,7 @@ Size of ``.text``: 0x20 byte or equal 32 bytes. ``.text`` corresponds to the siz
     - ``nexti`` move to the next line in the assembly Instruction
     - ``step`` step into a function call
     - ``ref`` refreshes the view
-    - ``x/i $pc`` eXamines the Instruction at the program counter
+    - ``x/i $pc`` examines the Instruction at the program counter
     - ``info registers`` show the current register state of the program
     - ``quit`` exit GDB
 
