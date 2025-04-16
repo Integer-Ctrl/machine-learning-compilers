@@ -1,0 +1,40 @@
+# Simple workflow for deploying static content to GitHub Pages
+name: Deploy HTML project report
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["main"]
+    tags:
+      - '*'  # Trigger on new tag
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  # Single deploy job since we're just deploying
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Requirements
+        run: |
+            sudo apt install doxygen
+            pip3 install -r docs_sphinx/requirements.txt
+      - name: Build Documentation
+        run: |
+            cd docs_sphinx
+            make clean && make html
+      - name: Create tar.xz of project report
+        run: |
+            tar -cJf project-report-html.tar.xz -C docs_sphinx/_build/html .
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-report-html
+          path: project-report-html.tar.xz
+        
