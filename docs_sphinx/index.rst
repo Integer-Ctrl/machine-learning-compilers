@@ -6,7 +6,7 @@
 Machine Learning Compilers
 ==========================
 
-.. .. toctree::
+.. .. toctree: :
 ..    :maxdepth: 4
 ..    :caption: GETTING STARTED
 ..    :glob:
@@ -20,6 +20,7 @@ Machine Learning Compilers
    :glob:
 
    submissions/report_25_04_17.rst
+   submissions/report_25_04_24.rst
 
 .. toctree::
    :maxdepth: 4
