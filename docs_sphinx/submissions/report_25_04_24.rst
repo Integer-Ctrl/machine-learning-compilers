@@ -54,15 +54,15 @@ With this knowledge we can now calculate the throughput of the ``ADD`` and ``MUL
 
 **ADD:**
 
-We have :math:`21.841 \cdot 10^9` instructions per second.
-That are :math:`21.841 \cdot 10^9 / 5 = 4.3682 \cdot 10^9` instructions per ALU per second.
+We have :math:`22.2845 \cdot 10^9` instructions per second.
+That are :math:`22.2845 \cdot 10^9 / 5 = 4.4569 \cdot 10^9` instructions per ALU per second.
 This aligns with a **throughput of 1 instruction per cycle**, as it is known from benchmarks that the performance cores of the M4 chip have a clock speed of 4.4 GHz. 
 
 
 **MUL:**
 
-We have :math:`13.2977 \cdot 10^9` instruction per second.
-That resolves to :math:`13.2966 \cdot 10^9 / 3 = 4.4322 \cdot 10^9` instructions per ALU per second. 
+We have :math:`13.2967 \cdot 10^9` instruction per second.
+That resolves to :math:`13.2967 \cdot 10^9 / 3 = 4.4322 \cdot 10^9` instructions per ALU per second. 
 This result also aligns with a **throughput of 1 instruction per cycle** for a known clock speed of 4.4 GHz.
 
 2. Microbenchmark the instruction latency of ADD (shifted register) and MUL.
@@ -73,11 +73,11 @@ Note, that we use read-after-write dependencies to measure the latency, thus we 
 
 **ADD:**
 
-We have :math:`4.38627 \cdot 10^9` instruction per seconds in a single ALU.
+We have :math:`4.38367 \cdot 10^9` instruction per seconds in a single ALU.
 Resulting in a **latency of 1 cycle** for the known clock speed of 4.4 GHz.
 
 
 **MUL:**
 
-We have :math:`1.46155 \cdot 10^9` instruction per seconds in a single ALU.
-Resulting in a **latency of** :math:`4.4 \text{ GHz} / 1.46155 \cdot 10^9  \approx 3` **cycles**.
+We have :math:`1.46179 \cdot 10^9` instruction per seconds in a single ALU.
+Resulting in a **latency of** :math:`4.4 \text{ GHz} / 1.46179 \cdot 10^9  \approx 3` **cycles**.
