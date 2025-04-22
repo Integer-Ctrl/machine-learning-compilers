@@ -9,7 +9,7 @@ Copying Data
 
 File ``submissions/submission_25_04_24/copy_asm.s``
 
-1. Implement the function ``copy_asm_1`` using only base instructions. The function should have the same functionality as its C counterpart.
+2. Implement the function ``copy_asm_1`` using only base instructions. The function should have the same functionality as its C counterpart.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 File ``submissions/submission_25_04_24/copy_asm.s``
@@ -65,7 +65,7 @@ We have :math:`13.2977 \cdot 10^9` instruction per second.
 That resolves to :math:`13.2966 \cdot 10^9 / 3 = 4.4322 \cdot 10^9` instructions per ALU per second. 
 This result also aligns with a **throughput of 1 instruction per cycle** for a known clock speed of 4.4 GHz.
 
-1. Microbenchmark the instruction latency of ADD (shifted register) and MUL.
+2. Microbenchmark the instruction latency of ADD (shifted register) and MUL.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The last two blocks of the output shows the latency benchmarks for ``ADD`` and ``MUL``.

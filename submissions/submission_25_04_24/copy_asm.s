@@ -15,6 +15,7 @@
     str w8, [x1, #24]
 
     ret
+    .size copy_asm_0, (. - copy_asm_0)
 
 
     .text
@@ -35,3 +36,4 @@ start_loop:
 
 end_loop:
     ret
+    .size copy_asm_1, (. - copy_asm_1)
