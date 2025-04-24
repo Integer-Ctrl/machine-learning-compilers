@@ -6,6 +6,13 @@
 .type throughput_add, %function
 .global throughput_add
 throughput_add:
+    // save callee-saved registers
+    stp x19, x20, [sp, #-16]!
+    stp x21, x22, [sp, #-16]!
+    stp x23, x24, [sp, #-16]!
+    stp x25, x26, [sp, #-16]!
+    stp x27, x28, [sp, #-16]!
+
     mov X27, #12
     mov X28, #25
 
@@ -48,6 +55,13 @@ loop_throughput_add:
     // loop back if iteration != 0
     cbnz X0, loop_throughput_add
 
+    // restore callee-saved registers
+    ldp x27, x28, [sp], #16
+    ldp x25, x26, [sp], #16
+    ldp x23, x24, [sp], #16
+    ldp x21, x22, [sp], #16
+    ldp x19, x20, [sp], #16
+
     mov X0, #25*100 // set return value to instructions * rept
     ret
     .size throughput_add, (. - throughput_add)
@@ -58,6 +72,13 @@ loop_throughput_add:
 .type throughput_mul, %function
 .global throughput_mul
 throughput_mul:
+    // save callee-saved registers
+    stp x19, x20, [sp, #-16]!
+    stp x21, x22, [sp, #-16]!
+    stp x23, x24, [sp, #-16]!
+    stp x25, x26, [sp, #-16]!
+    stp x27, x28, [sp, #-16]!
+
     mov X27, #12
     mov X28, #25
 
@@ -99,6 +120,13 @@ loop_throughput_mul:
 
     // loop back if iteration != 0
     cbnz X0, loop_throughput_mul
+
+    // restore callee-saved registers
+    ldp x27, x28, [sp], #16
+    ldp x25, x26, [sp], #16
+    ldp x23, x24, [sp], #16
+    ldp x21, x22, [sp], #16
+    ldp x19, x20, [sp], #16
 
     mov X0, #25*100 // set return value to instructions * rept 
     ret
