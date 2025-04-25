@@ -108,21 +108,21 @@ Building
     +====================+====================================================================================================================+
     | benchmark          | Build the benchmark executable to run throughput und latency benchmarks.                                           |
     +--------------------+--------------------------------------------------------------------------------------------------------------------+
-    | microkernel        | Build the microkernel executable to run a simple 16x16 matrix kernels                                              |
+    | microkernel        | Build the microkernel executable to run a simple 16x6 matrix kernels                                              |
     +--------------------+--------------------------------------------------------------------------------------------------------------------+
     | loops              | Build the loops executable to run matrix kernels with loops over K, M or N.                                        |
     +--------------------+--------------------------------------------------------------------------------------------------------------------+
     | test               | Builds the unit test executable                                                                                    |
     +--------------------+--------------------------------------------------------------------------------------------------------------------+
 
-Running the Simulation & Tests
+Running the Executables & Tests
 ------------------------------
 
 The executables have been build in to the ``../machine-learning-compilers/build`` directory with their corresponding name.
 E.g. If ``test`` is built than the executable name is ``test``, 
 for ``microkernel`` the executable name would be ``microkernel``, etc.
 
-All the executables can be found in ``../Tsunami-Simulation/build``.
+All the executables can be found in ``../machine-learning-compilers/build``.
 The available executables are ``benchmark``, ``microkernel``, ``loops``, and ``test``.
 
 .. note::
