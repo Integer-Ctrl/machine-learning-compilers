@@ -6,13 +6,13 @@
 Machine Learning Compilers
 ==========================
 
-.. .. toctree: :
-..    :maxdepth: 4
-..    :caption: GETTING STARTED
-..    :glob:
+.. toctree::
+   :maxdepth: 4
+   :caption: GETTING STARTED
+   :glob:
 
-..    getting_started/building_project.rst
-..    getting_started/building_docs.rst
+   getting_started/building_project.rst
+   getting_started/building_docs.rst
 
 .. toctree::
    :maxdepth: 4
