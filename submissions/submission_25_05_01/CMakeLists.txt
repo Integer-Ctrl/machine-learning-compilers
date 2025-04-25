@@ -43,6 +43,8 @@ FetchContent_MakeAvailable(Catch2)
 
 # Add source files
 set(SRC_FILES
+    neon_throughput_latency_driver.cpp
+    neon_throughput_latency.s
 )
 
 set(TEST_FILES
@@ -50,13 +52,13 @@ set(TEST_FILES
 )
 
 add_executable(benchmark "${SRC_FILES}")
-target_sources(benchmark benchmark_main.cpp)
+target_sources(benchmark PRIVATE neon_throughput_latency_driver.cpp)
 
-add_executable(mircokernel "${SRC_FILES}")
-target_sources(mircokernel mircokernel_main.cpp)
+# add_executable(mircokernel "${SRC_FILES}")
+# target_sources(mircokernel mircokernel_main.cpp)
 
-add_executable(loops "${SRC_FILES}")
-target_sources(loops loops_main.cpp)
+# add_executable(loops "${SRC_FILES}")
+# target_sources(loops loops_main.cpp)
 
 add_executable(tests "${SRC_FILES}" "${TEST_FILES}")
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)

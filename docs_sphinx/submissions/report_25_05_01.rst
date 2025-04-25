@@ -1,0 +1,14 @@
+Submission 2025-05-01
+=====================
+
+Execution Throughput and Latency
+--------------------------------
+
+This section microbenchmarks the execution throughput and latency of FP32 Neon instructio
+
+1. Microbenchmark the execution throughput of the following instructions:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+FMLA (vector) with arrangement specifier ``4S``
+- File ``submissions/submission_25_05_01/neon_throughput_latency.s``
+- Driver ``submissions/submission_25_05_01/neon_throughput_latency_driver.cpp``
