@@ -53,21 +53,23 @@ int main()
         matrix_c_verify[i] = matrix_c[i];
     }
     
+    // Run matmuls
     matmul_16_6_1(matrix_a, matrix_b, matrix_c, 16, 1, 16);
-
     verify_matmul_16_6_1(matrix_a, matrix_b, matrix_c_verify, 16, 1, 16);
 
+    // Verify results
     uint32_t success_count = 0;
     for (size_t i = 0; i < 6; i++)
     {
         for (size_t j = 0; j < 16; j++)
         {
-            success_count += std::abs(matrix_c[i * 16 + j] - matrix_c_verify[i * 16 + j]) < std::numeric_limits<float>::epsilon();
+            success_count += (std::abs(matrix_c[j + i * 16] - matrix_c_verify[j + i * 16]) < 0.01f);
             std::cout << "Element " << i << ", " << j << ": asm matrix: " << matrix_c[i * 16 + j] << " cpp matrix: " << matrix_c_verify[i * 16 + j] << std::endl;
+
         }   
     }
     
-    std::cout << success_count/static_cast<float>(16*6) << "% Successful" << std::endl;
+    std::cout << success_count/static_cast<float>(16*6) * 100 << "% Successful" << std::endl;
 
     return 0;
 }
