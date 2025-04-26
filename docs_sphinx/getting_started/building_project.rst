@@ -92,7 +92,7 @@ Building
             cmake --build . --config Release --target benchmark
 
         Options for ``--config`` are **Release** and **Debug**. :raw-html:`</br>`
-        Options for ``--target`` are **benchmark**, **microkernel**, **loops**, and **test**
+        Options for ``--target`` are **benchmarks** and **tests**
 
 6. Now we can build the project. The most desired command might be
 
@@ -100,36 +100,37 @@ Building
 
         cmake --build . --target simulation
 
-    Options for ``--target`` are **benchmark**, **microkernel**, **loops**, and **test**
+    Options for ``--target`` are **benchmark** and **tests**
 
 
     +--------------------+--------------------------------------------------------------------------------------------------------------------+
     | Option             |  Description                                                                                                       |
     +====================+====================================================================================================================+
-    | benchmark          | Build the benchmark executable to run throughput und latency benchmarks.                                           |
+    | benchmarks         | Build the benchmarks executable.                                                                                   |
     +--------------------+--------------------------------------------------------------------------------------------------------------------+
-    | microkernel        | Build the microkernel executable to run a simple 16x6 matrix kernels                                              |
-    +--------------------+--------------------------------------------------------------------------------------------------------------------+
-    | loops              | Build the loops executable to run matrix kernels with loops over K, M or N.                                        |
-    +--------------------+--------------------------------------------------------------------------------------------------------------------+
-    | test               | Builds the unit test executable                                                                                    |
+    | tests              | Builds the tests executable.                                                                                       |
     +--------------------+--------------------------------------------------------------------------------------------------------------------+
 
-Running the Executables & Tests
+Running the Benchmarks & Tests
 ------------------------------
 
 The executables have been build in to the ``../machine-learning-compilers/build`` directory with their corresponding name.
-E.g. If ``test`` is built than the executable name is ``test``, 
-for ``microkernel`` the executable name would be ``microkernel``, etc.
+E.g. If ``tests`` is built than the executable name is ``tests``, 
+for ``benchmarks`` the executable name would be ``benchmarks``, etc.
 
 All the executables can be found in ``../machine-learning-compilers/build``.
-The available executables are ``benchmark``, ``microkernel``, ``loops``, and ``test``.
+The available executables are ``benchmarks`` and ``tests``.
 
 .. note::
     They are available when build with their respective ``--target``
 
-E.g. the ``benchmark`` executable can be run with the following command:
+E.g. the ``benchmarks`` executable can be run with the following command:
 
 .. code-block::
 
-    ./benchmark
+    ./benchmarks
+
+The most desired command for the ``benchmarks`` might be:
+
+.. code-block::
+    ./benchmarks --benchmark_counters_tabular=true --benchmark_repetitions=10

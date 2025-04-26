@@ -7,9 +7,9 @@
     * @param x5 = ldc leading dimension of C.
     **/
 .text
-.type matmul_16_6_1, %function
-.global matmul_16_6_1
-matmul_16_6_1:
+.type matmul_16_6_1_unrolled, %function
+.global matmul_16_6_1_unrolled
+matmul_16_6_1_unrolled:
 
     // Offset the used leading dimension by the size of floats
     lsl x3, x3, #2 // x3 * 4 = x3 * sizeof(float)
@@ -67,4 +67,4 @@ matmul_16_6_1:
     .endr
 
     ret
-    .size matmul_16_6_1, (. - matmul_16_6_1)
+    .size matmul_16_6_1_unrolled, (. - matmul_16_6_1_unrolled)

@@ -7,9 +7,9 @@
     * @param x5 = ldc leading dimension of C.
     **/
 .text
-.type matmul_16_6_1, %function
-.global matmul_16_6_1
-matmul_16_6_1:
+.type matmul_16_6_1_simple, %function
+.global matmul_16_6_1_simple
+matmul_16_6_1_simple:
     // Optimization: Only use caller-saved registers to avoid stack usage
 
     // Offset the used leading dimension by the size of floats (4byte == 2 lshifts)
@@ -47,4 +47,4 @@ process_next_column:
     cbnz x6, process_next_column
 
     ret
-    .size matmul_16_6_1, (. - matmul_16_6_1)
+    .size matmul_16_6_1_simple, (. - matmul_16_6_1_simple)
