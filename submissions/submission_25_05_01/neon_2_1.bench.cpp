@@ -8,11 +8,11 @@ public:
     float matrix_a[16*1];
     float matrix_b[1*6];
     float matrix_c[16*6];
-    double gflops;
+    double flops;
 
     void SetUp(::benchmark::State& _)
     {
-        gflops = 0;
+        flops = 0;
 
         // Fill with random values
         std::srand(std::time(0));
@@ -33,7 +33,7 @@ public:
 
     void TearDown(::benchmark::State& state)
     {
-        state.counters["GFLOPS"] = benchmark::Counter(gflops, benchmark::Counter::kIsRate);
+        state.counters["FLOPS"] = benchmark::Counter(flops, benchmark::Counter::kIsRate);
     }
 };
 
@@ -43,7 +43,7 @@ BENCHMARK_F(Gemm16x6x1Fixture, BM_matmul_16_6_1_simple)(benchmark::State& state)
     for (auto _ : state)
     {
         matmul_16_6_1_simple(matrix_a, matrix_b, matrix_c, 16, 1, 16);
-        gflops += 4*6*4*2; // 4 fmla * 4 floats each * 2 instructions (add & mul) * 6 columns 
+        flops += 4*6*4*2; // 4 fmla * 4 floats each * 2 instructions (add & mul) * 6 columns 
     }
 } 
 
@@ -52,6 +52,6 @@ BENCHMARK_F(Gemm16x6x1Fixture, BM_matmul_16_6_1_unrolled)(benchmark::State& stat
     for (auto _ : state)
     {
         matmul_16_6_1_unrolled(matrix_a, matrix_b, matrix_c, 16, 1, 16);
-        gflops += 4*6*4*2; // 4 fmla * 4 floats each * 2 instructions (add & mul) * 6 columns 
+        flops += 4*6*4*2; // 4 fmla * 4 floats each * 2 instructions (add & mul) * 6 columns 
     }
 }
