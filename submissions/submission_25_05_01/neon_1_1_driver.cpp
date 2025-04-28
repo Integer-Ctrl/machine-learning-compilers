@@ -41,9 +41,9 @@ int main()
     const auto end_throughput_fmla_2s = std::chrono::high_resolution_clock::now();
     const std::chrono::duration<double, std::milli> diff_throughput_fmla_2s = end_throughput_fmla_2s - start_throughput_fmla_2s;
     std::cout << "Executed " << run_instructions_throughput_fmla_2s << " \"FMLA 2s\" Instructions in " << diff_throughput_fmla_2s.count() << " milliseconds." << std::endl
-            << "Resulting in a Throughput of " << run_instructions_throughput_fmla_2s / diff_throughput_fmla_2s.count() * 1000 << " Instructions per Second!"
-            << std::endl
-            << std::endl;
+              << "Resulting in a Throughput of " << run_instructions_throughput_fmla_2s / diff_throughput_fmla_2s.count() * 1000 << " Instructions per Second!"
+              << std::endl
+              << std::endl;
 
     std::cout << "Running the Throughput \"FMADD\" Benchmark:" << std::endl;
     const auto start_throughput_fmadd = std::chrono::high_resolution_clock::now();
@@ -51,9 +51,9 @@ int main()
     const auto end_throughput_fmadd = std::chrono::high_resolution_clock::now();
     const std::chrono::duration<double, std::milli> diff_throughput_fmadd = end_throughput_fmadd - start_throughput_fmadd;
     std::cout << "Executed " << run_instructions_throughput_fmadd << " \"FMADD\" Instructions in " << diff_throughput_fmadd.count() << " milliseconds." << std::endl
-                << "Resulting in a Throughput of " << run_instructions_throughput_fmadd / diff_throughput_fmadd.count() * 1000 << " Instructions per Second!"
-                << std::endl
-                << std::endl;
+              << "Resulting in a Throughput of " << run_instructions_throughput_fmadd / diff_throughput_fmadd.count() * 1000 << " Instructions per Second!"
+              << std::endl
+              << std::endl;
 
     return 0;
 }

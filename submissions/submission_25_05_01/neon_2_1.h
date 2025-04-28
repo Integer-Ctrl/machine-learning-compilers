@@ -28,6 +28,17 @@ extern "C"
      **/
     void matmul_16_6_1_unrolled(const float * __restrict__ a, const float * __restrict__ b, float * __restrict__ c, 
         int64_t lda, int64_t ldb, int64_t ldc);
+
+    /**
+     * @param a pointer to column-major matrix A.
+     * @param b pointer to column-major matrix B.
+     * @param c pointer to column-major matrix C.
+     * @param lda leading dimension of A.
+     * @param ldb leading dimension of B.
+     * @param ldc leading dimension of C.
+     **/
+    void matmul_16_6_1_optimized(const float * __restrict__ a, const float * __restrict__ b, float * __restrict__ c, 
+        int64_t lda, int64_t ldb, int64_t ldc);
 }
 
 void naive_matmul_16_6_1(const float * __restrict__ a, const float * __restrict__ b, float * __restrict__ c, 
