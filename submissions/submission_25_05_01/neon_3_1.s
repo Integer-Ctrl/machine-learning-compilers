@@ -18,15 +18,15 @@ matmul_16_6_64:
     lsl x4, x4, #2 // x4 * 4 = x4 * sizeof(float)
     lsl x5, x5, #2 // x5 * 4 = x5 * sizeof(float)
 
-    // Load first column data from the 16x1 matrix a
-    ld1 {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], x3
-
     mov x6, x1 // Store the initial value of x1, to be restored in the next loop iteration
     mov x7, x2 // Store the initial value of x2, to be restored in the next loop iteration
 
     mov x9, #64 // x9 iterator for K loop
 matmul_loop_over_K:
     sub x9, x9, #1
+
+    // Load first column data from the 16x1 matrix a
+    ld1 {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], x3
 
     // run the known matmul_16_6_1_unrolled kernel
     .rept 2
@@ -82,9 +82,6 @@ matmul_loop_over_K:
     // Restore x1 and x2 to be incremented again
     mov x1, x6
     mov x2, x7
-
-    // Load next column data from the 16x1 matrix a
-    ld1 {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], x3
 
     // Loop back
     cbnz x9, matmul_loop_over_K

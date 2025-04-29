@@ -35,12 +35,12 @@ matmul_loop_over_N:
 matmul_loop_over_M:
     sub x16, x16, #1
 
-    // Load first column data from the 16x1 matrix a (+ offset based on M iteration)
-    ld1 {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], x3
-
     mov x15, #64 // x15 iterator for K loop
 matmul_loop_over_K:
     sub x15, x15, #1
+
+    // Load first column data from the 16x1 matrix a (+ offset based on M iteration)
+    ld1 {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], x3
 
     // run the known matmul_16_6_1_unrolled kernel
     .rept 2
@@ -96,9 +96,6 @@ matmul_loop_over_K:
     // Restore x1 and x2 to be incremented again
     mov x1, x6
     mov x2, x7
-
-    // Load next column data from the 16x1 matrix a
-    ld1 {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], x3
 
     // Loop back to K
     cbnz x15, matmul_loop_over_K
