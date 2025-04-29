@@ -17,8 +17,8 @@ This section microbenchmarks the execution throughput and latency of FP32 Neon i
 - File: ``submissions/submission_25_05_01/neon_1_1.s``
 - Driver: ``submissions/submission_25_05_01/neon_1_1_driver.cpp``
 - Compilation: ``g++ -o neon_1_1.exe neon_1_1_driver.cpp neon_1_1.s``
-- We have :math:`13.2304 \cdot 10^10` instructions per second.
-  That are :math:`13.2304 \cdot 10^10 / 8 = 16.538 \cdot 10^9` instructions per ALU per second.
+- We have :math:`13.2304 \cdot 10^{10}` instructions per second.
+  That are :math:`13.2304 \cdot 10^{10} / 8 = 16.538 \cdot 10^9` instructions per ALU per second.
   This aligns with a **throughput of** :math:`\approx 4` **instruction per cycle**, as it is known from benchmarks that the performance cores of the M4 chip have a clock speed of 4.4 GHz.
 
 
@@ -27,8 +27,8 @@ This section microbenchmarks the execution throughput and latency of FP32 Neon i
 - File: ``submissions/submission_25_05_01/neon_1_1.s``
 - Driver: ``submissions/submission_25_05_01/neon_1_1_driver.cpp``
 - Compilation: ``g++ -o neon_1_1.exe neon_1_1_driver.cpp neon_1_1.s``
-- We have :math:`6.65221 \cdot 10^10` instructions per second.
-  That are :math:`6.65221 \cdot 10^10 / 8 = 8.31526 \cdot 10^9` instructions per ALU per second.
+- We have :math:`6.65221 \cdot 10^{10}` instructions per second.
+  That are :math:`6.65221 \cdot 10^{10} / 8 = 8.31526 \cdot 10^9` instructions per ALU per second.
   This aligns with a **throughput of** :math:`\approx 2` **instruction per cycle**, as it is known from benchmarks that the performance cores of the M4 chip have a clock speed of 4.4 GHz.
 
 
@@ -37,8 +37,8 @@ This section microbenchmarks the execution throughput and latency of FP32 Neon i
 - File: ``submissions/submission_25_05_01/neon_1_1.s``
 - Driver: ``submissions/submission_25_05_01/neon_1_1_driver.cpp``
 - Compilation: ``g++ -o neon_1_1.exe neon_1_1_driver.cpp neon_1_1.s``
-- We have :math:`1.12728 \cdot 10^10` instructions per second.
-  That are :math:`1.12728 \cdot 10^10 / 8 = 1.4091 \cdot 10^9` instructions per ALU per second.
+- We have :math:`1.12728 \cdot 10^{10}` instructions per second.
+  That are :math:`1.12728 \cdot 10^{10} / 8 = 1.4091 \cdot 10^9` instructions per ALU per second.
   This aligns with a **throughput of** :math:`\approx 1/3` **instruction per cycle**, as it is known from benchmarks that the performance cores of the M4 chip have a clock speed of 4.4 GHz.
 
 
@@ -63,3 +63,14 @@ This section microbenchmarks the execution throughput and latency of FP32 Neon i
 - Compilation: ``g++ -o neon_1_2.exe neon_1_2_driver.cpp neon_1_2.s``
 - We have :math:`11.7019 \cdot 10^9` instruction per seconds in a single ALU.
   Resulting in a **latency of** :math:`\approx 3` **cycle** for the known clock speed of 4.4 GHz.
+
+
+Microkernel
+-----------
+
+Implement a Neon microkernel that computes C+=AB for M=16, N=6, and K=1. Wrap your microkernel in the `matmul_16_6_1` function.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+Test and optimize your microkernel. Report its performance in GFLOPS.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

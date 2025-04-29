@@ -45,19 +45,3 @@ TEST_CASE("Test 16x6x1 unrolled gemm correctness random data", "[neon_2_1][corre
 
     verify_matmul_16_6_1(matrix_c_verify, matrix_c);
 }
-
-TEST_CASE("Test 16x6x1 optimized gemm correctness random data", "[neon_2_1][correctness][gemm]")
-{
-    float matrix_a[16 * 1];
-    float matrix_b[1 * 6];
-    float matrix_c[16 * 6];
-    float matrix_c_verify[16 * 6];
-
-    fill_matmul_16_6_1(matrix_a, matrix_b, matrix_c, matrix_c_verify);
-
-    // Run matmuls
-    matmul_16_6_1_optimized(matrix_a, matrix_b, matrix_c, 16, 1, 16);
-    naive_matmul_16_6_1(matrix_a, matrix_b, matrix_c_verify, 16, 1, 16);
-
-    verify_matmul_16_6_1(matrix_c_verify, matrix_c);
-}

@@ -17,7 +17,7 @@ public:
         std::srand(std::time(0));
         for (size_t i = 0; i < 16 * 1; i++)
         {
-            matrix_c[i] = (static_cast<float>(std::rand())) / (static_cast<float>(std::rand()));
+            matrix_a[i] = (static_cast<float>(std::rand())) / (static_cast<float>(std::rand()));
         }
         for (size_t i = 0; i < 1 * 6; i++)
         {
@@ -56,14 +56,3 @@ BENCHMARK_DEFINE_F(Gemm16x6x1Fixture, BM_matmul_16_6_1_unrolled)(benchmark::Stat
 }
 
 BENCHMARK_REGISTER_F(Gemm16x6x1Fixture, BM_matmul_16_6_1_unrolled)->MinWarmUpTime(1.0); // WarmUp in seconds
-
-BENCHMARK_DEFINE_F(Gemm16x6x1Fixture, BM_matmul_16_6_1_optimized)(benchmark::State &state)
-{
-    for (auto _ : state)
-    {
-        matmul_16_6_1_optimized(matrix_a, matrix_b, matrix_c, 16, 1, 16);
-        flops += 4 * 6 * 4 * 2; // 4 fmla * 4 floats each * 2 instructions (add & mul) * 6 columns
-    }
-}
-
-BENCHMARK_REGISTER_F(Gemm16x6x1Fixture, BM_matmul_16_6_1_optimized)->MinWarmUpTime(1.0); // WarmUp in seconds
