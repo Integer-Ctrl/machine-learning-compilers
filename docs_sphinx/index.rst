@@ -21,6 +21,7 @@ Machine Learning Compilers
 
    submissions/report_25_04_17.rst
    submissions/report_25_04_24.rst
+   submissions/report_25_05_01.rst
 
 .. toctree::
    :maxdepth: 4
