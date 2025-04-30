@@ -68,9 +68,149 @@ This section microbenchmarks the execution throughput and latency of FP32 Neon i
 Microkernel
 -----------
 
-Implement a Neon microkernel that computes C+=AB for M=16, N=6, and K=1. Wrap your microkernel in the `matmul_16_6_1` function.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1. Implement a Neon microkernel that computes C+=AB for M=16, N=6, and K=1. 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+- Files ``submissions/submission_25_05_01/neon_2_1_simple.s``
+- Driver ``submissions/submission_25_05_01/neon_2_1_driver.cpp``
+
+Implementation loops over each column over the matrix c to be calculated.
+
+.. code-block:: asm
+    :linenos:
+    
+        ...
+
+        // Offset the used leading dimension by the size of floats (4byte == 2 lshifts)
+        lsl x3, x3, #2 // x3 * 4 = x3 * sizeof(float)
+        lsl x4, x4, #2 // x4 * 4 = x4 * sizeof(float)
+        lsl x5, x5, #2 // x5 * 4 = x5 * sizeof(float)
+
+        // Load all data from the 16x1 matrix a
+        ld1 {v0.4s, v1.4s, v2.4s, v3.4s}, [x0]
+
+        // Init the loop counter
+        mov x6, #6
+    process_next_column:
+        // Iteration -= 1
+        subs x6, x6, #1
+
+        // Load next element from the 1x6 matrix 
+        // ldr s4, [x1], #4 // one-liner but not using the argument offset
+        ldr s4, [x1]
+        add x1, x1, x4
+
+        // Load next column from the 16x6 matrix c
+        ld1 {v17.4s, v18.4s, v19.4s, v20.4s}, [x2]
+        
+        // Calculate the next row of c
+        fmla v17.4s, v0.4s, v4.s[0]
+        fmla v18.4s, v1.4s, v4.s[0]
+        fmla v19.4s, v2.4s, v4.s[0]
+        fmla v20.4s, v3.4s, v4.s[0]
+
+        // Store the result back to memory
+        st1 {v17.4s, v18.4s, v19.4s, v20.4s}, [x2], x5
+
+        // Compare and branch on not-zero
+        cbnz x6, process_next_column
+
+        ...
 
 
-Test and optimize your microkernel. Report its performance in GFLOPS.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2. Test and optimize your microkernel. Report its performance in GFLOPS.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+- Files 
+    - ``submissions/submission_25_05_01/neon_2_1.h``
+    - ``submissions/submission_25_05_01/neon_2_1_unrolled.s``
+- Tests ``submissions/submission_25_05_01/neon_2_1.test.cpp``
+- Benchmarks ``submissions/submission_25_05_01/neon_2_1.bench.cpp``
+
+Optimization
+############
+
+To optimize the kernel we unrolled the loop into 3 different register ranges (v15-v28, v17-v20, v21-v24),
+to allow for less dependency between the calculation of columns.
+These 3 different ``fmla`` blocks gets repeated with ``.rept 2`` to achieve the total of 6 column of calculation.
+
+.. code-block:: asm
+    :linenos:
+
+    ...
+
+    .rept 2
+    // Load first element from the 1x6 matrix b
+    ldr s4, [x1]
+    add x1, x1, x4
+    // Load first column from the 16x6 matrix c
+    ld1 {v25.4s, v26.4s, v27.4s, v28.4s}, [x2]
+
+    // Calculate first column of c
+    fmla v25.4s, v0.4s, v4.s[0]
+    fmla v26.4s, v1.4s, v4.s[0]
+    fmla v27.4s, v2.4s, v4.s[0]
+    fmla v28.4s, v3.4s, v4.s[0]
+
+    // Store first column back to memory
+    st1 {v25.4s, v26.4s, v27.4s, v28.4s}, [x2], x5 
+
+    // Load second element from the 1x6 matrix b
+    ldr s4, [x1]
+    add x1, x1, x4
+    // Load second column from the 16x6 matrix c
+    ld1 {v17.4s, v18.4s, v19.4s, v20.4s}, [x2]
+
+    // Calculate second column of c
+    fmla v17.4s, v0.4s, v4.s[0]
+    fmla v18.4s, v1.4s, v4.s[0]
+    fmla v19.4s, v2.4s, v4.s[0]
+    fmla v20.4s, v3.4s, v4.s[0]
+
+    // Store second column back to memory
+    st1 {v17.4s, v18.4s, v19.4s, v20.4s}, [x2], x5
+    
+    // Load third element from the 1x6 matrix b
+    ldr s4, [x1]
+    add x1, x1, x4
+    // Load third column from the 16x6 matrix c
+    ld1 {v21.4s, v22.4s, v23.4s, v24.4s}, [x2]
+
+    // Calculated third column of c
+    fmla v21.4s, v0.4s, v4.s[0]
+    fmla v22.4s, v1.4s, v4.s[0]
+    fmla v23.4s, v2.4s, v4.s[0]
+    fmla v24.4s, v3.4s, v4.s[0]
+
+    // Store third column back to memory
+    st1 {v21.4s, v22.4s, v23.4s, v24.4s}, [x2], x5
+    .endr
+
+    ...
+
+Benchmarks
+##########
+
+We run the benchmark with the following command: 
+
+.. code-block:: 
+  
+  ./benchmarks --benchmark_counters_tabular=true --benchmark_repetitions=10 --benchmark_report_aggregates_only=true
+
+Therefore we do 10 repetitions of the benchmark which do about ``120 000 000`` iterations each on our matmul kernels.
+
+.. code-block::
+  :emphasize-lines: 4, 8
+     
+  ----------------------------------------------------------------------------------------------------------------------------------
+  Benchmark                                                                             Time             CPU   Iterations      FLOPS
+  ----------------------------------------------------------------------------------------------------------------------------------
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_simple/min_warmup_time:1.000_mean               5.89 ns         5.87 ns           10 32.7048G/s
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_simple/min_warmup_time:1.000_median             5.89 ns         5.87 ns           10 32.7228G/s
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_simple/min_warmup_time:1.000_stddev            0.046 ns        0.044 ns           10 244.331M/s
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_simple/min_warmup_time:1.000_cv                 0.77 %          0.75 %            10      0.75%
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_unrolled/min_warmup_time:1.000_mean             5.74 ns         5.72 ns           10 33.5453G/s
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_unrolled/min_warmup_time:1.000_median           5.73 ns         5.71 ns           10 33.6103G/s
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_unrolled/min_warmup_time:1.000_stddev          0.051 ns        0.050 ns           10 291.918M/s
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_unrolled/min_warmup_time:1.000_cv               0.90 %          0.88 %            10      0.87%
+
+We see that the simple first implementation of our matmul kernel gets about **32.7 GFLOPS**.
+The optimized unrolled version gets about 0.8 GFLOPS more resulting in **33.5 GFLOPS**.

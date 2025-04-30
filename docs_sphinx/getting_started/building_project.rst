@@ -122,6 +122,7 @@ All the executables can be found in ``../machine-learning-compilers/build``.
 The available executables are ``benchmarks`` and ``tests``.
 
 .. note::
+     
     They are available when build with their respective ``--target``
 
 E.g. the ``benchmarks`` executable can be run with the following command:
@@ -133,4 +134,5 @@ E.g. the ``benchmarks`` executable can be run with the following command:
 The most desired command for the ``benchmarks`` might be:
 
 .. code-block::
-    ./benchmarks --benchmark_counters_tabular=true --benchmark_repetitions=10
+
+    ./benchmarks --benchmark_counters_tabular=true --benchmark_repetitions=10 --benchmark_report_aggregates_only=true
