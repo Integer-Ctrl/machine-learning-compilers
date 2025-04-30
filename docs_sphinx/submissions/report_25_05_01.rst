@@ -214,3 +214,233 @@ Therefore we do 10 repetitions of the benchmark which do about ``120 000 000`` i
 
 We see that the simple first implementation of our matmul kernel gets about **32.7 GFLOPS**.
 The optimized unrolled version gets about 0.8 GFLOPS more resulting in **33.5 GFLOPS**.
+
+
+Loops
+-----
+
+1. Loop over K: Implement a kernel that computes C+=AB for M=16, N=6 and K=64.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+- File ``submissions/submission_25_05_01/neon_3_1.s``
+
+.. code-block:: asm
+    :linenos:
+    ...
+
+    matmul_16_6_64:
+
+    ...
+
+    mov x6, x1 // Store the initial value of x1, to be restored in the next loop iteration
+    mov x7, x2 // Store the initial value of x2, to be restored in the next loop iteration
+
+    mov x9, #64 // x9 iterator for K loop
+matmul_loop_over_K:
+    sub x9, x9, #1
+
+    [logic of matmul_16_6_1 - neon_2_1_unrolled.s]
+
+    // offset x6 to the next element in the column
+    add x6, x6, #4 // #4 = sizeof(float)
+
+    // Restore x1 and x2 to be incremented again
+    mov x1, x6
+    mov x2, x7
+
+    // Loop back
+    cbnz x9, matmul_loop_over_K
+
+    ret
+
+    ...
+
+
+2. Loop over M: Implement a kernel that computes C+=AB for M=64, N=6 and K=64.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+- File ``submissions/submission_25_05_01/neon_3_2.s``
+
+.. code-block:: asm
+    :linenos:
+    ...
+
+    matmul_64_6_64:
+
+    ...
+
+    mov x6, x1 // Store the initial value of x1, to be restored in the K loop iteration
+    mov x7, x2 // Store the initial value of x2, to be restored in the K loop iteration
+
+    mov x8, x0 // Store the initial value of x0, to be restored in the M loop iteration
+    mov x9, x1 // Store the initial value of x1, to be restored in the M loop iteration
+
+    mov x16, #4 // x16 iterator for M loop
+matmul_loop_over_M:
+    sub x16, x16, #1
+
+    mov x15, #64 // x15 iterator for K loop
+matmul_loop_over_K:
+    sub x15, x15, #1
+
+    [logic of matmul_16_6_1 - neon_2_1_unrolled.s]
+
+    // offset x6 to the next element in the column
+    add x6, x6, #4 // #4 = sizeof(float)
+
+    // Restore x1 and x2 to be incremented again
+    mov x1, x6
+    mov x2, x7
+
+    // Loop back to K
+    cbnz x15, matmul_loop_over_K
+
+    // next M iteration on the matrix c and matrix a, both need offset about 16 values
+    // also matrix b needs to start at the initial location again
+    // Updates for the matrix c
+    add x7, x7, #16*4 // column height * sizeof(float)
+    mov x2, x7 // also apply offset to x2
+
+    // Updates for the matrix a
+    add x8, x8, #16*4 // column height * sizeof(float)
+    mov x0, x8 // also apply offset to x0
+
+    // Updates for the matrix b
+    mov x6, x9 // Update the restore register for x1 for the K loop
+    mov x1, x9 // Update the x1 register itself
+
+    // Loop back to M
+    cbnz x16, matmul_loop_over_M
+
+    ret
+
+    ...
+
+3. Loop over N: Implement a kernel that computes C+=AB for M=64, N=48 and K=64.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+- File ``submissions/submission_25_05_01/neon_3_3.s``
+
+.. code-block:: asm
+    :linenos:
+    ...
+
+    matmul_64_48_64:
+    
+    ...
+
+    mov x6, x1 // Store the initial value of x1, to be restored in the K loop iteration
+    mov x7, x2 // Store the initial value of x2, to be restored in the K loop iteration
+
+    mov x8, x0 // Store the initial value of x0, to be restored in the M loop iteration
+    mov x9, x1 // Store the initial value of x1, to be restored in the M loop iteration
+
+    mov x10, x0 // Store the initial value of x0, to be restored in the N loop iteration
+    mov x11, x2 // Store the initial value of x2, to bes restored in the N loop iteration
+    mov x12, #6 // hold the size of N that are processed in one loop, needed for offset calculation 
+
+    mov x17, #8 // x17 iterator for N loop
+matmul_loop_over_N:
+    sub x17, x17, #1
+
+    mov x16, #4 // x16 iterator for M loop
+matmul_loop_over_M:
+    sub x16, x16, #1
+
+    mov x15, #64 // x15 iterator for K loop
+matmul_loop_over_K:
+    sub x15, x15, #1
+
+    [logic of matmul_16_6_1 - neon_2_1_unrolled.s]
+
+    // offset x6 to the next element in the column
+    add x6, x6, #4 // #4 = sizeof(float)
+
+    // Restore x1 and x2 to be incremented again
+    mov x1, x6
+    mov x2, x7
+
+    // Loop back to K
+    cbnz x15, matmul_loop_over_K
+
+    // next M iteration on the matrix c and matrix a, both need offset about 16 values
+    // also matrix b needs to start at the initial location again
+    // Updates for the matrix a
+    add x8, x8, #16*4 // column height * sizeof(float)
+    mov x0, x8 // also apply offset to x0
+
+    // Updates for the matrix c
+    add x7, x7, #16*4 // column height * sizeof(float)
+    mov x2, x7 // also apply offset to x2
+
+    // Updates for the matrix b
+    mov x6, x9 // Update the restore register for x1 for the K loop
+    mov x1, x9 // Update the x1 register itself
+
+    // Loop back to M
+    cbnz x16, matmul_loop_over_M
+    
+    // next M iteration on the matrix b and matrix c, both need offset about 6*ldb/ldc values
+    // also matrix a needs to start at the initial location again
+    // Update for the matrix a
+    mov x8, x10 // Update the restore register for x0 for the M loop
+    mov x0, x10 // Update the x0 register itself
+
+    // Updates for the matrix b
+    madd x9, x4, x12, x9 // ldb * 6 + initial position
+    mov x6, x9 // Update the restore register of x1 for the K loop
+    mov x1, x9 // Update the x1 register itself
+
+    // Updates for the matrix c
+    madd x11, x5, x12, x11 // ldc * 6 + initial position
+    mov x7, x11 // Update the restore register of x2 for the K loop
+    mov x2, x11 // Update the x2 register itself
+
+    // Loop back to N
+    cbnz x17, matmul_loop_over_N
+
+    ret
+
+    ...
+
+4. Test and optimize the kernels. Report your performance in GFLOPS.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+- File ``submissions/submission_25_05_01/neon_3.h``
+- Tests ``submissions/submission_25_05_01/neon_3.test.cpp``
+- Benchmarks ``submissions/submission_25_05_01/neon_3.bench.cpp``
+
+Optimization
+############
+
+Usage of already optmiized `matmul_16_6_1` from task 2.
+
+Benchmarks
+##########
+
+We run the benchmark with the following command: 
+
+.. code-block:: 
+  
+  ./benchmarks --benchmark_counters_tabular=true --benchmark_repetitions=10 --benchmark_report_aggregates_only=true
+
+
+.. code-block::
+  :emphasize-lines: 4, 8, 12
+     
+  ----------------------------------------------------------------------------------------------------------------------------------
+  Benchmark                                                                             Time             CPU   Iterations      FLOPS
+  ----------------------------------------------------------------------------------------------------------------------------------
+  GemmMxNxKFixture<16, 6, 64>/BM_matmul_16_6_64/min_warmup_time:1.000_mean            396 ns          396 ns           10 31.0266G/s
+  GemmMxNxKFixture<16, 6, 64>/BM_matmul_16_6_64/min_warmup_time:1.000_median          396 ns          396 ns           10 31.0281G/s
+  GemmMxNxKFixture<16, 6, 64>/BM_matmul_16_6_64/min_warmup_time:1.000_stddev        0.069 ns        0.057 ns           10 4.50274M/s
+  GemmMxNxKFixture<16, 6, 64>/BM_matmul_16_6_64/min_warmup_time:1.000_cv             0.02 %          0.01 %            10      0.01%
+  GemmMxNxKFixture<64, 6, 64>/BM_matmul_64_6_64/min_warmup_time:1.000_mean           1728 ns         1728 ns           10 28.4438G/s
+  GemmMxNxKFixture<64, 6, 64>/BM_matmul_64_6_64/min_warmup_time:1.000_median         1728 ns         1728 ns           10 28.4445G/s
+  GemmMxNxKFixture<64, 6, 64>/BM_matmul_64_6_64/min_warmup_time:1.000_stddev        0.115 ns        0.106 ns           10  1.7484M/s
+  GemmMxNxKFixture<64, 6, 64>/BM_matmul_64_6_64/min_warmup_time:1.000_cv             0.01 %          0.01 %            10      0.01%
+  GemmMxNxKFixture<64, 48, 64>/BM_matmul_64_48_64/min_warmup_time:1.000_mean        13078 ns        13077 ns           10 22.5524G/s
+  GemmMxNxKFixture<64, 48, 64>/BM_matmul_64_48_64/min_warmup_time:1.000_median      13078 ns        13077 ns           10  22.552G/s
+  GemmMxNxKFixture<64, 48, 64>/BM_matmul_64_48_64/min_warmup_time:1.000_stddev       1.83 ns         1.60 ns           10 2.76464M/s
+  GemmMxNxKFixture<64, 48, 64>/BM_matmul_64_48_64/min_warmup_time:1.000_cv           0.01 %          0.01 %            10      0.01%
+
+
+- Mean FLOPS for loop over K: **31.0 GFLOPS**.
+- Mean FLOPS for loop over M: **28.4 GFLOPS**.
+- Mean FLOPS for loop over N: **22.6 GFLOPS**.
