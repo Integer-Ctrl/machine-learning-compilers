@@ -1,5 +1,5 @@
-#ifndef MLC_NEON_2_1_H
-#define MLC_NEON_2_1_H
+#ifndef MLC_neon_2_H
+#define MLC_neon_2_H
 
 #include <cstdint>
 #include <cstdlib>
@@ -61,4 +61,4 @@ void fill_matmul_16_6_1(float * __restrict__ a, float * __restrict__ b, float * 
         verify_c[i] = c[i];
     }
 }
-#endif // MLC_NEON_2_1_H
+#endif // MLC_neon_2_H

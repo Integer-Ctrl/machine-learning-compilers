@@ -54,8 +54,8 @@ set(SRC_FILES
     neon_1_1.s
     neon_1_2.s
 
-    neon_2_1_simple.s
-    neon_2_1_unrolled.s
+    neon_2_simple.s
+    neon_2_unrolled.s
 
     neon_3_1.s
     neon_3_2.s
@@ -63,12 +63,12 @@ set(SRC_FILES
 )
 
 set(TEST_FILES
-    neon_2_1.test.cpp
+    neon_2.test.cpp
     neon_3.test.cpp
 )
 
 set(BENCH_FILES
-    neon_2_1.bench.cpp
+    neon_2.bench.cpp
     neon_3.bench.cpp
 )
 
@@ -80,8 +80,8 @@ add_executable(neon_1_2 "${SRC_FILES}"
     neon_1_2_driver.cpp
 )
 
-add_executable(neon_2_1 "${SRC_FILES}"
-    neon_2_1_driver.cpp
+add_executable(neon_2 "${SRC_FILES}"
+    neon_2_driver.cpp
 )
 
 # add_executable(loops "${SRC_FILES}")

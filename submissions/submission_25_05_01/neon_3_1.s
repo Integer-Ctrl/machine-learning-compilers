@@ -1,4 +1,4 @@
-// using the neon_2_1_unrolled as base kernel as it is the fast based on benchmarks
+// using the neon_2_unrolled as base kernel as it is the fast based on benchmarks
 
 /**
     * @param x0 = a pointer to column-major 16x64 matrix A.

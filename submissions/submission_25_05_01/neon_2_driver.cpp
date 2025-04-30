@@ -1,6 +1,6 @@
 #include <iostream>
 #include <cstdint>
-#include "neon_2_1.h"
+#include "neon_2.h"
 
 void matmul_16_6_1(const float *__restrict__ a, const float *__restrict__ b, float *__restrict__ c,
                    int64_t lda, int64_t ldb, int64_t ldc)

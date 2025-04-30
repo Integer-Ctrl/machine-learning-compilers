@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <cstdint>
-#include "neon_2_1.h"
+#include "neon_2.h"
 
 void verify_matmul_16_6_1(const float *__restrict__ expected, const float *__restrict__ result)
 {
@@ -14,7 +14,7 @@ void verify_matmul_16_6_1(const float *__restrict__ expected, const float *__res
     }
 }
 
-TEST_CASE("Test 16x6x1 simple gemm correctness random data", "[neon_2_1][correctness][gemm]")
+TEST_CASE("Test 16x6x1 simple gemm correctness random data", "[neon_2][correctness][gemm]")
 {
     float matrix_a[16 * 1];
     float matrix_b[1 * 6];
@@ -30,7 +30,7 @@ TEST_CASE("Test 16x6x1 simple gemm correctness random data", "[neon_2_1][correct
     verify_matmul_16_6_1(matrix_c_verify, matrix_c);
 }
 
-TEST_CASE("Test 16x6x1 unrolled gemm correctness random data", "[neon_2_1][correctness][gemm]")
+TEST_CASE("Test 16x6x1 unrolled gemm correctness random data", "[neon_2][correctness][gemm]")
 {
     float matrix_a[16 * 1];
     float matrix_b[1 * 6];

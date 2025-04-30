@@ -1,5 +1,5 @@
 #include <benchmark/benchmark.h>
-#include "neon_2_1.h"
+#include "neon_2.h"
 
 class Gemm16x6x1Fixture : public benchmark::Fixture
 {
