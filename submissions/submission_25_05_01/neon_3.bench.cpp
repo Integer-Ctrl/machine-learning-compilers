@@ -30,8 +30,10 @@ BENCHMARK_TEMPLATE_DEFINE_F(GemmMxNxKFixture, BM_matmul_16_6_64, 16, 6, 64)(benc
     for (auto _ : state)
     {
         matmul_16_6_64(matrix_a, matrix_b, matrix_c, 16, 64, 16);
-        flops += (4 * 6 * 4 * 2) * 64; // (4 fmla * 4 floats each * 2 instructions (add & mul) * 6 columns) * 64 K-Loop
     }
+
+    flops = (4 * 6 * 4 * 2) * 64; // (4 fmla * 4 floats each * 2 instructions (add & mul) * 6 columns) * 64 K-Loop
+    flops *= state.iterations();
 };
 
 BENCHMARK_REGISTER_F(GemmMxNxKFixture, BM_matmul_16_6_64)->MinWarmUpTime(1.0); // WarmUp in seconds
@@ -41,9 +43,11 @@ BENCHMARK_TEMPLATE_DEFINE_F(GemmMxNxKFixture, BM_matmul_64_6_64, 64, 6, 64)(benc
     for (auto _ : state)
     {
         matmul_64_6_64(matrix_a, matrix_b, matrix_c, 64, 64, 64);
-        // ((4 fmla * 4 floats each * 2 instructions (add & mul) * 6 columns) * 64 K-Loop) * 4 M-Loop
-        flops += ((4 * 6 * 4 * 2) * 64) * 4;
     }
+
+    // ((4 fmla * 4 floats each * 2 instructions (add & mul) * 6 columns) * 64 K-Loop) * 4 M-Loop
+    flops = ((4 * 6 * 4 * 2) * 64) * 4;
+    flops *= state.iterations();
 }
 
 BENCHMARK_REGISTER_F(GemmMxNxKFixture, BM_matmul_64_6_64)->MinWarmUpTime(1.0); // WarmUp in seconds
@@ -53,9 +57,11 @@ BENCHMARK_TEMPLATE_DEFINE_F(GemmMxNxKFixture, BM_matmul_64_48_64, 64, 48, 64)(be
     for (auto _ : state)
     {
         matmul_64_48_64(matrix_a, matrix_b, matrix_c, 64, 64, 64);
-        // (((4 fmla * 4 floats each * 2 instructions (add & mul) * 6 columns) * 64 K-Loop) * 4 M-Loop) * 6 N-Loop
-        flops += (((4 * 6 * 4 * 2) * 64) * 4) * 6;
     }
+
+    // (((4 fmla * 4 floats each * 2 instructions (add & mul) * 6 columns) * 64 K-Loop) * 4 M-Loop) * 6 N-Loop
+    flops = (((4 * 6 * 4 * 2) * 64) * 4) * 6;
+    flops *= state.iterations();
 }
 
 BENCHMARK_REGISTER_F(GemmMxNxKFixture, BM_matmul_64_48_64)->MinWarmUpTime(1.0); // WarmUp in seconds
