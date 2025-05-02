@@ -183,10 +183,10 @@ These 3 different ``fmla`` blocks gets repeated with ``.rept 2`` to achieve the 
 
 **Benchmarks**
 
-We run the benchmark with the following command: 
+We run the benchmark with the following command:
 
-.. code-block:: 
-  
+.. code-block::
+ 
   ./benchmarks --benchmark_counters_tabular=true --benchmark_repetitions=10 --benchmark_report_aggregates_only=true
 
 Therefore we do 10 repetitions of the benchmark which do about ``120 000 000`` iterations each on our matmul kernels.
@@ -197,17 +197,17 @@ Therefore we do 10 repetitions of the benchmark which do about ``120 000 000`` i
   ----------------------------------------------------------------------------------------------------------------------------------
   Benchmark                                                                             Time             CPU   Iterations      FLOPS
   ----------------------------------------------------------------------------------------------------------------------------------
-  Gemm16x6x1Fixture/BM_matmul_16_6_1_simple/min_warmup_time:1.000_mean               5.89 ns         5.87 ns           10 32.7048G/s
-  Gemm16x6x1Fixture/BM_matmul_16_6_1_simple/min_warmup_time:1.000_median             5.89 ns         5.87 ns           10 32.7228G/s
-  Gemm16x6x1Fixture/BM_matmul_16_6_1_simple/min_warmup_time:1.000_stddev            0.046 ns        0.044 ns           10 244.331M/s
-  Gemm16x6x1Fixture/BM_matmul_16_6_1_simple/min_warmup_time:1.000_cv                 0.77 %          0.75 %            10      0.75%
-  Gemm16x6x1Fixture/BM_matmul_16_6_1_unrolled/min_warmup_time:1.000_mean             5.74 ns         5.72 ns           10 33.5453G/s
-  Gemm16x6x1Fixture/BM_matmul_16_6_1_unrolled/min_warmup_time:1.000_median           5.73 ns         5.71 ns           10 33.6103G/s
-  Gemm16x6x1Fixture/BM_matmul_16_6_1_unrolled/min_warmup_time:1.000_stddev          0.051 ns        0.050 ns           10 291.918M/s
-  Gemm16x6x1Fixture/BM_matmul_16_6_1_unrolled/min_warmup_time:1.000_cv               0.90 %          0.88 %            10      0.87%
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_simple/min_warmup_time:1.000_mean               5.84 ns         5.82 ns           10 33.0036G/s
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_simple/min_warmup_time:1.000_median             5.83 ns         5.81 ns           10 33.0317G/s
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_simple/min_warmup_time:1.000_stddev            0.025 ns        0.025 ns           10 143.339M/s
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_simple/min_warmup_time:1.000_cv                 0.43 %          0.44 %            10      0.43%
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_unrolled/min_warmup_time:1.000_mean             5.71 ns         5.69 ns           10 33.7234G/s
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_unrolled/min_warmup_time:1.000_median           5.70 ns         5.68 ns           10 33.7732G/s
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_unrolled/min_warmup_time:1.000_stddev          0.038 ns        0.038 ns           10 224.892M/s
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_unrolled/min_warmup_time:1.000_cv               0.67 %          0.67 %            10      0.67
 
-We see that the simple first implementation of our matmul kernel gets about **32.7 GFLOPS**.
-The optimized unrolled version gets about 0.8 GFLOPS more resulting in **33.5 GFLOPS**.
+We see that the simple first implementation of our matmul kernel gets about **33.0 GFLOPS**.
+The optimized unrolled version gets about 0.7 GFLOPS more resulting in **33.7 GFLOPS**.
 
 
 Loops
@@ -438,7 +438,7 @@ Loops
 
 **Optimization**
 
-Usage of already optmiized `matmul_16_6_1` from task 2.
+Usage of already optimized `matmul_16_6_1` from task 2.
 
 **Benchmarks**
 
