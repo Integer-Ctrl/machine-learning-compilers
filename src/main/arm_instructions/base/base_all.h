@@ -1,0 +1,9 @@
+#ifndef MINI_JIT_ARM_INSTRUCTIONS_BASE_ALL_H
+#define MINI_JIT_ARM_INSTRUCTIONS_BASE_ALL_H
+
+#include "ldr.h"
+#include
+
+static_assert
+
+#endif // MINI_JIT_ARM_INSTRUCTIONS_BASE_ALL_H
