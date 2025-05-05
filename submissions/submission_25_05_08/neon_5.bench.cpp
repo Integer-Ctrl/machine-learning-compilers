@@ -1,5 +1,5 @@
 #include <benchmark/benchmark.h>
-#include "neon_4.h"
+#include "neon_5.h"
 
 template <uint32_t TMdim, uint32_t TNdim, uint32_t TKdim>
 class GemmMxNxKFixture : public benchmark::Fixture
@@ -25,28 +25,28 @@ public:
     }
 };
 
-BENCHMARK_TEMPLATE_DEFINE_F(GemmMxNxKFixture, BM_matmul_14_6_64, 14, 6, 64)(benchmark::State &state)
+BENCHMARK_TEMPLATE_DEFINE_F(GemmMxNxKFixture, BM_matmul_64_64_64, 64, 64, 64)(benchmark::State &state)
 {
     for (auto _ : state)
     {
-        matmul_14_6_64(matrix_a, matrix_b, matrix_c, 16, 64, 16);
+        matmul_64_64_64(matrix_a, matrix_b, matrix_c, 64, 64, 64);
     }
 
-    flops = (14 *6 * 64) * 2; // M * N * K * 2 instructions (add & mul)
+    flops = (64 *64 * 64) * 2; // M * N * K * 2 instructions (add & mul)
     flops *= state.iterations();
 };
 
-BENCHMARK_REGISTER_F(GemmMxNxKFixture, BM_matmul_14_6_64)->MinWarmUpTime(1.0); // WarmUp in seconds
+BENCHMARK_REGISTER_F(GemmMxNxKFixture, BM_matmul_64_64_64)->MinWarmUpTime(1.0); // WarmUp in seconds
 
-BENCHMARK_TEMPLATE_DEFINE_F(GemmMxNxKFixture, BM_matmul_15_6_64, 15, 6, 64)(benchmark::State &state)
+BENCHMARK_TEMPLATE_DEFINE_F(GemmMxNxKFixture, BM_matmul_64_64_64_base_line, 64, 64, 64)(benchmark::State &state)
 {
     for (auto _ : state)
     {
-        matmul_15_6_64(matrix_a, matrix_b, matrix_c, 15, 64, 16);
+        matmul_64_64_64_base_line(matrix_a, matrix_b, matrix_c);
     }
 
-    flops = (15 *6 * 64) * 2; // M * N * K * 2 instructions (add & mul)
+    flops = (64 *64 * 64) * 2; // M * N * K * 2 instructions (add & mul)
     flops *= state.iterations();
 };
 
-BENCHMARK_REGISTER_F(GemmMxNxKFixture, BM_matmul_15_6_64)->MinWarmUpTime(1.0); // WarmUp in seconds
+BENCHMARK_REGISTER_F(GemmMxNxKFixture, BM_matmul_64_64_64_base_line)->MinWarmUpTime(1.0); // WarmUp in seconds

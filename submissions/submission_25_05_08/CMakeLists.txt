@@ -53,14 +53,18 @@ FetchContent_MakeAvailable(google_benchmark)
 set(SRC_FILES
     neon_4_1.s
     neon_4_2.s
+    neon_5_1.s
+    neon_5_1-base-line.s
 )
 
 set(TEST_FILES
     neon_4.test.cpp
+    neon_5.test.cpp
 )
 
 set(BENCH_FILES
     neon_4.bench.cpp
+    neon_5.bench.cpp
 )
 
 # add_executable(loops "${SRC_FILES}")

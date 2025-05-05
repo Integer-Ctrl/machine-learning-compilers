@@ -1,5 +1,3 @@
-// using the neon_2_unrolled as base kernel as it is the fast based on benchmarks
-
 /**
     * @param x0 = a pointer to column-major 14x64 matrix A.
     * @param x1 = b pointer to column-major 64x6 matrix B.
@@ -7,7 +5,7 @@
     * @param x3 = lda leading dimension of A.
     * @param x4 = ldb leading dimension of B.
     * @param x5 = ldc leading dimension of C.
-    **/
+**/
 .text
 .type matmul_14_6_64, %function
 .global matmul_14_6_64
