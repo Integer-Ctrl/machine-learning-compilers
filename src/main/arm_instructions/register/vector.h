@@ -398,201 +398,201 @@ const V16Bit h30 = V16Bit::h30;
 /// @brief 16 bit scratch register (caller-saved)
 const V16Bit h31 = V16Bit::h31;
 
-/// @brief Word sized vector register W0 - W31
+/// @brief Word sized vector register S0 - S31
 enum class V32Bit : uint32_t
 {
     /// @brief 32 bit parameter/result register (caller-saved)
-    w0 = 0,
+    s0 = 0,
 
     /// @brief 32 bit parameter/result register (caller-saved)
-    w1 = 1,
+    s1 = 1,
 
     /// @brief 32 bit parameter/result register (caller-saved)
-    w2 = 2,
+    s2 = 2,
 
     /// @brief 32 bit parameter/result register (caller-saved)
-    w3 = 3,
+    s3 = 3,
 
     /// @brief 32 bit parameter/result register (caller-saved)
-    w4 = 4,
+    s4 = 4,
 
     /// @brief 32 bit parameter/result register (caller-saved)
-    w5 = 5,
+    s5 = 5,
 
     /// @brief 32 bit parameter/result register (caller-saved)
-    w6 = 6,
+    s6 = 6,
 
     /// @brief 32 bit parameter/result register (caller-saved)
-    w7 = 7,
+    s7 = 7,
 
     /// @brief 32 bit scratch register (caller-saved)
-    w8 = 8,
+    s8 = 8,
 
     /// @brief 32 bit scratch register (callee-saved, lower 64 bits)
-    w9 = 9,
+    s9 = 9,
 
     /// @brief 32 bit scratch register (callee-saved, lower 64 bits)
-    w10 = 10,
+    s10 = 10,
 
     /// @brief 32 bit scratch register (callee-saved, lower 64 bits)
-    w11 = 11,
+    s11 = 11,
 
     /// @brief 32 bit scratch register (callee-saved, lower 64 bits)
-    w12 = 12,
+    s12 = 12,
 
     /// @brief 32 bit scratch register (callee-saved, lower 64 bits)
-    w13 = 13,
+    s13 = 13,
 
     /// @brief 32 bit scratch register (callee-saved, lower 64 bits)
-    w14 = 14,
+    s14 = 14,
 
     /// @brief 32 bit scratch register (callee-saved, lower 64 bits)
-    w15 = 15,
+    s15 = 15,
 
     /// @brief 32 bit scratch register (caller-saved)
-    w16 = 16,
+    s16 = 16,
 
     /// @brief 32 bit scratch register (caller-saved)
-    w17 = 17,
+    s17 = 17,
 
     /// @brief 32 bit scratch register (caller-saved)
-    w18 = 18,
+    s18 = 18,
 
     /// @brief 32 bit scratch register (caller-saved)
-    w19 = 19,
+    s19 = 19,
 
     /// @brief 32 bit scratch register (caller-saved)
-    w20 = 20,
+    s20 = 20,
 
     /// @brief 32 bit scratch register (caller-saved)
-    w21 = 21,
+    s21 = 21,
 
     /// @brief 32 bit scratch register (caller-saved)
-    w22 = 22,
+    s22 = 22,
 
     /// @brief 32 bit scratch register (caller-saved)
-    w23 = 23,
+    s23 = 23,
 
     /// @brief 32 bit scratch register (caller-saved)
-    w24 = 24,
+    s24 = 24,
 
     /// @brief 32 bit scratch register (caller-saved)
-    w25 = 25,
+    s25 = 25,
 
     /// @brief 32 bit scratch register (caller-saved)
-    w26 = 26,
+    s26 = 26,
 
     /// @brief 32 bit scratch register (caller-saved)
-    w27 = 27,
+    s27 = 27,
 
     /// @brief 32 bit scratch register (caller-saved)
-    w28 = 28,
+    s28 = 28,
 
     /// @brief 32 bit scratch register (caller-saved)
-    w29 = 29,
+    s29 = 29,
 
     /// @brief 32 bit scratch register (caller-saved)
-    w30 = 30,
+    s30 = 30,
 
     /// @brief 32 bit scratch register (caller-saved)
-    w31 = 31,
+    s31 = 31,
 };
 
 /// @brief 32 bit parameter/result register (caller-saved)
-const V32Bit w0 = V32Bit::w0;
+const V32Bit s0 = V32Bit::s0;
 
 /// @brief 32 bit parameter/result register (caller-saved)
-const V32Bit w1 = V32Bit::w1;
+const V32Bit s1 = V32Bit::s1;
 
 /// @brief 32 bit parameter/result register (caller-saved)
-const V32Bit w2 = V32Bit::w2;
+const V32Bit s2 = V32Bit::s2;
 
 /// @brief 32 bit parameter/result register (caller-saved)
-const V32Bit w3 = V32Bit::w3;
+const V32Bit s3 = V32Bit::s3;
 
 /// @brief 32 bit parameter/result register (caller-saved)
-const V32Bit w4 = V32Bit::w4;
+const V32Bit s4 = V32Bit::s4;
 
 /// @brief 32 bit parameter/result register (caller-saved)
-const V32Bit w5 = V32Bit::w5;
+const V32Bit s5 = V32Bit::s5;
 
 /// @brief 32 bit parameter/result register (caller-saved)
-const V32Bit w6 = V32Bit::w6;
+const V32Bit s6 = V32Bit::s6;
 
 /// @brief 32 bit parameter/result register (caller-saved)
-const V32Bit w7 = V32Bit::w7;
+const V32Bit s7 = V32Bit::s7;
 
 /// @brief 32 bit scratch register (callee-saved, lower 64 bit)
-const V32Bit w8 = V32Bit::w8;
+const V32Bit s8 = V32Bit::s8;
 
 /// @brief 32 bit scratch register (callee-saved, lower 64 bit)
-const V32Bit w9 = V32Bit::w9;
+const V32Bit s9 = V32Bit::s9;
 
 /// @brief 32 bit scratch register (callee-saved, lower 64 bit)
-const V32Bit w10 = V32Bit::w10;
+const V32Bit s10 = V32Bit::s10;
 
 /// @brief 32 bit scratch register (callee-saved, lower 64 bit)
-const V32Bit w11 = V32Bit::w11;
+const V32Bit s11 = V32Bit::s11;
 
 /// @brief 32 bit scratch register (callee-saved, lower 64 bit)
-const V32Bit w12 = V32Bit::w12;
+const V32Bit s12 = V32Bit::s12;
 
 /// @brief 32 bit scratch register (callee-saved, lower 64 bit)
-const V32Bit w13 = V32Bit::w13;
+const V32Bit s13 = V32Bit::s13;
 
 /// @brief 32 bit scratch register (callee-saved, lower 64 bit)
-const V32Bit w14 = V32Bit::w14;
+const V32Bit s14 = V32Bit::s14;
 
 /// @brief 32 bit scratch register (callee-saved, lower 64 bit)
-const V32Bit w15 = V32Bit::w15;
+const V32Bit s15 = V32Bit::s15;
 
 /// @brief 32 bit scratch register (caller-saved)
-const V32Bit w16 = V32Bit::w16;
+const V32Bit s16 = V32Bit::s16;
 
 /// @brief 32 bit scratch register (caller-saved)
-const V32Bit w17 = V32Bit::w17;
+const V32Bit s17 = V32Bit::s17;
 
 /// @brief 32 bit scratch register (caller-saved)
-const V32Bit w18 = V32Bit::w18;
+const V32Bit s18 = V32Bit::s18;
 
 /// @brief 32 bit scratch register (caller-saved)
-const V32Bit w19 = V32Bit::w19;
+const V32Bit s19 = V32Bit::s19;
 
 /// @brief 32 bit scratch register (caller-saved)
-const V32Bit w20 = V32Bit::w20;
+const V32Bit s20 = V32Bit::s20;
 
 /// @brief 32 bit scratch register (caller-saved)
-const V32Bit w21 = V32Bit::w21;
+const V32Bit s21 = V32Bit::s21;
 
 /// @brief 32 bit scratch register (caller-saved)
-const V32Bit w22 = V32Bit::w22;
+const V32Bit s22 = V32Bit::s22;
 
 /// @brief 32 bit scratch register (caller-saved)
-const V32Bit w23 = V32Bit::w23;
+const V32Bit s23 = V32Bit::s23;
 
 /// @brief 32 bit scratch register (caller-saved)
-const V32Bit w24 = V32Bit::w24;
+const V32Bit s24 = V32Bit::s24;
 
 /// @brief 32 bit scratch register (caller-saved)
-const V32Bit w25 = V32Bit::w25;
+const V32Bit s25 = V32Bit::s25;
 
 /// @brief 32 bit scratch register (caller-saved)
-const V32Bit w26 = V32Bit::w26;
+const V32Bit s26 = V32Bit::s26;
 
 /// @brief 32 bit scratch register (caller-saved)
-const V32Bit w27 = V32Bit::w27;
+const V32Bit s27 = V32Bit::s27;
 
 /// @brief 32 bit scratch register (caller-saved)
-const V32Bit w28 = V32Bit::w28;
+const V32Bit s28 = V32Bit::s28;
 
 /// @brief 32 bit scratch register (caller-saved)
-const V32Bit w29 = V32Bit::w29;
+const V32Bit s29 = V32Bit::s29;
 
 /// @brief 32 bit scratch register (caller-saved)
-const V32Bit w30 = V32Bit::w30;
+const V32Bit s30 = V32Bit::s30;
 
 /// @brief 32 bit scratch register (caller-saved)
-const V32Bit w31 = V32Bit::w31;
+const V32Bit s31 = V32Bit::s31;
 
 /// @brief Double word sized vector register D0 - D31
 enum class V64Bit : uint32_t
@@ -1181,6 +1181,86 @@ const VGeneral v30 = VGeneral::v30;
 
 /// @brief general scratch register (caller-saved)
 const VGeneral v31 = VGeneral::v31;
+
+/// @brief Use 8 Byte sized vectors.
+enum class VType8x8Bit : uint32_t
+{
+    /// @brief Use 8 Byte sized vectors.
+    t8B,
+};
+
+/// @brief Use 16 Byte sized vectors.
+enum class VType16x8Bit : uint32_t
+{
+    /// @brief Use 16 Byte sized vectors.
+    t16B
+};
+
+/// @brief Use 8 Byte sized vectors.
+const VType8x8Bit t8b = VType8x8Bit::t8B;
+
+/// @brief Use 16 Byte sized vectors.
+const VType16x8Bit t16b = VType16x8Bit::t16B;
+
+/// @brief Use 4 half word (16 Bit) sized vectors.
+enum class VType4x16Bit : uint32_t
+{
+    /// @brief Use 4 half word (16 Bit) sized vectors.
+    t4H,
+};
+
+/// @brief Use 8 half word (16 Bit) sized vectors.
+enum class VType8x16Bit : uint32_t
+{
+    /// @brief Use 8 half word (16 Bit) sized vectors.
+    t8H
+};
+
+/// @brief Use 4 half word (16 Bit) sized vectors.
+const VType4x16Bit t4h = VType4x16Bit::t4H;
+
+/// @brief Use 8 half word (16 Bit) sized vectors.
+const VType8x16Bit t8h = VType8x16Bit::t8H;
+
+/// @brief Use 2 word (32 Bit) sized vectors.
+enum class VType2x32Bit : uint32_t
+{
+    /// @brief Use 2 word (32 Bit) sized vectors.
+    t2S,
+};
+
+/// @brief Use 4 word (32 Bit) sized vectors.
+enum class VType4x32Bit : uint32_t
+{
+    /// @brief Use 4 word (32 Bit) sized vectors.
+    t4S
+};
+
+/// @brief Use 2 word (32 Bit) sized vectors.
+const VType2x32Bit t2s = VType2x32Bit::t2S;
+
+/// @brief Use 4 word (32 Bit) sized vectors.
+const VType4x32Bit t4s = VType4x32Bit::t4S;
+
+/// @brief Use 1 double word (64 Bit) sized vector.
+enum class VType1x64Bit : uint32_t
+{
+    /// @brief Use 1 double word (64 Bit) sized vector.
+    t1D,
+};
+
+/// @brief Use 2 double word (64 Bit) sized vector.
+enum class VType2x64Bit : uint32_t
+{
+    /// @brief Use 2 double word (64 Bit) sized vector.
+    t2D
+};
+
+/// @brief Use 1 double word (64 Bit) sized vector.
+const VType1x64Bit t1d = VType1x64Bit::t1D;
+
+/// @brief Use 2 double word (64 Bit) sized vector.
+const VType2x64Bit t2d = VType2x64Bit::t2D;
 
 } // namespace arm_instructions
 } // namespace mini_jit

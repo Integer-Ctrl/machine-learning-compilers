@@ -2,21 +2,11 @@
 #define MINI_JIT_ARM_INSTRUCTIONS_BASE_LDR_H
 
 #include <cstdint>
-#include "release_assert.h"
-#include "register.h"
+#include "../../release_assert.h"
+#include "../register.h"
 
 namespace mini_jit {
 namespace arm_instructions {
-
-constexpr uint32_t ldrPost(const R32Bit Wt, const R64Bit Xn, const int32_t imm9)
-{
-    return internal::ldrImmediatePost(static_cast<uint32_t>(Wt), static_cast<uint32_t>(Xn), imm9, false);
-}
-
-constexpr uint32_t ldrPost(const R64Bit Xt, const R64Bit Xn, const int32_t imm9)
-{
-    return internal::ldrImmediatePost(static_cast<uint32_t>(Xt), static_cast<uint32_t>(Xn), imm9, false);
-}
 
 namespace internal {
 
@@ -69,12 +59,20 @@ constexpr uint32_t ldrImmediateOffset(const uint32_t Rt, const uint32_t Rn, cons
     release_assert(((Rt & mask5) == Rt), "Rt is only allowed to have a size of 5 bit.");
     release_assert(((Rn & mask5) == Rn), "Rn is only allowed to have a size of 5 bit.");
 
-    uint32_t immShift = is64bit ? 3 : 2; // <pimm>/8 or <pimm>/4
-    uint32_t maskShift = is64bit ? mask3 : mask2;
-    release_assert((((imm12 >> immShift) & mask12) == (imm12 >> immShift)),
-        "imm12 is only allowed to have a size of 12 bit after shift.");
-    release_assert(((imm12 & maskShift) == 0), "imm12 should be multiple of 4 or 8.");
+    if (is64bit)
+    {
+        release_assert((((imm12 >> 3) & mask12) == (imm12 >> 3)),
+            "imm12 is only allowed to have a size of 12 bit after shift.");
+        release_assert(((imm12 & mask3) == 0), "imm12 should be multiple of 4 or 8.");
+    }
+    else
+    {
+        release_assert((((imm12 >> 2) & mask12) == (imm12 >> 2)),
+            "imm12 is only allowed to have a size of 12 bit after shift.");
+        release_assert(((imm12 & mask2) == 0), "imm12 should be multiple of 4 or 8.");
+    }
 
+    uint32_t immShift = is64bit ? 3 : 2; // <pimm>/8 or <pimm>/4
     uint32_t ldr = 0;
     ldr |= 0b1 << 31; // size bit 31
     ldr |= (is64bit & mask1) << 30;
@@ -86,6 +84,38 @@ constexpr uint32_t ldrImmediateOffset(const uint32_t Rt, const uint32_t Rn, cons
 }
 
 } // namespace internal
+
+constexpr uint32_t ldrPost(const R32Bit Wt, const R64Bit Xn, const int32_t imm9)
+{
+    return internal::ldrImmediatePost(static_cast<uint32_t>(Wt), static_cast<uint32_t>(Xn), imm9, false);
+}
+
+constexpr uint32_t ldrPost(const R64Bit Xt, const R64Bit Xn, const int32_t imm9)
+{
+    return internal::ldrImmediatePost(static_cast<uint32_t>(Xt), static_cast<uint32_t>(Xn), imm9, true);
+}
+
+constexpr uint32_t ldrPre(const R32Bit Wt, const R64Bit Xn, const int32_t imm9)
+{
+    return internal::ldrImmediatePre(static_cast<uint32_t>(Wt), static_cast<uint32_t>(Xn), imm9, false);
+}
+
+constexpr uint32_t ldrPre(const R64Bit Xt, const R64Bit Xn, const int32_t imm9)
+{
+    return internal::ldrImmediatePre(static_cast<uint32_t>(Xt), static_cast<uint32_t>(Xn), imm9, true);
+}
+
+constexpr uint32_t ldrOffset(const R32Bit Wt, const R64Bit Xn, const int32_t imm12)
+{
+    return internal::ldrImmediateOffset(static_cast<uint32_t>(Wt), static_cast<uint32_t>(Xn), imm12, false);
+}
+
+constexpr uint32_t ldrOffset(const R64Bit Xt, const R64Bit Xn, const int32_t imm12)
+{
+    return internal::ldrImmediateOffset(static_cast<uint32_t>(Xt), static_cast<uint32_t>(Xn), imm12, true);
+}
+
+
 } // namespace arm_instructions
 } // namespace mini_jit
 

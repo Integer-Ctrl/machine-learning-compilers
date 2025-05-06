@@ -397,6 +397,47 @@ const R64Bit lr = R64Bit::lr;
 /// @brief stack pointer register
 const R64Bit sp = R64Bit::sp;
 
+/// @brief Represents the Logical Shift Left option
+enum class ShiftLSL
+{
+    /// @brief Represents the Logical Shift Left option
+    LSL
+};
+
+/// @brief Logical Shift Left
+const ShiftLSL LSL = ShiftLSL::LSL;
+
+/// @brief Represents the Logical Shift Right option
+enum class ShiftLSR
+{
+    /// @brief Represents the Logical Shift Right option
+    LSR
+};
+
+/// @brief Logical Shift Right
+const ShiftLSR LSR = ShiftLSR::LSR;
+
+/// @brief Represents the Arithmetic Shift Right option
+enum class ShiftASR
+{
+    /// @brief Represents the Arithmetic Shift Right option
+    ASR
+};
+
+/// @brief Arithmetic Shift Right
+const ShiftASR ASR = ShiftASR::ASR;
+
+/// @brief Represents the ROtate Right option
+enum class ShiftROR
+{
+    /// @brief Represents the ROtate Right option
+    ROR
+};
+
+/// @brief ROtate Right
+const ShiftROR ROR = ShiftROR::ROR;
+
+
 } // namespace arm_instructions
 } // namespace mini_jit
 #endif // MINI_JIT_ARM_INSTRUCTIONS_GENERAL_PURPOSE_H

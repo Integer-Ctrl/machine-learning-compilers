@@ -1,5 +1,5 @@
-#ifndef MINI_JIT_REGISTER_H
-#define MINI_JIT_REGISTER_H
+#ifndef MINI_JIT_ARM_INSTRUCTIONS_REGISTER_H
+#define MINI_JIT_ARM_INSTRUCTIONS_REGISTER_H
 
 namespace mini_jit {
 namespace arm_instructions {
@@ -26,4 +26,4 @@ const uint32_t mask15 = 0b111'1111'1111'1111;
 #include "register/general_purpose.h"
 #include "register/vector.h"
 
-#endif // MINI_JIT_REGISTER_H
+#endif // MINI_JIT_ARM_INSTRUCTIONS_REGISTER_H
