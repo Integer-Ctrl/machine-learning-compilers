@@ -6,5 +6,8 @@
 #include "lsl.h"
 #include "add.h"
 #include "ret.h"
+#include "cbnz.h"
+#include "ldp.h"
+#include "stp.h"
 
 #endif // MINI_JIT_ARM_INSTRUCTIONS_BASE_ALL_H

@@ -23,7 +23,11 @@ enum class ld1Types {
     t2d
 };
 
-template<typename T> constexpr ld1Types _ld1ParseType() { static_assert(false, "Not a valid ld1 vector type.") }
+template<typename T> constexpr ld1Types _ld1ParseType()
+{
+    static_assert(false, "Not a valid ld1 vector type.");
+    return ld1Types::t8b;
+}
 template<> constexpr ld1Types _ld1ParseType<VType8x8Bit>() { return ld1Types::t8b; }
 template<> constexpr ld1Types _ld1ParseType<VType16x8Bit>() { return ld1Types::t16b; }
 template<> constexpr ld1Types _ld1ParseType<VType4x16Bit>() { return ld1Types::t4h; }

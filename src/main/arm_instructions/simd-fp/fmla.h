@@ -24,14 +24,22 @@ enum class fmlaSingleDoublePrecisionTypes
     t2d
 };
 
-template<typename T> constexpr bool _fmlaIsHalf() { static_assert(false, "Not a valid type to check."); }
+template<typename T> constexpr bool _fmlaIsHalf()
+{
+    static_assert(false, "Not a valid type to check.");
+    return false;
+}
 template<> constexpr bool _fmlaIsHalf<VType4x16Bit>() { return true; }
 template<> constexpr bool _fmlaIsHalf<VType8x16Bit>() { return true; }
 template<> constexpr bool _fmlaIsHalf<VType2x32Bit>() { return false; }
 template<> constexpr bool _fmlaIsHalf<VType4x32Bit>() { return false; }
 template<> constexpr bool _fmlaIsHalf<VType2x64Bit>() { return false; }
 
-template<typename T> constexpr bool _fmlaIsDouble() { static_assert(false, "Not a valid type to check."); }
+template<typename T> constexpr bool _fmlaIsDouble()
+{
+    static_assert(false, "Not a valid type to check.");
+    return false;
+}
 template<> constexpr bool _fmlaIsDouble<VType4x16Bit>() { return false; }
 template<> constexpr bool _fmlaIsDouble<VType8x16Bit>() { return false; }
 template<> constexpr bool _fmlaIsDouble<VType2x32Bit>() { return false; }
@@ -39,13 +47,18 @@ template<> constexpr bool _fmlaIsDouble<VType4x32Bit>() { return false; }
 template<> constexpr bool _fmlaIsDouble<VType2x64Bit>() { return true; }
 
 template<typename T>
-constexpr fmlaHalfPrecisionTypes _fmlaParseHalfType() { static_assert(false, "Not a valid half precision type."); }
+constexpr fmlaHalfPrecisionTypes _fmlaParseHalfType()
+{
+    static_assert(false, "Not a valid half precision type.");
+    return fmlaHalfPrecisionTypes::t4H;
+}
 template<> constexpr fmlaHalfPrecisionTypes _fmlaParseHalfType<VType4x16Bit>() { return fmlaHalfPrecisionTypes::t4H; }
 template<> constexpr fmlaHalfPrecisionTypes _fmlaParseHalfType<VType8x16Bit>() { return fmlaHalfPrecisionTypes::t8H; }
 
 template<typename T> constexpr fmlaSingleDoublePrecisionTypes _fmlaParseSingleDoubleType()
 {
     static_assert(false, "Not a valid single or double precision type.");
+    return fmlaSingleDoublePrecisionTypes::t2s;
 }
 template<> constexpr fmlaSingleDoublePrecisionTypes _fmlaParseSingleDoubleType<VType2x32Bit>()
 {

@@ -19,19 +19,19 @@ constexpr uint32_t lslImmediate(const uint32_t Rd, const uint32_t Rn, const uint
 
     if (is64bit)
     {
-        release_assert(shift > 63, "Shift should be in range of 0 to 63, for the 64-bit variant.");
+        release_assert(shift <= 63, "Shift should be in range of 0 to 63, for the 64-bit variant.");
     }
     else
     {
-        release_assert(shift > 31, "Shift should be in range of 0 to 31, for the 32-bit variant.");
+        release_assert(shift <= 31, "Shift should be in range of 0 to 31, for the 32-bit variant.");
     }
 
-    uint32_t immrMod = is64bit ? 64 : 32;
+    int32_t immrMod = is64bit ? 64 : 32;
     uint32_t lsl = 0;
     lsl |= (is64bit & mask1) << 31; // sf
     lsl |= 0b10100110 << 23;
     lsl |= (is64bit & mask1) << 22; // N
-    lsl |= ((-shift % immrMod) & mask6) << 16; // immr
+    lsl |= (((-static_cast<int32_t>(shift)) % immrMod) & mask6) << 16; // immr
     lsl |= (is64bit & mask1) << 15; // first bit of imms
     lsl |= 0b11111 << 10; // rest of imms
     lsl |= (Rn & mask5) << 5;

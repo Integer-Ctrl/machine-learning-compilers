@@ -20,7 +20,11 @@ enum class addShiftType : uint32_t
     // 0b11 RESERVED
 };
 
-template<typename T> constexpr addShiftType _addParseShiftType() { static_assert(false, "Not a valid add shift option.") }
+template<typename T> constexpr addShiftType _addParseShiftType()
+{
+    static_assert(false, "Not a valid add shift option.");
+    return addShiftType::DEFAULT;
+}
 template<> constexpr addShiftType _addParseShiftType<ShiftLSL>() { return addShiftType::LSL; }
 template<> constexpr addShiftType _addParseShiftType<ShiftLSR>() { return addShiftType::LSR; }
 template<> constexpr addShiftType _addParseShiftType<ShiftASR>() { return addShiftType::ASR; }

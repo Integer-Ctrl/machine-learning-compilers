@@ -3,4 +3,3 @@ _build/
 build
 *.o
 .vscode/
-src/arm_instructions/register/generate.py

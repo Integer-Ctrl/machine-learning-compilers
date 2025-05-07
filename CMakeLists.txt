@@ -75,6 +75,10 @@ set(ARM_INSTRUCTION_FILES
     base/ldr.h
     base/lsl.h
     base/add.h
+    base/cbnz.h
+    base/ldp.h
+    base/stp.h
+    base/ret.h
     
     simd-fp/ld1.h
     simd-fp/st1.h
@@ -86,6 +90,10 @@ set(TEST_FILES
 
 set(TEST_ARM_INSTRUCTION_FILES
     base/ldr.cpp
+    base/lsl.cpp
+    base/ret.cpp
+    base/add.cpp
+    base/ldp.cpp
 )
 
 set(BENCH_FILES

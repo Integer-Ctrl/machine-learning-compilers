@@ -63,13 +63,13 @@ constexpr uint32_t ldrImmediateOffset(const uint32_t Rt, const uint32_t Rn, cons
     {
         release_assert((((imm12 >> 3) & mask12) == (imm12 >> 3)),
             "imm12 is only allowed to have a size of 12 bit after shift.");
-        release_assert(((imm12 & mask3) == 0), "imm12 should be multiple of 4 or 8.");
+        release_assert(((imm12 & mask3) == 0), "imm12 should be multiple of 8.");
     }
     else
     {
         release_assert((((imm12 >> 2) & mask12) == (imm12 >> 2)),
             "imm12 is only allowed to have a size of 12 bit after shift.");
-        release_assert(((imm12 & mask2) == 0), "imm12 should be multiple of 4 or 8.");
+        release_assert(((imm12 & mask2) == 0), "imm12 should be multiple of 4.");
     }
 
     uint32_t immShift = is64bit ? 3 : 2; // <pimm>/8 or <pimm>/4

@@ -19,6 +19,10 @@ const uint32_t mask12 = 0b1111'1111'1111;
 const uint32_t mask13 = 0b1'1111'1111'1111;
 const uint32_t mask14 = 0b11'1111'1111'1111;
 const uint32_t mask15 = 0b111'1111'1111'1111;
+const uint32_t mask16 = 0b1111'1111'1111'1111;
+const uint32_t mask17 = 0b1'1111'1111'1111'1111;
+const uint32_t mask18 = 0b11'1111'1111'1111'1111;
+const uint32_t mask19 = 0b111'1111'1111'1111'1111;
 
 } // namespace arm_instructions
 } // namespace mini_jit

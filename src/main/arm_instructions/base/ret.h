@@ -1,4 +1,3 @@
-
 #ifndef MINI_JIT_ARM_INSTRUCTIONS_BASE_RET_H
 #define MINI_JIT_ARM_INSTRUCTIONS_BASE_RET_H
 
@@ -14,6 +13,8 @@ namespace internal {
 constexpr uint32_t ret(const uint32_t Rn)
 {
     release_assert((Rn & mask5) == Rn, "Rn is only allowed ot have a size of 5 bit.");
+    release_assert(static_cast<uint32_t>(Rn) != static_cast<uint32_t>(R64Bit::sp),
+        "The stack pointer register (X31) is not a valid register for ret.");
 
     uint32_t ret = 0;
     ret |= 0b1101011001011111000000 << 10;
@@ -31,9 +32,6 @@ constexpr uint32_t ret()
 
 constexpr uint32_t ret(const R64Bit Rn)
 {
-    release_assert(static_cast<uint32_t>(Rn) != static_cast<uint32_t>(R64Bit::sp),
-        "The stack pointer register (X31) is not a valid register for ret.");
-
     return internal::ret(static_cast<uint32_t>(Rn));
 }
 
