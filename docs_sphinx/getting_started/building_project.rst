@@ -89,7 +89,7 @@ Building
 
         .. code-block:: 
 
-            cmake --build . --config Release --target benchmark
+            cmake --build . --config Release --target benchmarks
 
         Options for ``--config`` are **Release** and **Debug**. :raw-html:`</br>`
         Options for ``--target`` are **benchmarks** and **tests**
@@ -98,7 +98,7 @@ Building
 
     .. code-block:: bash
         
-    Options for ``--target`` are **benchmark** and **tests**
+    Options for ``--target`` are **benchmarks** and **tests**
 
 
     +--------------------+--------------------------------------------------------------------------------------------------------------------+

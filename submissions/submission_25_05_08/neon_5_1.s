@@ -68,7 +68,7 @@ matmul_loop_over_K:
     ld1 {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], x3
 
     // run the matmul_16_4_1_unrolled kernel
-    // Load first element from the 1x6 matrix b
+    // Load first element from the 1x4 matrix b
     ldr s4, [x1]
     add x1, x1, x4
 
@@ -79,7 +79,7 @@ matmul_loop_over_K:
     fmla v28.4s, v3.4s, v4.s[0]
 
 
-    // Load second element from the 1x6 matrix b
+    // Load second element from the 1x4 matrix b
     ldr s4, [x1]
     add x1, x1, x4
 
@@ -90,7 +90,7 @@ matmul_loop_over_K:
     fmla v20.4s, v3.4s, v4.s[0]
 
     
-    // Load third element from the 1x6 matrix b
+    // Load third element from the 1x4 matrix b
     ldr s4, [x1]
     add x1, x1, x4
 
@@ -101,7 +101,7 @@ matmul_loop_over_K:
     fmla v24.4s, v3.4s, v4.s[0]
 
 
-    // Load fourth element from the 1x6 matrix b
+    // Load fourth element from the 1x4 matrix b
     ldr s4, [x1]
     add x1, x1, x4
 

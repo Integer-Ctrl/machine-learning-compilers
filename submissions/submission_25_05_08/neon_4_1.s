@@ -54,11 +54,8 @@ matmul_14_6_64:
 matmul_loop_over_K:
     sub x9, x9, #1
 
-    // Load first column data from the 14x1 matrix a
+    // Load first column data from the 14x1 matrix a (again 16 but we'll only using two from v3)
     ld1 {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], x3
-    // ldp q0, q1, [x0] // 4 + 4 values
-    // ldr q2, [x0, #32] // 4 values
-    // ldr d3, [x0, #48] // 2 values
 
     // run the known matmul_16_6_1_unrolled kernel with modification to matmult_14_6_1
     // Load first element from the 1x6 matrix b
