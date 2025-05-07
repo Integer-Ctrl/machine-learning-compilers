@@ -29,7 +29,7 @@ BENCHMARK_TEMPLATE_DEFINE_F(GemmMxNxKFixture, BM_matmul_14_6_64, 14, 6, 64)(benc
 {
     for (auto _ : state)
     {
-        matmul_14_6_64(matrix_a, matrix_b, matrix_c, 16, 64, 16);
+        matmul_14_6_64(matrix_a, matrix_b, matrix_c, 14, 64, 14);
     }
 
     flops = (14 *6 * 64) * 2; // M * N * K * 2 instructions (add & mul)
@@ -42,7 +42,7 @@ BENCHMARK_TEMPLATE_DEFINE_F(GemmMxNxKFixture, BM_matmul_15_6_64, 15, 6, 64)(benc
 {
     for (auto _ : state)
     {
-        matmul_15_6_64(matrix_a, matrix_b, matrix_c, 15, 64, 16);
+        matmul_15_6_64(matrix_a, matrix_b, matrix_c, 15, 64, 15);
     }
 
     flops = (15 *6 * 64) * 2; // M * N * K * 2 instructions (add & mul)
