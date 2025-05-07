@@ -407,6 +407,26 @@ enum class ShiftLSL
 /// @brief Logical Shift Left
 const ShiftLSL LSL = ShiftLSL::LSL;
 
+/// @brief Represents the Logical Shift Left option fixed with 0
+enum class ShiftLSL0
+{
+    /// @brief Represents the Logical Shift Left option fixed with 0
+    LSL0
+};
+
+/// @brief Logical Shift Left fixed with 0
+const ShiftLSL0 LSL0 = ShiftLSL0::LSL0;
+
+/// @brief Represents the Logical Shift Left option fixed with 12
+enum class ShiftLSL12
+{
+    /// @brief Represents the Logical Shift Left option fixed with 12
+    LSL12
+};
+
+/// @brief Logical Shift Left fixed with 12
+const ShiftLSL12 LSL12 = ShiftLSL12::LSL12;
+
 /// @brief Represents the Logical Shift Right option
 enum class ShiftLSR
 {

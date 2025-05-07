@@ -9,8 +9,6 @@
 
 void* mini_jit::Kernel::allocate_mmap(std::size_t size_bytes) const
 {
-    release_assert(size_bytes == 0, "Mmap allocation should not be size 0!");
-
     void* memory = mmap(0, size_bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
     if (memory == MAP_FAILED) {
@@ -41,9 +39,9 @@ void mini_jit::Kernel::set_executable(std::size_t size_bytes, void* memory) cons
 void mini_jit::Kernel::release_memory()
 {
     if (kernel != nullptr) {
-        release_mmap(size_allocated, kernel);
+        release_mmap(size_allocate, kernel);
     }
-    size_allocated = 0;
+    size_allocate = 0;
 
     kernel = nullptr;
 }
@@ -78,10 +76,10 @@ void mini_jit::Kernel::set_kernel()
         return;
     }
 
-    // allocated kernel memory
-    size_allocated = get_size();
+    // allocate kernel memory
+    size_allocate = get_size();
     try {
-        kernel = (void*)allocate_mmap(size_allocated);
+        kernel = (void*)allocate_mmap(size_allocate);
     }
     catch (std::runtime_error& e) {
         throw std::runtime_error("Failed to allocate memory for kernel: " + std::string(e.what()));
@@ -95,7 +93,7 @@ void mini_jit::Kernel::set_kernel()
     __builtin___clear_cache(kernel_ptr, kernel_ptr + get_size());
 
     // set executable
-    set_executable(size_allocated, kernel);
+    set_executable(size_allocate, kernel);
 }
 
 void const* mini_jit::Kernel::get_kernel() const
