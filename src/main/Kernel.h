@@ -13,7 +13,7 @@ private:
     std::vector<uint32_t> buffer;
 
     //! size of the kernel
-    std::size_t size_alloc = 0;
+    std::size_t size_allocate= 0;
 
     //! executable kernel
     void* kernel = nullptr;
