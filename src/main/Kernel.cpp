@@ -9,8 +9,6 @@
 
 void* mini_jit::Kernel::allocate_mmap(std::size_t size_bytes) const
 {
-    release_assert(size_bytes == 0, "Mmap allocation should not be size 0!");
-
     void* memory = mmap(0, size_bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
     if (memory == MAP_FAILED) {
