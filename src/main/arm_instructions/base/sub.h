@@ -20,20 +20,13 @@ enum class subShiftType : uint32_t
 	LSL12 = 0b1,
 };
 
-template<typename T> constexpr subShiftType _subParseShiftType()
-{
-	static_assert(false, "Not a valid sub shift option.");
-	return subShiftType::DEFAULT;
-}
-template<> constexpr subShiftType _subParseShiftType<ShiftLSL0>() { return subShiftType::LSL0; }
-template<> constexpr subShiftType _subParseShiftType<ShiftLSL12>() { return subShiftType::LSL12; }
-
-constexpr uint32_t subImmediate(const uint32_t Rd, const uint32_t Rn, const subShiftType shift, const uint32_t imm12,
+constexpr uint32_t subImmediate(const uint32_t Rd, const uint32_t Rn, const uint32_t imm12, const subShiftType shift,
 	bool is64bit)
 {
 	release_assert((Rd & mask5) == Rd, "Rd is only allowed to have a size of 5 bit.");
 	release_assert((Rn & mask5) == Rn, "Rn is only allowed to have a size of 5 bit.");
 	release_assert((imm12 & mask12) == imm12, "imm12 is only allowed to have a size of 12 bit.");
+	release_assert(imm12 <= 4096, "imm12 has maximum of 4096.");
 
 	uint32_t sub = 0;
 	sub |= (is64bit & mask1) << 31;
@@ -47,31 +40,29 @@ constexpr uint32_t subImmediate(const uint32_t Rd, const uint32_t Rn, const subS
 
 } // namespace internal
 
-constexpr uint32_t sub(const R32Bit Wd, const R32Bit Wn, const R32Bit Wm)
+constexpr uint32_t sub(const R32Bit Wd, const R32Bit Wn, const uint32_t imm12)
 {
-	return internal::subImmediate(static_cast<uint32_t>(Wd), static_cast<uint32_t>(Wn),
-		internal::subShiftType::DEFAULT, 0, false);
+	return internal::subImmediate(static_cast<uint32_t>(Wd), static_cast<uint32_t>(Wn), imm12,
+		internal::subShiftType::DEFAULT, false);
 }
 
-constexpr uint32_t sub(const R64Bit Rd, const R64Bit Rn, const R64Bit Rm)
+constexpr uint32_t sub(const R64Bit Rd, const R64Bit Rn, const uint32_t imm12)
 {
-	return internal::subImmediate(static_cast<uint32_t>(Rd), static_cast<uint32_t>(Rn),
-		internal::subShiftType::DEFAULT, 0, true);
+	return internal::subImmediate(static_cast<uint32_t>(Rd), static_cast<uint32_t>(Rn), imm12,
+		internal::subShiftType::DEFAULT, true);
 }
 
-template <typename T>
-constexpr uint32_t sub(const R32Bit Wd, const R32Bit Wn, const R32Bit Wm, const T)
+constexpr uint32_t sub(const R32Bit Wd, const R32Bit Wn, const uint32_t imm12, const bool leftShift12)
 {
-	internal::subShiftType shift = internal::_subParseShiftType<T>();
-	return internal::subImmediate(static_cast<uint32_t>(Wd), static_cast<uint32_t>(Wn),
+	internal::subShiftType shift = leftShift12 ? internal::subShiftType::LSL12 : internal::subShiftType::LSL0;
+	return internal::subImmediate(static_cast<uint32_t>(Wd), static_cast<uint32_t>(Wn), imm12,
 		shift, false);
 }
 
-template <typename T>
-constexpr uint32_t sub(const R64Bit Rd, const R64Bit Rn, const R64Bit Rm, const T)
+constexpr uint32_t sub(const R64Bit Rd, const R64Bit Rn, const uint32_t imm12, const bool leftShift12)
 {
-	internal::subShiftType shift = internal::_subParseShiftType<T>();
-	return internal::subImmediate(static_cast<uint32_t>(Rd), static_cast<uint32_t>(Rn),
+	internal::subShiftType shift = leftShift12 ? internal::subShiftType::LSL12 : internal::subShiftType::LSL0;
+	return internal::subImmediate(static_cast<uint32_t>(Rd), static_cast<uint32_t>(Rn), imm12,
 		shift, true);
 }
 } // namespace arm_instructions
