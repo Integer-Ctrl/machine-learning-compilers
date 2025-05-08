@@ -15,7 +15,7 @@ void verify_matmul(const float (&expected)[TSize], const float (&result)[TSize])
   }
 }
 
-TEST_CASE("Test 16x6x1 jited gemm correctness random data", "[jit][correctness][gemm]")
+TEST_CASE("Test matmul_16_6_1 jited gemm correctness random data", "[jit][correctness][gemm]")
 {
   float matrix_a[16 * 1];
   float matrix_b[1 * 6];
@@ -41,7 +41,7 @@ TEST_CASE("Test 16x6x1 jited gemm correctness random data", "[jit][correctness][
   verify_matmul(matrix_c_verify, matrix_c);
 }
 
-TEST_CASE("Test 16x6x1 jited gemm correctness counting data", "[jit][neon_3][correctness][gemm]")
+TEST_CASE("Test matmul_16_6_1 jited gemm correctness counting data", "[jit][neon_3][correctness][gemm]")
 {
   float matrix_a[16 * 1];
   float matrix_b[1 * 6];

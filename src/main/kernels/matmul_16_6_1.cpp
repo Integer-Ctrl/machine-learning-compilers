@@ -2,7 +2,6 @@
 #include "../Brgemm.h"
 #include "../Kernel.h"
 #include "matmul_16_6_1.h"
-#include <iostream>
 
 
 void mini_jit::kernels::matmul_16_6_1(mini_jit::Kernel &kernel)
@@ -12,7 +11,7 @@ void mini_jit::kernels::matmul_16_6_1(mini_jit::Kernel &kernel)
   kernel.add({
       // Offset the used leading dimension by the size of floats
       lsl(x3, x3, 2), // lsl x3, x3, #2
-      lsl(x4, x4, 2), // lsl x4, x4, #22
+      lsl(x4, x4, 2), // lsl x4, x4, #2
       lsl(x5, x5, 2), // lsl x5, x5, #2
 
       // Load all data from the 16x1 matrix a

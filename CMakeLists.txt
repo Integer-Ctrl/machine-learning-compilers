@@ -63,6 +63,8 @@ set(SRC_MAIN_FILES
 set(KERNEL_FILES
     matmul_16_6_1.cpp
     matmul_16_6_1.h
+    matmul_16_6_k.cpp
+    matmul_16_6_k.h
 )
 
 set(ARM_INSTRUCTION_FILES
@@ -91,8 +93,9 @@ set(ARM_INSTRUCTION_FILES
 )
 
 set(TEST_KERNELS
-    matmul_16_6_1.test.cpp
     matmul.test.h
+    matmul_16_6_1.test.cpp
+    matmul_16_6_k.test.cpp
 )
 
 set(TEST_ARM_INSTRUCTION_FILES

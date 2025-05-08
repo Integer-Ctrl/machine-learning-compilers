@@ -1,5 +1,6 @@
 #include "Brgemm.h"
 #include "kernels/matmul_16_6_1.h"
+#include "kernels/matmul_16_6_k.h"
 #include "Kernel.h"
 
 mini_jit::Brgemm::error_t mini_jit::Brgemm::generate(uint32_t m, uint32_t n, uint32_t k, uint32_t br_size, uint32_t trans_a, uint32_t trans_b, uint32_t trans_c, dtype_t  dtype)
@@ -8,7 +9,7 @@ mini_jit::Brgemm::error_t mini_jit::Brgemm::generate(uint32_t m, uint32_t n, uin
     {
         return error_t::err_wrong_dtype;
     }
-    if (m != 16 || n != 6 || k != 1)
+    if (m != 16 || n != 6)
     {
         return error_t::err_wrong_dimension;
     }
@@ -21,9 +22,14 @@ mini_jit::Brgemm::error_t mini_jit::Brgemm::generate(uint32_t m, uint32_t n, uin
         return error_t::err_batch_reduce_size_not_supported;
     }
 
-    kernels::matmul_16_6_1(native_kernel);
-    native_kernel.set_kernel();
+    if (k == 1)
+    {
+      kernels::matmul_16_6_1(native_kernel);
+    }
+    
+    kernels::matmul_16_6_k(native_kernel, k);
 
+    native_kernel.set_kernel();
     kernel = reinterpret_cast<kernel_t>(const_cast<void*>(native_kernel.get_kernel()));  // Properly cast from const void* to kernel_t
 
     return error_t::success;
