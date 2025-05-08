@@ -1,5 +1,5 @@
-#ifndef MINI_JIT_ARM_INSTRUCTIONS_BASE_STP_H
-#define MINI_JIT_ARM_INSTRUCTIONS_BASE_STP_H
+#ifndef MINI_JIT_ARM_INSTRUCTIONS_SIMD_FP_STP_H
+#define MINI_JIT_ARM_INSTRUCTIONS_SIMD_FP_STP_H
 
 #include <cstdint>
 #include "../../release_assert.h"
@@ -155,4 +155,4 @@ constexpr uint32_t stpOffset(const V128Bit Qt1, const V128Bit Qt2, const R64Bit 
 } // namespace arm_instructions
 } // namespace mini_jit
 
-#endif // MINI_JIT_ARM_INSTRUCTIONS_BASE_STP_H
+#endif // MINI_JIT_ARM_INSTRUCTIONS_SIMD_FP_STP_H

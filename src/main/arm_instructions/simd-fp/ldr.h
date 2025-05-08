@@ -1,5 +1,5 @@
-#ifndef MINI_JIT_ARM_INSTRUCTIONS_BASE_LDR_H
-#define MINI_JIT_ARM_INSTRUCTIONS_BASE_LDR_H
+#ifndef MINI_JIT_ARM_INSTRUCTIONS_SIMD_FP_LDR_H
+#define MINI_JIT_ARM_INSTRUCTIONS_SIMD_FP_LDR_H
 
 #include <cstdint>
 #include "../../release_assert.h"
@@ -260,4 +260,4 @@ constexpr uint32_t ldrOffset(const V128Bit Qt, const R64Bit Xn, const int32_t im
 } // namespace arm_instructions
 } // namespace mini_jit
 
-#endif // MINI_JIT_ARM_INSTRUCTIONS_BASE_LDR_H
+#endif // MINI_JIT_ARM_INSTRUCTIONS_SIMD_FP_LDR_H

@@ -29,12 +29,12 @@ constexpr uint32_t cbnz(const uint32_t Rt, const int32_t imm19, bool is64bit)
 
 constexpr uint32_t cbnz(const R32Bit Wt, const int32_t offset)
 {
-    internal::cbnz(static_cast<uint32_t>(Wt), offset, false);
+    return internal::cbnz(static_cast<uint32_t>(Wt), offset, false);
 }
 
 constexpr uint32_t cbnz(const R64Bit Xt, const int32_t offset)
 {
-    internal::cbnz(static_cast<uint32_t>(Xt), offset, true);
+    return internal::cbnz(static_cast<uint32_t>(Xt), offset, true);
 }
 
 } // namespace arm_instructions

@@ -37,8 +37,6 @@ constexpr uint32_t orrShiftedRegister(uint32_t Rd, uint32_t Rn, uint32_t Rm, orr
     release_assert((Rm & mask5) == Rm, "Rm is only allowed to have a size of 5 bit.");
     release_assert((static_cast<uint32_t>(shift) & mask2) == static_cast<uint32_t>(shift),
         "Rm is only allowed to have a size of 5 bit.");
-    release_assert((imm6 & mask6) == imm6, "imm6 is only allowed to have a size of 6 bit.");
-    release_assert(imm6 >= 0, "Shift amount should be greater equal than 0.");
 
     if (is64bit)
     {

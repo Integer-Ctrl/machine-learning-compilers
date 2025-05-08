@@ -60,6 +60,11 @@ set(SRC_MAIN_FILES
     release_assert.h
 )
 
+set(KERNEL_FILES
+    matmul_16_6_1.cpp
+    matmul_16_6_1.h
+)
+
 set(ARM_INSTRUCTION_FILES
     register.h
 
@@ -85,7 +90,9 @@ set(ARM_INSTRUCTION_FILES
     simd-fp/stp.h
 )
 
-set(TEST_FILES
+set(TEST_KERNELS
+    matmul_16_6_1.test.cpp
+    matmul.test.h
 )
 
 set(TEST_ARM_INSTRUCTION_FILES
@@ -114,12 +121,17 @@ foreach(file ${SRC_MAIN_FILES})
     list(APPEND SOURCE_FILEPATHS src/main/${file})
 endforeach()
 
+foreach(file ${KERNEL_FILES})
+    list(APPEND SOURCE_FILEPATHS src/main/kernels/${file})
+endforeach()
+
+
 foreach(file ${ARM_INSTRUCTION_FILES})
     list(APPEND SOURCE_FILEPATHS src/main/arm_instructions/${file})
 endforeach()
 
-foreach(file ${TEST_FILES})
-    list(APPEND TEST_FILEPATHS src/test/${file})
+foreach(file ${TEST_KERNELS})
+    list(APPEND TEST_FILEPATHS src/test/kernels/${file})
 endforeach()
 
 foreach(file ${TEST_ARM_INSTRUCTION_FILES})

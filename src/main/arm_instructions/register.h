@@ -1,6 +1,8 @@
 #ifndef MINI_JIT_ARM_INSTRUCTIONS_REGISTER_H
 #define MINI_JIT_ARM_INSTRUCTIONS_REGISTER_H
 
+#include <cstdint>
+
 namespace mini_jit {
 namespace arm_instructions {
 

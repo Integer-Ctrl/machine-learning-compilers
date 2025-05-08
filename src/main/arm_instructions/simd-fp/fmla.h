@@ -1,5 +1,5 @@
-#ifndef MINI_JIT_ARM_INSTRUCTIONS_BASE_FMLA_H
-#define MINI_JIT_ARM_INSTRUCTIONS_BASE_FMLA_H
+#ifndef MINI_JIT_ARM_INSTRUCTIONS_SIMD_FP_FMLA_H
+#define MINI_JIT_ARM_INSTRUCTIONS_SIMD_FP_FMLA_H
 
 #include <cstdint>
 #include "../../release_assert.h"
@@ -57,7 +57,6 @@ constexpr uint32_t fmlaByElementScalarHalfPrecision(const uint32_t Hd, const uin
     release_assert((Hd & mask5) == Hd, "Hd is only allowed to have a size of 5 bit.");
     release_assert((Hn & mask5) == Hn, "Hn is only allowed to have a size of 5 bit.");
     release_assert((Vm & mask4) == Vm, "Vm is only allowed to have a size of 4 bit, restricting to range of V0 to V15.");
-    release_assert(index >= 0, "Index should be larger equal than 0.");
     release_assert(index <= 7, "Index should be less equal than 7.");
 
     // index in the H:L:M fields
@@ -79,7 +78,6 @@ constexpr uint32_t fmlaByElementScalarSingleDoublePrecision(const uint32_t Vd, c
     release_assert((Vd & mask5) == Vd, "Vd is only allowed to have a size of 5 bit.");
     release_assert((Vn & mask5) == Vn, "Vn is only allowed to have a size of 5 bit.");
     release_assert((Vm & mask5) == Vm, "Vm is only allowed to have a size of 5 bit.");
-    release_assert(index >= 0, "Index should be larger equal than 0.");
 
     // index encoded in sz:L:H, but sz encoded the type i.e Single or Double
     uint32_t L = 0;
@@ -118,7 +116,6 @@ constexpr uint32_t fmlaByElementVectorHalfPrecision(const fmlaHalfPrecisionTypes
     release_assert((Vd & mask5) == Vd, "Vd is only allowed to have a size of 5 bit.");
     release_assert((Vn & mask5) == Vn, "Vn is only allowed to have a size of 5 bit.");
     release_assert((Vm & mask4) == Vm, "Vm is only allowed to have a size of 4 bit, restricting to range of V0 to V15.");
-    release_assert(index >= 0, "Index should be larger equal than 0.");
     release_assert(index <= 7, "Index should be less equal than 7.");
 
     uint32_t Q = 0;
@@ -156,7 +153,6 @@ constexpr uint32_t fmlaByElementVectorSingleDoublePrecision(const fmlaSingleDoub
     release_assert((Vd & mask5) == Vd, "Vd is only allowed to have a size of 5 bit.");
     release_assert((Vn & mask5) == Vn, "Vn is only allowed to have a size of 5 bit.");
     release_assert((Vm & mask5) == Vm, "Vm is only allowed to have a size of 5 bit.");
-    release_assert(index >= 0, "Index should be larger equal than 0.");
 
     // index encoded in sz:L:H, but sz encoded the type i.e Single or Double
     uint32_t L = 0;
@@ -269,4 +265,4 @@ constexpr uint32_t fmla<VType8x16Bit>(const VGeneral Vd, const VType8x16Bit, con
 } // namespace arm_instructions
 } // namespace mini_jit
 
-#endif // MINI_JIT_ARM_INSTRUCTIONS_BASE_FMLA_H
+#endif // MINI_JIT_ARM_INSTRUCTIONS_SIMD_FP_FMLA_H

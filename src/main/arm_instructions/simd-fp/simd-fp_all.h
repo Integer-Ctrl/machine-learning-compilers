@@ -8,5 +8,6 @@
 #include "fmla.h"
 #include "ldp.h"
 #include "stp.h"
+#include "ldr.h"
 
 #endif // MINI_JIT_ARM_INSTRUCTIONS_SIMD_FP_ALL_H
