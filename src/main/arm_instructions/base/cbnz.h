@@ -13,9 +13,9 @@ namespace internal {
 constexpr uint32_t cbnz(const uint32_t Rt, const int32_t imm19, bool is64bit)
 {
     release_assert((Rt & mask5) == Rt, "Rt is only allowed to have a size of 5 bit.");
-    release_assert(((imm19 >> 2) & mask19) == (imm19 >> 2),
-        "imm19 is only allowed to have a size of 19 bit after shift.");
     release_assert((imm19 & mask2) == 0, "imm19 should be multiple of 4");
+    release_assert(imm19 <= (1024 * 1024), "imm19 has a maximum of 1MB (= 1048576)");
+    release_assert(imm19 >= (-1024 * 1024), "imm19 has a minimum of -1MB (= -1048576)");
 
     uint32_t cbnz = 0;
     cbnz |= (is64bit & mask1) << 31;

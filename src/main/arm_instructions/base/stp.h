@@ -19,16 +19,12 @@ constexpr uint32_t _stpPostPreOffset(const uint32_t opcode, const uint32_t Rt1, 
 
     if (is64bit)
     {
-        release_assert(((imm7 >> 2) & mask7) == (imm7 >> 2),
-            "imm7 is only allowed to have a size of 7 bit, after shift.");
         release_assert((imm7 & mask2) == 0, "imm7 should be a multiple of 4.");
         release_assert(imm7 >= -256, "imm7 minimum is -256.");
         release_assert(imm7 <= 252, "immm7 maximum is 252.");
     }
     else
     {
-        release_assert(((imm7 >> 3) & mask7) == (imm7 >> 3),
-            "imm7 is only allowed to have a size of 7 bit, after shift.");
         release_assert((imm7 & mask3) == 0, "imm7 should be a multiple of 8.");
         release_assert(imm7 >= -512, "imm7 minimum is -512.");
         release_assert(imm7 <= 504, "immm7 maximum is 504.");

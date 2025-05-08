@@ -31,7 +31,7 @@ template<typename T> constexpr st1Types _st1ParseType()
 template<> constexpr st1Types _st1ParseType<VType8x8Bit>() { return st1Types::t8b; }
 template<> constexpr st1Types _st1ParseType<VType16x8Bit>() { return st1Types::t16b; }
 template<> constexpr st1Types _st1ParseType<VType4x16Bit>() { return st1Types::t4h; }
-template<> constexpr st1Types _st1ParseType<VType4x16Bit>() { return st1Types::t8h; }
+template<> constexpr st1Types _st1ParseType<VType8x16Bit>() { return st1Types::t8h; }
 template<> constexpr st1Types _st1ParseType<VType2x32Bit>() { return st1Types::t2s; }
 template<> constexpr st1Types _st1ParseType<VType4x32Bit>() { return st1Types::t4s; }
 template<> constexpr st1Types _st1ParseType<VType1x64Bit>() { return st1Types::t1d; }
@@ -273,7 +273,7 @@ constexpr uint32_t st1Post(const VGeneral Vt, const T, const VGeneral Vt2, const
 template<typename T>
 constexpr uint32_t st1Post(const VGeneral Vt, const T, const R64Bit Xn, const R64Bit Xm)
 {
-    release_assert((static_cast<uint32_t>(Xm) & mask5) == internal::st1ImmediateRm,
+    release_assert((static_cast<uint32_t>(Xm) & mask5) != internal::st1ImmediateRm,
         "The offset register should not have the same value as the Rm for the immediate.");
 
     internal::st1Types type = internal::_st1ParseType<T>();
@@ -286,7 +286,7 @@ constexpr uint32_t st1Post(const VGeneral Vt, const T, const VGeneral Vt2, const
 {
     release_assert(((static_cast<uint32_t>(Vt) + 1) % 32) == static_cast<uint32_t>(Vt2),
         "Vt2 should be a consecutive vector register.");
-    release_assert((static_cast<uint32_t>(Xm) & mask5) == internal::st1ImmediateRm,
+    release_assert((static_cast<uint32_t>(Xm) & mask5) != internal::st1ImmediateRm,
         "The offset register should not have the same value as the Rm for the immediate.");
 
     internal::st1Types type = internal::_st1ParseType<T>();
@@ -302,7 +302,7 @@ constexpr uint32_t st1Post(const VGeneral Vt, const T, const VGeneral Vt2, const
         "Vt2 should be a consecutive vector register.");
     release_assert(((static_cast<uint32_t>(Vt) + 2) % 32) == static_cast<uint32_t>(Vt3),
         "Vt3 should be a consecutive vector register.");
-    release_assert((static_cast<uint32_t>(Xm) & mask5) == internal::st1ImmediateRm,
+    release_assert((static_cast<uint32_t>(Xm) & mask5) != internal::st1ImmediateRm,
         "The offset register should not have the same value as the Rm for the immediate.");
 
     internal::st1Types type = internal::_st1ParseType<T>();
@@ -320,7 +320,7 @@ constexpr uint32_t st1Post(const VGeneral Vt, const T, const VGeneral Vt2, const
         "Vt3 should be a consecutive vector register.");
     release_assert(((static_cast<uint32_t>(Vt) + 3) % 32) == static_cast<uint32_t>(Vt4),
         "Vt4 should be a consecutive vector register.");
-    release_assert((static_cast<uint32_t>(Xm) & mask5) == internal::st1ImmediateRm,
+    release_assert((static_cast<uint32_t>(Xm) & mask5) != internal::st1ImmediateRm,
         "The offset register should not have the same value as the Rm for the immediate.");
 
     internal::st1Types type = internal::_st1ParseType<T>();

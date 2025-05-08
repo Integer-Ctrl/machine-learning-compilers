@@ -101,6 +101,8 @@ set(TEST_ARM_INSTRUCTION_FILES
 
     simd-fp/fmla.cpp
     simd-fp/ld1.cpp
+    simd-fp/st1.cpp
+    simd-fp/ldp.cpp
 )
 
 set(BENCH_FILES

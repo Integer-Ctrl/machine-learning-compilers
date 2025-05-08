@@ -7,7 +7,6 @@
 
 namespace mini_jit {
 namespace arm_instructions {
-
 namespace internal {
 
 enum class addShiftType : uint32_t
@@ -89,6 +88,7 @@ constexpr uint32_t add(const R64Bit Rd, const R64Bit Rn, const R64Bit Rm, const 
     return internal::addShiftedRegister(static_cast<uint32_t>(Rd), static_cast<uint32_t>(Rn), static_cast<uint32_t>(Rm),
         shift, amount, true);
 }
+
 } // namespace arm_instructions
 } // namespace mini_jit
 

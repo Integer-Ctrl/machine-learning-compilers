@@ -24,7 +24,8 @@ constexpr uint32_t ldrImmediatePost(const uint32_t Rt, const uint32_t Rn, const 
 
     release_assert(((Rt & mask5) == Rt), "Rt is only allowed to have a size of 5 bit.");
     release_assert(((Rn & mask5) == Rn), "Rn is only allowed to have a size of 5 bit.");
-    release_assert(((imm9 & mask9) == imm9), "imm9 is only allowed to have a size of 9 bit.");
+    release_assert(imm9 <= 255, "imm9 has a Maximum of 255");
+    release_assert(imm9 >= -256, "imm9 has a Minimum of -256");
 
     uint32_t ldr = 0;
     ldr |= 0b1 << 31; // size bit 31
@@ -41,7 +42,8 @@ constexpr uint32_t ldrImmediatePre(const uint32_t Rt, const uint32_t Rn, const i
 {
     release_assert(((Rt & mask5) == Rt), "Rt is only allowed to have a size of 5 bit.");
     release_assert(((Rn & mask5) == Rn), "Rn is only allowed to have a size of 5 bit.");
-    release_assert(((imm9 & mask9) == imm9), "imm9 is only allowed to have a size of 9 bit.");
+    release_assert(imm9 <= 255, "imm9 has a Maximum of 255");
+    release_assert(imm9 >= -256, "imm9 has a Minimum of -256");
 
     uint32_t ldr = 0;
     ldr |= 0b1 << 31; // size bit 31
@@ -62,13 +64,13 @@ constexpr uint32_t ldrImmediateOffset(const uint32_t Rt, const uint32_t Rn, cons
     if (is64bit)
     {
         release_assert((((imm12 >> 3) & mask12) == (imm12 >> 3)),
-            "imm12 is only allowed to have a size of 12 bit after shift.");
+            "imm12 is only allowed to have a size of 12 bit after shift i.e. 16380.");
         release_assert(((imm12 & mask3) == 0), "imm12 should be multiple of 8.");
     }
     else
     {
         release_assert((((imm12 >> 2) & mask12) == (imm12 >> 2)),
-            "imm12 is only allowed to have a size of 12 bit after shift.");
+            "imm12 is only allowed to have a size of 12 bit after shift i.e. 32760.");
         release_assert(((imm12 & mask2) == 0), "imm12 should be multiple of 4.");
     }
 
