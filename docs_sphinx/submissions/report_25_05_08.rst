@@ -347,7 +347,9 @@ Microkernel
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Each instruction we generate gets a wrapper which is based on the following structure:
-1. First assert are placed to check if the instruction is used correctly to evade most errors from usage.
+
+1. First asserts are placed to check if the instruction is used correctly to evade most errors from usage.
+
 2. The instruction is build using masking operation and shifts to the starting bit of the opcode "block". 
 
 .. code-block:: cpp
