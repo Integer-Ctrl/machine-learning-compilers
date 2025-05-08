@@ -23,3 +23,23 @@ TEST_CASE("Test mov 64bit instruction", "[codegen][64bit]")
     INFO("expected: " << std::bitset<32>(expected));
     REQUIRE(value == expected);
 }
+
+TEST_CASE("Test mov immediate 32bit instruction", "[codegen][32bit]")
+{
+    uint32_t value = mov(w12, 1033);
+    uint32_t expected = 0b0'10100101'00'0000010000001001'01100;
+
+    INFO("value:    " << std::bitset<32>(value));
+    INFO("expected: " << std::bitset<32>(expected));
+    REQUIRE(value == expected);
+}
+
+TEST_CASE("Test mov immediate 64bit instruction", "[codegen][64bit]")
+{
+    uint32_t value = mov(x12, 1033);
+    uint32_t expected = 0b1'10100101'00'0000010000001001'01100;
+
+    INFO("value:    " << std::bitset<32>(value));
+    INFO("expected: " << std::bitset<32>(expected));
+    REQUIRE(value == expected);
+}

@@ -5,20 +5,20 @@
 
 using namespace mini_jit::arm_instructions;
 
-TEST_CASE("Test mov 32bit instruction", "[codegen][32bit]")
+TEST_CASE("Test movz 32bit instruction", "[codegen][32bit]")
 {
-    uint32_t value = mov(w12, w4);
-    uint32_t expected = 0b0'0101010000'00100'00000011111'01100;
+    uint32_t value = movz(w12, 1033);
+    uint32_t expected = 0b0'10100101'00'0000010000001001'01100;
 
     INFO("value:    " << std::bitset<32>(value));
     INFO("expected: " << std::bitset<32>(expected));
     REQUIRE(value == expected);
 }
 
-TEST_CASE("Test mov 64bit instruction", "[codegen][64bit]")
+TEST_CASE("Test movz 64bit instruction", "[codegen][64bit]")
 {
-    uint32_t value = mov(x12, x4);
-    uint32_t expected = 0b1'0101010000'00100'00000011111'01100;
+    uint32_t value = movz(x12, 1033);
+    uint32_t expected = 0b1'10100101'00'0000010000001001'01100;
 
     INFO("value:    " << std::bitset<32>(value));
     INFO("expected: " << std::bitset<32>(expected));
@@ -27,8 +27,8 @@ TEST_CASE("Test mov 64bit instruction", "[codegen][64bit]")
 
 TEST_CASE("Test movz shift 32bit instruction", "[codegen][32bit]")
 {
-    uint32_t value = mov(w12, w4);
-    uint32_t expected = 0b0'0101010000'00100'00000011111'01100;
+    uint32_t value = movz(w12, 1033, 16);
+    uint32_t expected = 0b0'10100101'01'0000010000001001'01100;
 
     INFO("value:    " << std::bitset<32>(value));
     INFO("expected: " << std::bitset<32>(expected));
@@ -37,8 +37,18 @@ TEST_CASE("Test movz shift 32bit instruction", "[codegen][32bit]")
 
 TEST_CASE("Test movz shift 64bit instruction", "[codegen][64bit]")
 {
-    uint32_t value = mov(x12, x4);
-    uint32_t expected = 0b1'0101010000'00100'00000011111'01100;
+    uint32_t value = movz(x12, 1033, 32);
+    uint32_t expected = 0b1'10100101'10'0000010000001001'01100;
+
+    INFO("value:    " << std::bitset<32>(value));
+    INFO("expected: " << std::bitset<32>(expected));
+    REQUIRE(value == expected);
+}
+
+TEST_CASE("Test movz immediate internal instruction", "[codegen][internal]")
+{
+    uint32_t value = internal::movz(12, 1033, 32, true);
+    uint32_t expected = 0b1'10100101'10'0000010000001001'01100;
 
     INFO("value:    " << std::bitset<32>(value));
     INFO("expected: " << std::bitset<32>(expected));

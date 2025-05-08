@@ -105,6 +105,7 @@ set(TEST_ARM_INSTRUCTION_FILES
     base/sub.test.cpp
     base/orr.test.cpp
     base/mov.test.cpp
+    base/movz.test.cpp
 
     simd_fp/fmla.test.cpp
     simd_fp/ld1.test.cpp
