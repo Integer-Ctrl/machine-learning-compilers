@@ -27,13 +27,13 @@ constexpr uint32_t lslImmediate(const uint32_t Rd, const uint32_t Rn, const uint
     }
 
     int32_t immrMod = is64bit ? 64 : 32;
+    int32_t immsMod = is64bit ? 63 : 31;
     uint32_t lsl = 0;
     lsl |= (is64bit & mask1) << 31; // sf
     lsl |= 0b10100110 << 23;
     lsl |= (is64bit & mask1) << 22; // N
     lsl |= (((-static_cast<int32_t>(shift)) % immrMod) & mask6) << 16; // immr
-    lsl |= (is64bit & mask1) << 15; // first bit of imms
-    lsl |= 0b00000 << 10; // rest of imms
+    lsl |= (immsMod - static_cast<int32_t>(shift)) << 10;
     lsl |= (Rn & mask5) << 5;
     lsl |= (Rd & mask5) << 0;
     return lsl;
