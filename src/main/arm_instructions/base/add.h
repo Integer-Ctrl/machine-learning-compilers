@@ -27,8 +27,8 @@ template<> constexpr addShiftType _addParseShiftType<ShiftLSL>() { return addShi
 template<> constexpr addShiftType _addParseShiftType<ShiftLSR>() { return addShiftType::LSR; }
 template<> constexpr addShiftType _addParseShiftType<ShiftASR>() { return addShiftType::ASR; }
 
-constexpr uint32_t addShiftedRegister(uint32_t Rd, uint32_t Rn, uint32_t Rm, addShiftType shift, uint32_t imm6,
-    bool is64bit)
+constexpr uint32_t addShiftedRegister(const uint32_t Rd, const uint32_t Rn, const uint32_t Rm, const addShiftType shift,
+    const uint32_t imm6, const bool is64bit)
 {
     release_assert((Rd & mask5) == Rd, "Rd is only allowed to have a size of 5 bit.");
     release_assert((Rn & mask5) == Rn, "Rn is only allowed to have a size of 5 bit.");
@@ -53,6 +53,23 @@ constexpr uint32_t addShiftedRegister(uint32_t Rd, uint32_t Rn, uint32_t Rm, add
     add |= 0b0 << 21;
     add |= (Rm & mask5) << 16;
     add |= (imm6 & mask6) << 10;
+    add |= (Rn & mask5) << 5;
+    add |= (Rd & mask5) << 0;
+    return add;
+}
+
+constexpr uint32_t addImmediate(const uint32_t Rd, const uint32_t Rn, const uint32_t imm12, const bool shift12,
+    const bool is64bit)
+{
+    release_assert((Rd & mask5) == Rd, "Rd is only allowed to have a size of 5 bit.");
+    release_assert((Rn & mask5) == Rn, "Rn is only allowed to have a size of 5 bit.");
+    release_assert((imm12 & mask12) == imm12, "imm12 is only allowed to have a size of 12 bit.");
+
+    uint32_t add = 0;
+    add |= (is64bit & mask1) << 31;
+    add |= 0b00100010 << 23;
+    add |= (shift12 & mask1) << 22;
+    add |= (imm12 & mask12) << 10;
     add |= (Rn & mask5) << 5;
     add |= (Rd & mask5) << 0;
     return add;
@@ -86,6 +103,26 @@ constexpr uint32_t add(const R64Bit Rd, const R64Bit Rn, const R64Bit Rm, const 
     internal::addShiftType shift = internal::_addParseShiftType<T>();
     return internal::addShiftedRegister(static_cast<uint32_t>(Rd), static_cast<uint32_t>(Rn), static_cast<uint32_t>(Rm),
         shift, amount, true);
+}
+
+constexpr uint32_t add(const R32Bit Wd, const R32Bit Wn, const uint32_t imm)
+{
+    return internal::addImmediate(static_cast<uint32_t>(Wd), static_cast<uint32_t>(Wn), imm, false, false);
+}
+
+constexpr uint32_t add(const R64Bit Rd, const R64Bit Rn, const uint32_t imm)
+{
+    return internal::addImmediate(static_cast<uint32_t>(Rd), static_cast<uint32_t>(Rn), imm, false, true);
+}
+
+constexpr uint32_t add(const R32Bit Wd, const R32Bit Wn, const uint32_t imm, bool shift12)
+{
+    return internal::addImmediate(static_cast<uint32_t>(Wd), static_cast<uint32_t>(Wn), imm, shift12, false);
+}
+
+constexpr uint32_t add(const R64Bit Rd, const R64Bit Rn, const uint32_t imm, bool shift12)
+{
+    return internal::addImmediate(static_cast<uint32_t>(Rd), static_cast<uint32_t>(Rn), imm, shift12, true);
 }
 
 } // namespace arm_instructions
