@@ -1,5 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
-#include "../../../main/arm_instructions/simd-fp/ldp.h"
+#include "../../../main/arm_instructions/simd_fp/ldp.h"
 #include <bitset>
 
 using namespace mini_jit::arm_instructions;

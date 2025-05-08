@@ -83,11 +83,11 @@ set(ARM_INSTRUCTION_FILES
     base/mov.h
     base/orr.h
     
-    simd-fp/ld1.h
-    simd-fp/st1.h
-    simd-fp/fmla.h
-    simd-fp/ldp.h
-    simd-fp/stp.h
+    simd_fp/ld1.h
+    simd_fp/st1.h
+    simd_fp/fmla.h
+    simd_fp/ldp.h
+    simd_fp/stp.h
 )
 
 set(TEST_KERNELS
@@ -96,22 +96,22 @@ set(TEST_KERNELS
 )
 
 set(TEST_ARM_INSTRUCTION_FILES
-    base/ldr.cpp
-    base/lsl.cpp
-    base/ret.cpp
-    base/add.cpp
-    base/ldp.cpp
-    base/stp.cpp
-    base/sub.cpp
-    base/orr.cpp
-    base/mov.cpp
+    base/ldr.test.cpp
+    base/lsl.test.cpp
+    base/ret.test.cpp
+    base/add.test.cpp
+    base/ldp.test.cpp
+    base/stp.test.cpp
+    base/sub.test.cpp
+    base/orr.test.cpp
+    base/mov.test.cpp
 
-    simd-fp/fmla.cpp
-    simd-fp/ld1.cpp
-    simd-fp/st1.cpp
-    simd-fp/ldp.cpp
-    simd-fp/stp.cpp
-    simd-fp/ldr.cpp
+    simd_fp/fmla.test.cpp
+    simd_fp/ld1.test.cpp
+    simd_fp/st1.test.cpp
+    simd_fp/ldp.test.cpp
+    simd_fp/stp.test.cpp
+    simd_fp/ldr.test.cpp
 )
 
 set(BENCH_FILES
