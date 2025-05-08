@@ -75,6 +75,7 @@ constexpr void _st1GetQAndSize(const st1Types type, uint32_t& out_q, uint32_t& o
         break;
     default:
         release_assert(false, "Undefined st1 type found.");
+        break;
     }
 }
 
@@ -179,7 +180,7 @@ template<typename T>
 constexpr uint32_t st1(const VGeneral Vt, const T, const R64Bit Xn)
 {
     internal::st1Types type = internal::_st1ParseType<T>();
-    return internal::st1MultipleStructures(Vt, type, Xn, 1);
+    return internal::st1MultipleStructures(static_cast<uint32_t>(Vt), type, static_cast<uint32_t>(Xn), 1);
 }
 
 template<typename T>
@@ -189,7 +190,7 @@ constexpr uint32_t st1(const VGeneral Vt, const T, const VGeneral Vt2, const T, 
         "Vt2 should be a consecutive vector register.");
 
     internal::st1Types type = internal::_st1ParseType<T>();
-    return internal::st1MultipleStructures(Vt, type, Xn, 2);
+    return internal::st1MultipleStructures(static_cast<uint32_t>(Vt), type, static_cast<uint32_t>(Xn), 2);
 }
 
 template<typename T>
@@ -202,7 +203,7 @@ constexpr uint32_t st1(const VGeneral Vt, const T, const VGeneral Vt2, const T, 
         "Vt3 should be a consecutive vector register.");
 
     internal::st1Types type = internal::_st1ParseType<T>();
-    return internal::st1MultipleStructures(Vt, type, Xn, 3);
+    return internal::st1MultipleStructures(static_cast<uint32_t>(Vt), type, static_cast<uint32_t>(Xn), 3);
 }
 
 template<typename T>
@@ -217,28 +218,30 @@ constexpr uint32_t st1(const VGeneral Vt, const T, const VGeneral Vt2, const T, 
         "Vt4 should be a consecutive vector register.");
 
     internal::st1Types type = internal::_st1ParseType<T>();
-    return internal::st1MultipleStructures(Vt, type, Xn, 4);
+    return internal::st1MultipleStructures(static_cast<uint32_t>(Vt), type, static_cast<uint32_t>(Xn), 4);
 }
 
 template<typename T>
-constexpr uint32_t st1(const VGeneral Vt, const T, const R64Bit Xn, const uint32_t imm)
+constexpr uint32_t st1Post(const VGeneral Vt, const T, const R64Bit Xn, const uint32_t imm)
 {
     internal::st1Types type = internal::_st1ParseType<T>();
-    return internal::st1MultipleStructuresPost(Vt, type, Xn, imm, internal::st1ImmediateRm, 1);
+    return internal::st1MultipleStructuresPost(static_cast<uint32_t>(Vt), type, static_cast<uint32_t>(Xn), imm,
+        internal::st1ImmediateRm, 1);
 }
 
 template<typename T>
-constexpr uint32_t st1(const VGeneral Vt, const T, const VGeneral Vt2, const T, const R64Bit Xn, const uint32_t imm)
+constexpr uint32_t st1Post(const VGeneral Vt, const T, const VGeneral Vt2, const T, const R64Bit Xn, const uint32_t imm)
 {
     release_assert(((static_cast<uint32_t>(Vt) + 1) % 32) == static_cast<uint32_t>(Vt2),
         "Vt2 should be a consecutive vector register.");
 
     internal::st1Types type = internal::_st1ParseType<T>();
-    return internal::st1MultipleStructuresPost(Vt, type, Xn, imm, internal::st1ImmediateRm, 2);
+    return internal::st1MultipleStructuresPost(static_cast<uint32_t>(Vt), type, static_cast<uint32_t>(Xn), imm,
+        internal::st1ImmediateRm, 2);
 }
 
 template<typename T>
-constexpr uint32_t st1(const VGeneral Vt, const T, const VGeneral Vt2, const T, const VGeneral Vt3, const T,
+constexpr uint32_t st1Post(const VGeneral Vt, const T, const VGeneral Vt2, const T, const VGeneral Vt3, const T,
     const R64Bit Xn, const uint32_t imm)
 {
     release_assert(((static_cast<uint32_t>(Vt) + 1) % 32) == static_cast<uint32_t>(Vt2),
@@ -247,11 +250,12 @@ constexpr uint32_t st1(const VGeneral Vt, const T, const VGeneral Vt2, const T, 
         "Vt3 should be a consecutive vector register.");
 
     internal::st1Types type = internal::_st1ParseType<T>();
-    return internal::st1MultipleStructuresPost(Vt, type, Xn, imm, internal::st1ImmediateRm, 3);
+    return internal::st1MultipleStructuresPost(static_cast<uint32_t>(Vt), type, static_cast<uint32_t>(Xn), imm,
+        internal::st1ImmediateRm, 3);
 }
 
 template<typename T>
-constexpr uint32_t st1(const VGeneral Vt, const T, const VGeneral Vt2, const T, const VGeneral Vt3, const T,
+constexpr uint32_t st1Post(const VGeneral Vt, const T, const VGeneral Vt2, const T, const VGeneral Vt3, const T,
     const VGeneral Vt4, const T, const R64Bit Xn, const uint32_t imm)
 {
     release_assert(((static_cast<uint32_t>(Vt) + 1) % 32) == static_cast<uint32_t>(Vt2),
@@ -262,21 +266,23 @@ constexpr uint32_t st1(const VGeneral Vt, const T, const VGeneral Vt2, const T, 
         "Vt4 should be a consecutive vector register.");
 
     internal::st1Types type = internal::_st1ParseType<T>();
-    return internal::st1MultipleStructuresPost(Vt, type, Xn, imm, internal::st1ImmediateRm, 4);
+    return internal::st1MultipleStructuresPost(static_cast<uint32_t>(Vt), type, static_cast<uint32_t>(Xn), imm,
+        internal::st1ImmediateRm, 4);
 }
 
 template<typename T>
-constexpr uint32_t st1(const VGeneral Vt, const T, const R64Bit Xn, const R64Bit Xm)
+constexpr uint32_t st1Post(const VGeneral Vt, const T, const R64Bit Xn, const R64Bit Xm)
 {
     release_assert((static_cast<uint32_t>(Xm) & mask5) == internal::st1ImmediateRm,
         "The offset register should not have the same value as the Rm for the immediate.");
 
     internal::st1Types type = internal::_st1ParseType<T>();
-    return internal::st1MultipleStructuresPost(Vt, type, Xn, 0, Xm, 1);
+    return internal::st1MultipleStructuresPost(static_cast<uint32_t>(Vt), type, static_cast<uint32_t>(Xn), 0,
+        static_cast<uint32_t>(Xm), 1);
 }
 
 template<typename T>
-constexpr uint32_t st1(const VGeneral Vt, const T, const VGeneral Vt2, const T, const R64Bit Xn, const R64Bit Xm)
+constexpr uint32_t st1Post(const VGeneral Vt, const T, const VGeneral Vt2, const T, const R64Bit Xn, const R64Bit Xm)
 {
     release_assert(((static_cast<uint32_t>(Vt) + 1) % 32) == static_cast<uint32_t>(Vt2),
         "Vt2 should be a consecutive vector register.");
@@ -284,11 +290,12 @@ constexpr uint32_t st1(const VGeneral Vt, const T, const VGeneral Vt2, const T, 
         "The offset register should not have the same value as the Rm for the immediate.");
 
     internal::st1Types type = internal::_st1ParseType<T>();
-    return internal::st1MultipleStructuresPost(Vt, type, Xn, 0, Xm, 2);
+    return internal::st1MultipleStructuresPost(static_cast<uint32_t>(Vt), type, static_cast<uint32_t>(Xn), 0,
+        static_cast<uint32_t>(Xm), 2);
 }
 
 template<typename T>
-constexpr uint32_t st1(const VGeneral Vt, const T, const VGeneral Vt2, const T, const VGeneral Vt3, const T,
+constexpr uint32_t st1Post(const VGeneral Vt, const T, const VGeneral Vt2, const T, const VGeneral Vt3, const T,
     const R64Bit Xn, const R64Bit Xm)
 {
     release_assert(((static_cast<uint32_t>(Vt) + 1) % 32) == static_cast<uint32_t>(Vt2),
@@ -299,11 +306,12 @@ constexpr uint32_t st1(const VGeneral Vt, const T, const VGeneral Vt2, const T, 
         "The offset register should not have the same value as the Rm for the immediate.");
 
     internal::st1Types type = internal::_st1ParseType<T>();
-    return internal::st1MultipleStructuresPost(Vt, type, Xn, 0, Xm, 3);
+    return internal::st1MultipleStructuresPost(static_cast<uint32_t>(Vt), type, static_cast<uint32_t>(Xn), 0,
+        static_cast<uint32_t>(Xm), 3);
 }
 
 template<typename T>
-constexpr uint32_t st1(const VGeneral Vt, const T, const VGeneral Vt2, const T, const VGeneral Vt3, const T,
+constexpr uint32_t st1Post(const VGeneral Vt, const T, const VGeneral Vt2, const T, const VGeneral Vt3, const T,
     const VGeneral Vt4, const T, const R64Bit Xn, const R64Bit Xm)
 {
     release_assert(((static_cast<uint32_t>(Vt) + 1) % 32) == static_cast<uint32_t>(Vt2),
@@ -316,7 +324,8 @@ constexpr uint32_t st1(const VGeneral Vt, const T, const VGeneral Vt2, const T, 
         "The offset register should not have the same value as the Rm for the immediate.");
 
     internal::st1Types type = internal::_st1ParseType<T>();
-    return internal::st1MultipleStructuresPost(Vt, type, Xn, 0, Xm, 4);
+    return internal::st1MultipleStructuresPost(static_cast<uint32_t>(Vt), type, static_cast<uint32_t>(Xn), 0,
+        static_cast<uint32_t>(Xm), 4);
 }
 } // namespace arm_instructions
 } // namespace mini_jit

@@ -14,11 +14,7 @@ constexpr uint32_t _ldpPostPreOffset(const uint32_t opcode, const uint32_t Rt1, 
     const int32_t imm7, const bool is64bit)
 {
     release_assert((Rt1 & mask5) == Rt1, "Rt1 is only allowed to have a size of 5 bit.");
-    release_assert(static_cast<uint32_t>(Rt1) != static_cast<uint32_t>(R64Bit::sp),
-        "The stack pointer register (X31) is not a valid register Rt1.");
     release_assert((Rt2 & mask5) == Rt2, "Rt2 is only allowed to have a size of 5 bit.");
-    release_assert(static_cast<uint32_t>(Rt2) != static_cast<uint32_t>(R64Bit::sp),
-        "The stack pointer register (X31) is not a valid register for Rt2.");
     release_assert((Rn & mask5) == Rn, "Rn is only allowed to have a size of 5 bit.");
 
     if (is64bit)
@@ -91,6 +87,18 @@ constexpr uint32_t ldpPre(const R64Bit Xt1, const R64Bit Xt2, const R64Bit Xn, c
 {
     return internal::ldpPre(static_cast<uint32_t>(Xt1), static_cast<uint32_t>(Xt2), static_cast<uint32_t>(Xn),
         imm7, true);
+}
+
+constexpr uint32_t ldp(const R32Bit Wt1, const R32Bit Wt2, const R64Bit Xn)
+{
+    return internal::ldpOffset(static_cast<uint32_t>(Wt1), static_cast<uint32_t>(Wt2), static_cast<uint32_t>(Xn),
+        0, false);
+}
+
+constexpr uint32_t ldp(const R64Bit Xt1, const R64Bit Xt2, const R64Bit Xn)
+{
+    return internal::ldpOffset(static_cast<uint32_t>(Xt1), static_cast<uint32_t>(Xt2), static_cast<uint32_t>(Xn),
+        0, true);
 }
 
 constexpr uint32_t ldpOffset(const R32Bit Wt1, const R32Bit Wt2, const R64Bit Xn, const int32_t imm7)

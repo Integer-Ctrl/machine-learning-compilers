@@ -18,15 +18,10 @@ message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
 # ==============================================================
 # Setup compile Flags
 # ==============================================================
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    add_compile_options(-Wall -Wextra -Wpedantic)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -Og")
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    add_compile_options(-Wall -Wextra -Wpedantic)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -Og")
-endif()
+add_compile_options(-Werror -Wall -Wextra -Wpedantic)
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -Og")
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
 set(CMAKE_VERBOSE_MAKEFILE off)
@@ -79,10 +74,15 @@ set(ARM_INSTRUCTION_FILES
     base/ldp.h
     base/stp.h
     base/ret.h
+    base/sub.h
+    base/mov.h
+    base/orr.h
     
     simd-fp/ld1.h
     simd-fp/st1.h
     simd-fp/fmla.h
+    simd-fp/ldp.h
+    simd-fp/stp.h
 )
 
 set(TEST_FILES
@@ -94,6 +94,13 @@ set(TEST_ARM_INSTRUCTION_FILES
     base/ret.cpp
     base/add.cpp
     base/ldp.cpp
+    base/stp.cpp
+    base/sub.cpp
+    base/orr.cpp
+    base/mov.cpp
+
+    simd-fp/fmla.cpp
+    simd-fp/ld1.cpp
 )
 
 set(BENCH_FILES

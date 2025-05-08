@@ -4,7 +4,7 @@
 
 using namespace mini_jit::arm_instructions;
 
-TEST_CASE("Test Ldr immediate post 32bit instruction", "[codegen][32bit]")
+TEST_CASE("Test ldr immediate post 32bit instruction", "[codegen][32bit]")
 {
     uint32_t value = ldrPost(w25, x5, 89);
     uint32_t expected = 0b1'0'111000010'001011001'01'00101'11001;

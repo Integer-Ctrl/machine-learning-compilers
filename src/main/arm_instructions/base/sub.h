@@ -1,4 +1,3 @@
-
 #ifndef MINI_JIT_ARM_INSTRUCTIONS_BASE_SUB_H
 #define MINI_JIT_ARM_INSTRUCTIONS_BASE_SUB_H
 
@@ -46,9 +45,9 @@ constexpr uint32_t sub(const R32Bit Wd, const R32Bit Wn, const uint32_t imm12)
 		internal::subShiftType::DEFAULT, false);
 }
 
-constexpr uint32_t sub(const R64Bit Rd, const R64Bit Rn, const uint32_t imm12)
+constexpr uint32_t sub(const R64Bit Xd, const R64Bit Xn, const uint32_t imm12)
 {
-	return internal::subImmediate(static_cast<uint32_t>(Rd), static_cast<uint32_t>(Rn), imm12,
+	return internal::subImmediate(static_cast<uint32_t>(Xd), static_cast<uint32_t>(Xn), imm12,
 		internal::subShiftType::DEFAULT, true);
 }
 
@@ -59,10 +58,10 @@ constexpr uint32_t sub(const R32Bit Wd, const R32Bit Wn, const uint32_t imm12, c
 		shift, false);
 }
 
-constexpr uint32_t sub(const R64Bit Rd, const R64Bit Rn, const uint32_t imm12, const bool leftShift12)
+constexpr uint32_t sub(const R64Bit Xd, const R64Bit Xn, const uint32_t imm12, const bool leftShift12)
 {
 	internal::subShiftType shift = leftShift12 ? internal::subShiftType::LSL12 : internal::subShiftType::LSL0;
-	return internal::subImmediate(static_cast<uint32_t>(Rd), static_cast<uint32_t>(Rn), imm12,
+	return internal::subImmediate(static_cast<uint32_t>(Xd), static_cast<uint32_t>(Xn), imm12,
 		shift, true);
 }
 } // namespace arm_instructions

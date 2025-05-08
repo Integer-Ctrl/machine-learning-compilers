@@ -24,7 +24,7 @@ TEST_CASE("Test cbnz 64bit instruction", "[codegen][64bit]")
     REQUIRE(value == expected);
 }
 
-TEST_CASE("Test lsl internal instruction", "[codegen][internal]")
+TEST_CASE("Test cbnz internal instruction", "[codegen][internal]")
 {
     uint32_t value = internal::cbnz(25, -35, true);
     uint32_t expected = 0b1'0110101'1111111111111011101'11001;

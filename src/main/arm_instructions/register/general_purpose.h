@@ -101,6 +101,12 @@ enum class R32Bit : uint32_t
     /// @brief 32 bit scratch register (callee-saved)
     w30 = 30,
 
+    /// @brief 32 bit stack pointer
+    wsp = 31,
+
+    /// @brief 32 bit zero register
+    wzr = 31,
+
 };
 
 /// @brief 32 bit parameter/result register (caller-saved)
@@ -192,6 +198,12 @@ const R32Bit w29 = R32Bit::w29;
 
 /// @brief 32 bit scratch register (callee-saved)
 const R32Bit w30 = R32Bit::w30;
+
+/// @brief 32 bit stack pointer
+const R32Bit wsp = R32Bit::wsp;
+
+/// @brief 32 bit zero register
+const R32Bit wzr = R32Bit::wzr;
 
 /// @brief 64 bit sized general purpose register, including stack pointer
 enum class R64Bit : uint32_t
@@ -296,6 +308,9 @@ enum class R64Bit : uint32_t
 
     /// @brief stack pointer register
     sp = 31,
+
+    /// @brief 64 bit zero register
+    xzr = 31,
 };
 
 /// @brief 64 bit parameter/result register (caller-saved)
@@ -396,6 +411,9 @@ const R64Bit lr = R64Bit::lr;
 
 /// @brief stack pointer register
 const R64Bit sp = R64Bit::sp;
+
+/// @brief 64 bit zero register
+const R64Bit xzr = R64Bit::xzr;
 
 /// @brief Represents the Logical Shift Left option
 enum class ShiftLSL

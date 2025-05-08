@@ -1,4 +1,3 @@
-
 #ifndef MINI_JIT_ARM_INSTRUCTIONS_BASE_FMLA_H
 #define MINI_JIT_ARM_INSTRUCTIONS_BASE_FMLA_H
 
@@ -24,36 +23,15 @@ enum class fmlaSingleDoublePrecisionTypes
     t2d
 };
 
-template<typename T> constexpr bool _fmlaIsHalf()
-{
-    static_assert(false, "Not a valid type to check.");
-    return false;
-}
-template<> constexpr bool _fmlaIsHalf<VType4x16Bit>() { return true; }
-template<> constexpr bool _fmlaIsHalf<VType8x16Bit>() { return true; }
-template<> constexpr bool _fmlaIsHalf<VType2x32Bit>() { return false; }
-template<> constexpr bool _fmlaIsHalf<VType4x32Bit>() { return false; }
-template<> constexpr bool _fmlaIsHalf<VType2x64Bit>() { return false; }
 
 template<typename T> constexpr bool _fmlaIsDouble()
 {
     static_assert(false, "Not a valid type to check.");
     return false;
 }
-template<> constexpr bool _fmlaIsDouble<VType4x16Bit>() { return false; }
-template<> constexpr bool _fmlaIsDouble<VType8x16Bit>() { return false; }
 template<> constexpr bool _fmlaIsDouble<VType2x32Bit>() { return false; }
 template<> constexpr bool _fmlaIsDouble<VType4x32Bit>() { return false; }
 template<> constexpr bool _fmlaIsDouble<VType2x64Bit>() { return true; }
-
-template<typename T>
-constexpr fmlaHalfPrecisionTypes _fmlaParseHalfType()
-{
-    static_assert(false, "Not a valid half precision type.");
-    return fmlaHalfPrecisionTypes::t4H;
-}
-template<> constexpr fmlaHalfPrecisionTypes _fmlaParseHalfType<VType4x16Bit>() { return fmlaHalfPrecisionTypes::t4H; }
-template<> constexpr fmlaHalfPrecisionTypes _fmlaParseHalfType<VType8x16Bit>() { return fmlaHalfPrecisionTypes::t8H; }
 
 template<typename T> constexpr fmlaSingleDoublePrecisionTypes _fmlaParseSingleDoubleType()
 {
@@ -91,7 +69,7 @@ constexpr uint32_t fmlaByElementScalarHalfPrecision(const uint32_t Hd, const uin
     fmla |= ((index >> 2) & mask1) << 11; // H
     fmla |= 0b0 << 10;
     fmla |= (Hn & mask5) << 5;
-    fmla |= (Hn & mask5) << 0;
+    fmla |= (Hd & mask5) << 0;
     return fmla;
 }
 
@@ -267,19 +245,25 @@ constexpr uint32_t fmla(const V64Bit Dd, const V64Bit Dn, const VGeneral Vm, con
 template<typename T>
 constexpr uint32_t fmla(const VGeneral Vd, const T, const VGeneral Vn, const T, const VGeneral Vm, const uint32_t index)
 {
-    if (internal::_fmlaIsHalf<T>())
-    {
-        internal::fmlaHalfPrecisionTypes type = internal::_fmlaParseHalfType<T>();
-        return internal::fmlaByElementVectorHalfPrecision(type, static_cast<uint32_t>(Vd), static_cast<uint32_t>(Vn),
-            static_cast<uint32_t>(Vm), index);
-    }
-    else
-    {
-        internal::fmlaSingleDoublePrecisionTypes type = internal::_fmlaParseSingleDoubleType<T>();
-        return internal::fmlaByElementVectorSingleDoublePrecision(type, static_cast<uint32_t>(Vd), static_cast<uint32_t>(Vn),
-            static_cast<uint32_t>(Vm), index, internal::_fmlaIsDouble<T>());
-    }
+    internal::fmlaSingleDoublePrecisionTypes type = internal::_fmlaParseSingleDoubleType<T>();
+    return internal::fmlaByElementVectorSingleDoublePrecision(type, static_cast<uint32_t>(Vd), static_cast<uint32_t>(Vn),
+        static_cast<uint32_t>(Vm), index, internal::_fmlaIsDouble<T>());
+}
 
+template<>
+constexpr uint32_t fmla<VType4x16Bit>(const VGeneral Vd, const VType4x16Bit, const VGeneral Vn, const VType4x16Bit,
+    const VGeneral Vm, const uint32_t index)
+{
+    return internal::fmlaByElementVectorHalfPrecision(internal::fmlaHalfPrecisionTypes::t4H, static_cast<uint32_t>(Vd),
+        static_cast<uint32_t>(Vn), static_cast<uint32_t>(Vm), index);
+}
+
+template<>
+constexpr uint32_t fmla<VType8x16Bit>(const VGeneral Vd, const VType8x16Bit, const VGeneral Vn, const VType8x16Bit,
+    const VGeneral Vm, const uint32_t index)
+{
+    return internal::fmlaByElementVectorHalfPrecision(internal::fmlaHalfPrecisionTypes::t8H, static_cast<uint32_t>(Vd),
+        static_cast<uint32_t>(Vn), static_cast<uint32_t>(Vm), index);
 }
 
 } // namespace arm_instructions
