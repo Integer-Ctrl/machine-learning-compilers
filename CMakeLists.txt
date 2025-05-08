@@ -103,6 +103,8 @@ set(TEST_ARM_INSTRUCTION_FILES
     simd-fp/ld1.cpp
     simd-fp/st1.cpp
     simd-fp/ldp.cpp
+    simd-fp/stp.cpp
+    simd-fp/ldr.cpp
 )
 
 set(BENCH_FILES

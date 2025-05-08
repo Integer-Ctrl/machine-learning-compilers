@@ -64,13 +64,13 @@ constexpr uint32_t ldrImmediateOffset(const uint32_t Rt, const uint32_t Rn, cons
     if (is64bit)
     {
         release_assert((((imm12 >> 3) & mask12) == (imm12 >> 3)),
-            "imm12 is only allowed to have a size of 12 bit after shift i.e. 16380.");
+            "imm12 is only allowed to have a size of 12 bit after shift i.e. 32760.");
         release_assert(((imm12 & mask3) == 0), "imm12 should be multiple of 8.");
     }
     else
     {
         release_assert((((imm12 >> 2) & mask12) == (imm12 >> 2)),
-            "imm12 is only allowed to have a size of 12 bit after shift i.e. 32760.");
+            "imm12 is only allowed to have a size of 12 bit after shift i.e. 16380.");
         release_assert(((imm12 & mask2) == 0), "imm12 should be multiple of 4.");
     }
 
@@ -105,6 +105,16 @@ constexpr uint32_t ldrPre(const R32Bit Wt, const R64Bit Xn, const int32_t imm9)
 constexpr uint32_t ldrPre(const R64Bit Xt, const R64Bit Xn, const int32_t imm9)
 {
     return internal::ldrImmediatePre(static_cast<uint32_t>(Xt), static_cast<uint32_t>(Xn), imm9, true);
+}
+
+constexpr uint32_t ldr(const R32Bit Wt, const R64Bit Xn)
+{
+    return internal::ldrImmediateOffset(static_cast<uint32_t>(Wt), static_cast<uint32_t>(Xn), 0, false);
+}
+
+constexpr uint32_t ldr(const R64Bit Xt, const R64Bit Xn)
+{
+    return internal::ldrImmediateOffset(static_cast<uint32_t>(Xt), static_cast<uint32_t>(Xn), 0, true);
 }
 
 constexpr uint32_t ldrOffset(const R32Bit Wt, const R64Bit Xn, const int32_t imm12)

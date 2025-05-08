@@ -119,19 +119,19 @@ constexpr uint32_t stpPre(const V128Bit Qt1, const V128Bit Qt2, const R64Bit Xn,
 
 constexpr uint32_t stp(const V32Bit St1, const V32Bit St2, const R64Bit Xn)
 {
-    return internal::stpPost(static_cast<uint32_t>(St1), static_cast<uint32_t>(St2), static_cast<uint32_t>(Xn),
+    return internal::stpOffset(static_cast<uint32_t>(St1), static_cast<uint32_t>(St2), static_cast<uint32_t>(Xn),
         0, internal::stpSimdFpDataTypes::v32bit);
 }
 
 constexpr uint32_t stp(const V64Bit Dt1, const V64Bit Dt2, const R64Bit Xn)
 {
-    return internal::stpPost(static_cast<uint32_t>(Dt1), static_cast<uint32_t>(Dt2), static_cast<uint32_t>(Xn),
+    return internal::stpOffset(static_cast<uint32_t>(Dt1), static_cast<uint32_t>(Dt2), static_cast<uint32_t>(Xn),
         0, internal::stpSimdFpDataTypes::v64bit);
 }
 
 constexpr uint32_t stp(const V128Bit Qt1, const V128Bit Qt2, const R64Bit Xn)
 {
-    return internal::stpPost(static_cast<uint32_t>(Qt1), static_cast<uint32_t>(Qt2), static_cast<uint32_t>(Xn),
+    return internal::stpOffset(static_cast<uint32_t>(Qt1), static_cast<uint32_t>(Qt2), static_cast<uint32_t>(Xn),
         0, internal::stpSimdFpDataTypes::v128bit);
 }
 constexpr uint32_t stpOffset(const V32Bit St1, const V32Bit St2, const R64Bit Xn, const int32_t imm7)
