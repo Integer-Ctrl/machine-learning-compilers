@@ -218,7 +218,7 @@ Loops
 - File ``submissions/submission_25_05_01/neon_3_1.s``
 
 .. code-block:: asm
-    :linenos:
+  :linenos:
 
     ...
     // Offset the used leading dimension by the size of floats
@@ -347,7 +347,7 @@ Loops
 - File ``submissions/submission_25_05_01/neon_3_2.s``
 
 .. code-block:: asm
-    :linenos:
+  :linenos:
 
       // Offset the used leading dimension by the size of floats
       lsl x3, x3, #2 // x3 * 4 = x3 * sizeof(float)
@@ -364,7 +364,7 @@ Loops
   matmul_loop_over_M:
       sub x16, x16, #1
 
-      ... <logic of loop over K - neon_3_1>
+      // ... <logic of loop over K - neon_3_1>
 
       // next M iteration on the matrix c and matrix a, both need offset about 16 values
       // also matrix b needs to start at the initial location again
@@ -383,12 +383,13 @@ Loops
       // Loop back to M
       cbnz x16, matmul_loop_over_M
 
+
 3. Loop over N: Implement a kernel that computes C+=AB for M=64, N=48 and K=64.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 - File ``submissions/submission_25_05_01/neon_3_3.s``
 
 .. code-block:: asm
-    :linenos:
+  :linenos:
   
       // Offset the used leading dimension by the size of floats
       lsl x3, x3, #2 // x3 * 4 = x3 * sizeof(float)
@@ -409,7 +410,7 @@ Loops
   matmul_loop_over_N:
       sub x17, x17, #1
 
-    ... <logic of loop over M - neon_3_2>
+    // ... <logic of loop over M - neon_3_2>
 
       // next M iteration on the matrix b and matrix c, both need offset about 6*ldb/ldc values
       // also matrix a needs to start at the initial location again
@@ -430,7 +431,7 @@ Loops
       // Loop back to N
       cbnz x17, matmul_loop_over_N
 
-4. Test and optimize the kernels. Report your performance in GFLOPS.
+1. Test and optimize the kernels. Report your performance in GFLOPS.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 - File ``submissions/submission_25_05_01/neon_3.h``
 - Tests ``submissions/submission_25_05_01/neon_3.test.cpp``
