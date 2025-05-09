@@ -213,8 +213,6 @@ This section considers a matrix-matrix multiplication where a high-performance i
 
 File: ``neon_5_1.s``
 
-matmul_64_48_64
-
 For this kernel ``matmul_64_64_64`` we adapt the already implemented kernel ``matmul_64_48_64``. The only changes is that we removed two ``fmla`` blocks from the inner loop:
 
 .. code-block:: asm
@@ -338,7 +336,7 @@ Optimized benchmark result:
     GemmMxNxKFixture<64, 64, 64>/BM_matmul_64_64_64/min_warmup_time:1.000_cv                     0.33 %          0.34 %            10      0.34%
 
 
-- **matmul_14_64_64** kernel: :math:`128.0` GFLOPS
+- **matmul_64_64_64** kernel: :math:`128.0` GFLOPS
 
 Microkernel
 -----------
@@ -702,6 +700,7 @@ Testing our jitted kernel, we get the same performance as out previous implement
     The generation of the matmul kernel is done outside of the benchmarking loop, as one would do in a real world scenario.
 
 .. code-block::
+    :emphasize-lines: 4, 8
 
     ------------------------------------------------------------------------------------------------------------------------------------
     Benchmark                                                                               Time             CPU   Iterations      FLOPS
@@ -714,3 +713,7 @@ Testing our jitted kernel, we get the same performance as out previous implement
     GemmJited16x6x128Fixture/BM_jited_matmul_16_6_128/min_warmup_time:1.000_median        187 ns          186 ns           10 131.811G/s
     GemmJited16x6x128Fixture/BM_jited_matmul_16_6_128/min_warmup_time:1.000_stddev       1.02 ns         1.01 ns           10 702.935M/s
     GemmJited16x6x128Fixture/BM_jited_matmul_16_6_128/min_warmup_time:1.000_cv           0.54 %          0.54 %            10      0.53%
+
+
+- **jited_matmul_16_6_1** kernel: :math:`34.6` GFLOPS
+- **jited_matmul_16_6_k(=128)** kernel: :math:`131.6` GFLOPS
