@@ -24,6 +24,7 @@ jobs:
       run: |
         cmake -S ${{github.workspace}}/submissions/submission_25_05_01 -B ${{github.workspace}}/build/submission_25_05_01 -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
         cmake -S ${{github.workspace}}/submissions/submission_25_05_08 -B ${{github.workspace}}/build/submission_25_05_08 -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+        cmake -S ${{github.workspace}}/submissions/submission_25_05_15 -B ${{github.workspace}}/build/submission_25_05_15 -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
         cmake -S ${{github.workspace}} -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
 
     - name: Build
@@ -31,6 +32,7 @@ jobs:
       run: |
         cmake --build ${{github.workspace}}/build/submission_25_05_01 --config ${{matrix.build_type}}
         cmake --build ${{github.workspace}}/build/submission_25_05_08 --config ${{matrix.build_type}}
+        cmake --build ${{github.workspace}}/build/submission_25_05_15 --config ${{matrix.build_type}}
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}}
 
     - name: Test
@@ -39,5 +41,6 @@ jobs:
       run: |
         ctest -C ${{matrix.build_type}} --test-dir submission_25_05_01
         ctest -C ${{matrix.build_type}} --test-dir submission_25_05_08
+        ctest -C ${{matrix.build_type}} --test-dir submission_25_05_15
         ctest -C ${{matrix.build_type}}
 
