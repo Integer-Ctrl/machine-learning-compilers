@@ -1,0 +1,75 @@
+
+build/matmul_16m_6n_k.bin:     file format binary
+
+
+Disassembly of section .data:
+
+0000000000000000 <.data>:
+   0:	6dbf27e8 	stp	d8, d9, [sp, #-16]!
+   4:	d37ef463 	lsl	x3, x3, #2
+   8:	d37ef484 	lsl	x4, x4, #2
+   c:	d37ef4a5 	lsl	x5, x5, #2
+  10:	aa0103e6 	mov	x6, x1
+  14:	aa0203e7 	mov	x7, x2
+  18:	aa0003e8 	mov	x8, x0
+  1c:	aa0103e9 	mov	x9, x1
+  20:	aa0003ea 	mov	x10, x0
+  24:	aa0203eb 	mov	x11, x2
+  28:	d280008c 	mov	x12, #0x4                   	// #4
+  2c:	d2800211 	mov	x17, #0x10                  	// #16
+  30:	d1000631 	sub	x17, x17, #0x1
+  34:	aa0a03e8 	mov	x8, x10
+  38:	aa0b03e7 	mov	x7, x11
+  3c:	d2800090 	mov	x16, #0x4                   	// #4
+  40:	d1000610 	sub	x16, x16, #0x1
+  44:	aa0703e2 	mov	x2, x7
+  48:	aa0803e0 	mov	x0, x8
+  4c:	aa0903e6 	mov	x6, x9
+  50:	aa0903e1 	mov	x1, x9
+  54:	4cc52859 	ld1	{v25.4s-v28.4s}, [x2], x5
+  58:	4cc52851 	ld1	{v17.4s-v20.4s}, [x2], x5
+  5c:	4cc52855 	ld1	{v21.4s-v24.4s}, [x2], x5
+  60:	4cc52845 	ld1	{v5.4s-v8.4s}, [x2], x5
+  64:	d280002f 	mov	x15, #0x1                   	// #1
+  68:	d10005ef 	sub	x15, x15, #0x1
+  6c:	4cc32800 	ld1	{v0.4s-v3.4s}, [x0], x3
+  70:	bd400024 	ldr	s4, [x1]
+  74:	8b040021 	add	x1, x1, x4
+  78:	4f841019 	fmla	v25.4s, v0.4s, v4.s[0]
+  7c:	4f84103a 	fmla	v26.4s, v1.4s, v4.s[0]
+  80:	4f84105b 	fmla	v27.4s, v2.4s, v4.s[0]
+  84:	4f84107c 	fmla	v28.4s, v3.4s, v4.s[0]
+  88:	bd400024 	ldr	s4, [x1]
+  8c:	8b040021 	add	x1, x1, x4
+  90:	4f841011 	fmla	v17.4s, v0.4s, v4.s[0]
+  94:	4f841032 	fmla	v18.4s, v1.4s, v4.s[0]
+  98:	4f841053 	fmla	v19.4s, v2.4s, v4.s[0]
+  9c:	4f841074 	fmla	v20.4s, v3.4s, v4.s[0]
+  a0:	bd400024 	ldr	s4, [x1]
+  a4:	8b040021 	add	x1, x1, x4
+  a8:	4f841015 	fmla	v21.4s, v0.4s, v4.s[0]
+  ac:	4f841036 	fmla	v22.4s, v1.4s, v4.s[0]
+  b0:	4f841057 	fmla	v23.4s, v2.4s, v4.s[0]
+  b4:	4f841078 	fmla	v24.4s, v3.4s, v4.s[0]
+  b8:	bd400024 	ldr	s4, [x1]
+  bc:	8b040021 	add	x1, x1, x4
+  c0:	4f841005 	fmla	v5.4s, v0.4s, v4.s[0]
+  c4:	4f841026 	fmla	v6.4s, v1.4s, v4.s[0]
+  c8:	4f841047 	fmla	v7.4s, v2.4s, v4.s[0]
+  cc:	4f841068 	fmla	v8.4s, v3.4s, v4.s[0]
+  d0:	910010c6 	add	x6, x6, #0x4
+  d4:	aa0603e1 	mov	x1, x6
+  d8:	b5fffc8f 	cbnz	x15, 0x68
+  dc:	aa0703e2 	mov	x2, x7
+  e0:	4c852859 	st1	{v25.4s-v28.4s}, [x2], x5
+  e4:	4c852851 	st1	{v17.4s-v20.4s}, [x2], x5
+  e8:	4c852855 	st1	{v21.4s-v24.4s}, [x2], x5
+  ec:	4c852845 	st1	{v5.4s-v8.4s}, [x2], x5
+  f0:	910100e7 	add	x7, x7, #0x40
+  f4:	91010108 	add	x8, x8, #0x40
+  f8:	b5fffa50 	cbnz	x16, 0x40
+  fc:	9b0c2489 	madd	x9, x4, x12, x9
+ 100:	9b0c2cab 	madd	x11, x5, x12, x11
+ 104:	b5fff971 	cbnz	x17, 0x30
+ 108:	6cc127e8 	ldp	d8, d9, [sp], #16
+ 10c:	d65f03c0 	ret

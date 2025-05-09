@@ -1,10 +1,9 @@
 #include "matmul_16_6_k.h"
 #include "../arm_instructions/arm_all.h"
-#include "../Brgemm.h"
 #include "../Kernel.h"
 
 
-void mini_jit::kernels::matmul_16_6_k(mini_jit::Kernel &kernel, const uint32_t k_loop)
+void mini_jit::kernels::matmul_16_6_k(mini_jit::Kernel& kernel, const uint32_t k_loop)
 {
   using namespace mini_jit::arm_instructions;
 
@@ -15,7 +14,7 @@ void mini_jit::kernels::matmul_16_6_k(mini_jit::Kernel &kernel, const uint32_t k
     stpPre(fp, lr, sp, -16),  // stp fp, lr, [sp, #-16]!
     // update frame pointer to current stack pointer
     movSp(fp, sp),  // mov fp, sp
-        
+
     // save callee-saved registers
     stpPre(x19, x20, sp, -16),  // stp x19, x20, [sp, #-16]!
     stpPre(x21, x22, sp, -16),  // stp x21, x22, [sp, #-16]!
@@ -50,7 +49,7 @@ void mini_jit::kernels::matmul_16_6_k(mini_jit::Kernel &kernel, const uint32_t k
     ld1Post(v13, t4s, v14, t4s, v15, t4s, v16, t4s, x2, x5),  // ld1 {v13.4s, v14.4s, v15.4s, v16.4s}, [x2], x5
 
     movz(x9, k_loop),  // mov x9, "iterator for K loop"
-    
+
     // #############################
     // #### matmul_loop_over_K: ####
     // #############################
@@ -81,7 +80,7 @@ void mini_jit::kernels::matmul_16_6_k(mini_jit::Kernel &kernel, const uint32_t k
     fmla(v19, t4s, v2, t4s, v4, 0),  // fmla v19.4s, v2.4s, v4.s[0]
     fmla(v20, t4s, v3, t4s, v4, 0),  // fmla v20.4s, v3.4s, v4.s[0]
 
-        
+
     // Load third element from the 1x6 matrix b
     ldr(s4, x1),  // ldr s4, [x1]
     add(x1, x1, x4),  // add x1, x1, x4
@@ -114,7 +113,7 @@ void mini_jit::kernels::matmul_16_6_k(mini_jit::Kernel &kernel, const uint32_t k
     fmla(v11, t4s, v2, t4s, v4, 0),  // fmla v11.4s, v2.4s, v4.s[0]
     fmla(v12, t4s, v3, t4s, v4, 0),  // fmla v12.4s, v3.4s, v4.s[0]
 
-        
+
     // Load sixth element from the 1x6 matrix b
     ldr(s4, x1),  // ldr s4, [x1]
     add(x1, x1, x4),  // add x1, x1, x4
@@ -133,7 +132,7 @@ void mini_jit::kernels::matmul_16_6_k(mini_jit::Kernel &kernel, const uint32_t k
     mov(x1, x6),  // mov x1, x6
 
     // Loop back
-    cbnz(x9, -40*4),  // cbnz x9, matmul_loop_over_K
+    cbnz(x9, -40 * 4),  // cbnz x9, matmul_loop_over_K
 
     // Restore initial value of x2 that was changed by the loads
     mov(x2, x7),  // mov x2, x7
@@ -168,7 +167,7 @@ void mini_jit::kernels::matmul_16_6_k(mini_jit::Kernel &kernel, const uint32_t k
     ldpPost(fp, lr, sp, 16),  // ldp fp, lr, [sp], #16
 
     ret()  // ret
-  });
+    });
 
   kernel.write("matmul_16_6_k.bin");
 }

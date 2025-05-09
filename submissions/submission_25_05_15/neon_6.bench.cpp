@@ -15,7 +15,7 @@ public:
     const uint32_t batch_stride_b = TKdim * TNdim;
     double flops;
 
-    void SetUp(::benchmark::State& _) override
+    void SetUp(::benchmark::State&) override
     {
         flops = 0;
 

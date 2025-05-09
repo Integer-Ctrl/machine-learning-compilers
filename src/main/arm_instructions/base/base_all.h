@@ -13,5 +13,6 @@
 #include "orr.h"
 #include "mov.h"
 #include "movz.h"
+#include "madd.h"
 
 #endif // MINI_JIT_ARM_INSTRUCTIONS_BASE_ALL_H

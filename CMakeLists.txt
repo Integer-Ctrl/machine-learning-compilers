@@ -65,6 +65,8 @@ set(KERNEL_FILES
     matmul_16_6_1.h
     matmul_16_6_k.cpp
     matmul_16_6_k.h
+    matmul_16m_4n_k.h
+    matmul_16m_4n_k.cpp
 )
 
 set(ARM_INSTRUCTION_FILES
@@ -84,6 +86,7 @@ set(ARM_INSTRUCTION_FILES
     base/sub.h
     base/mov.h
     base/orr.h
+    base/madd.h
     
     simd_fp/ld1.h
     simd_fp/st1.h
@@ -92,10 +95,17 @@ set(ARM_INSTRUCTION_FILES
     simd_fp/stp.h
 )
 
+set(TEST_FILES
+    BaseGeneration.test.h
+    BaseGeneration.test.cpp
+    Brgemm.test.cpp
+)
+
 set(TEST_KERNELS
     matmul.test.h
     matmul_16_6_1.test.cpp
     matmul_16_6_k.test.cpp
+    matmul_16m_4n_k.test.cpp
 )
 
 set(TEST_ARM_INSTRUCTION_FILES
@@ -109,6 +119,7 @@ set(TEST_ARM_INSTRUCTION_FILES
     base/orr.test.cpp
     base/mov.test.cpp
     base/movz.test.cpp
+    base/madd.test.cpp
 
     simd_fp/fmla.test.cpp
     simd_fp/ld1.test.cpp
@@ -129,9 +140,12 @@ foreach(file ${KERNEL_FILES})
     list(APPEND SOURCE_FILEPATHS src/main/kernels/${file})
 endforeach()
 
-
 foreach(file ${ARM_INSTRUCTION_FILES})
     list(APPEND SOURCE_FILEPATHS src/main/arm_instructions/${file})
+endforeach()
+
+foreach(file ${TEST_FILES})
+    list(APPEND TEST_FILEPATHS src/test/${file})
 endforeach()
 
 foreach(file ${TEST_KERNELS})
