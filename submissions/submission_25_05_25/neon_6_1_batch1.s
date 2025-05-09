@@ -47,9 +47,27 @@ matmul_64_48_64:
 matmul_loop_over_N:
     sub x17, x17, #1
 
+    // Restore for the loop jumps
+    // Update for the matrix a
+    mov x8, x10 // Update the restore register for x0 for the M loop
+
+    // Updates for the matrix c
+    mov x7, x11 // Update the restore register of x2 for the K loop
+
     mov x16, #4 // x16 iterator for M loop
 matmul_loop_over_M:
     sub x16, x16, #1
+
+    // Restore for the loop jumps
+    // Updates for the matrix c
+    mov x2, x7 // also apply offset to x2
+
+    // Updates for the matrix a
+    mov x0, x8 // also apply offset to x0
+
+    // Updates for the matrix b
+    mov x6, x9 // Update the restore register for x1 for the K loop
+    mov x1, x9 // Update the x1 register itself
 
     // Load first column from the 16x6 matrix c
     ld1 {v25.4s, v26.4s, v27.4s, v28.4s}, [x2], x5
@@ -137,34 +155,21 @@ matmul_loop_over_K:
     // also matrix b needs to start at the initial location again
     // Updates for the matrix c
     add x7, x7, #16*4 // column height * sizeof(float)
-    mov x2, x7 // also apply offset to x2
 
     // Updates for the matrix a
     add x8, x8, #16*4 // column height * sizeof(float)
-    mov x0, x8 // also apply offset to x0
-
-    // Updates for the matrix b
-    mov x6, x9 // Update the restore register for x1 for the K loop
-    mov x1, x9 // Update the x1 register itself
 
     // Loop back to M
     cbnz x16, matmul_loop_over_M
     
     // next M iteration on the matrix b and matrix c, both need offset about 4*ldb/ldc values
     // also matrix a needs to start at the initial location again
-    // Update for the matrix a
-    mov x8, x10 // Update the restore register for x0 for the M loop
-    mov x0, x10 // Update the x0 register itself
 
     // Updates for the matrix b
     madd x9, x4, x12, x9 // ldb * 4 + initial position
-    mov x6, x9 // Update the restore register of x1 for the K loop
-    mov x1, x9 // Update the x1 register itself
 
     // Updates for the matrix c
     madd x11, x5, x12, x11 // ldc * 4 + initial position
-    mov x7, x11 // Update the restore register of x2 for the K loop
-    mov x2, x11 // Update the x2 register itself
 
     // Loop back to N
     cbnz x17, matmul_loop_over_N

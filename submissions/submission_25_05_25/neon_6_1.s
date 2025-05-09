@@ -21,14 +21,14 @@ matmul_64_48_64_16:
     // save callee-saved registers
     stp x19, x20, [sp, #-16]!
     stp x21, x22, [sp, #-16]!
-    stp x23, x24, [sp, #-16]!
-    stp x25, x26, [sp, #-16]!
+    // stp x23, x24, [sp, #-16]!
+    // stp x25, x26, [sp, #-16]!
     stp x27, x28, [sp, #-16]!
 
     stp  d8,  d9, [sp, #-16]!
-    stp d10, d11, [sp, #-16]!
-    stp d12, d13, [sp, #-16]!
-    stp d14, d15, [sp, #-16]!
+    // stp d10, d11, [sp, #-16]!
+    // stp d12, d13, [sp, #-16]!
+    // stp d14, d15, [sp, #-16]!
 
     // Offset the used leading dimension by the size of floats
     lsl x3, x3, #2 // x3 * 4 = x3 * sizeof(float)
@@ -54,13 +54,39 @@ matmul_64_48_64_16:
 matmul_loop_batch_dimension:
     sub x19, x19, #1
 
+    // Restore for the loop jumps
+    // Update for the matrix b
+    mov x9, x20 // Update the restore register of x1 for the N loop
+
+    // Update for the matrix c
+    mov x11, x21 // Update the restore register of x2 for the N loop
+
     mov x17, #12 // x17 iterator for N loop
 matmul_loop_over_N:
     sub x17, x17, #1
 
+    // Restore for the loop jumps
+    // Update for the matrix a
+    mov x8, x10 // Update the restore register for x0 for the M loop
+    mov x0, x10 // Update the x0 register itself
+
+    // Update for the matrix 
+    mov x28, x11 // Update the restore register of x2 for the K loop
+
     mov x16, #4 // x16 iterator for M loop
 matmul_loop_over_M:
     sub x16, x16, #1
+
+    // Restore for the loop jumps
+    // Update for the matrix c
+    mov x2, x28 // also apply offset to x2
+
+    // Update for the matrix a 
+    mov x0, x8 // also apply offset to x0
+
+    // Update for the matrix c
+    mov x27, x9 // Update the restore register for x1 for the K loop
+    mov x1, x9 // Update the x1 register itself
 
     // Load first column from the 16x27 matrix c
     ld1 {v25.4s, v26.4s, v27.4s, v28.4s}, [x2], x5
@@ -148,34 +174,20 @@ matmul_loop_over_K:
     // also matrix b needs to start at the initial location again
     // Updates for the matrix c
     add x28, x28, #16*4 // column height * sizeof(float)
-    mov x2, x28 // also apply offset to x2
 
     // Updates for the matrix a
     add x8, x8, #16*4 // column height * sizeof(float)
-    mov x0, x8 // also apply offset to x0
-
-    // Updates for the matrix b
-    mov x27, x9 // Update the restore register for x1 for the K loop
-    mov x1, x9 // Update the x1 register itself
 
     // Loop back to M
     cbnz x16, matmul_loop_over_M
     
     // next M iteration on the matrix b and matrix c, both need offset about 4*ldb/ldc values
     // also matrix a needs to start at the initial location again
-    // Update for the matrix a
-    mov x8, x10 // Update the restore register for x0 for the M loop
-    mov x0, x10 // Update the x0 register itself
-
     // Updates for the matrix b
     madd x9, x4, x12, x9 // ldb * 4 + initial position
-    mov x27, x9 // Update the restore register of x1 for the K loop
-    mov x1, x9 // Update the x1 register itself
 
     // Updates for the matrix c
     madd x11, x5, x12, x11 // ldc * 4 + initial position
-    mov x28, x11 // Update the restore register of x2 for the K loop
-    mov x2, x11 // Update the x2 register itself
 
     // Loop back to N
     cbnz x17, matmul_loop_over_N
@@ -184,33 +196,23 @@ matmul_loop_over_K:
     // the matrix c need to start at the initial location again
     // Update matrix a
     add x10, x10, x6 // Offset to next matrix a in batch
-    mov x8, x10 // Update the restore register for the M loop
-    mov x0, x10 // Update the x0 register itself
 
     // Update matrix b
     add x20, x20, x7 // Offset to next matrix b in batch
-    mov x9, x20 // Update the restore register of x1 for the N loop
-    mov x27, x20 // Update the restore register of x1 for the K loop
-    mov x1, x20 // Update the x1 register itself
-
-    // Update matrix c
-    mov x11, x21 // Update the restore register of x2 for the N loop
-    mov x28, x21 // Update the restore register of x2 for the K loop
-    mov x2, x21 // Update the x2 register itself
 
     // Loop back to batch dimension
     cbnz x19, matmul_loop_batch_dimension
 
     // Procedural Call Standard
     // restore callee-saved registers
-    ldp d14, d15, [sp], #16
-    ldp d12, d13, [sp], #16
-    ldp d10, d11, [sp], #16
+    // ldp d14, d15, [sp], #16
+    // ldp d12, d13, [sp], #16
+    // ldp d10, d11, [sp], #16
     ldp  d8,  d9, [sp], #16
 
     ldp x27, x28, [sp], #16
-    ldp x25, x26, [sp], #16
-    ldp x23, x24, [sp], #16
+    // ldp x25, x26, [sp], #16
+    // ldp x23, x24, [sp], #16
     ldp x21, x22, [sp], #16
     ldp x19, x20, [sp], #16
 
