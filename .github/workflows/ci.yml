@@ -20,6 +20,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Requirements
+      run: |
+          sudo apt-get install valgrind
+
     - name: Configure CMake
       # Choose CMakeLists.text from a specific source directory with -S.
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -42,17 +46,17 @@ jobs:
       working-directory: ${{github.workspace}}/build
       # Execute tests defined by the CMake configuration.
       run: |
-        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir submission_25_05_01
-        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir submission_25_05_08
-        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir submission_25_05_15
-        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}}
+        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir submission_25_05_01 --output-on-failure
+        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir submission_25_05_08 --output-on-failure
+        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir submission_25_05_15 --output-on-failure
+        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --output-on-failure
 
     - name: Test + Valgrind
       working-directory: ${{github.workspace}}/build
       # Execute tests defined by the CMake configuration.
       run: |
-        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_01
-        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_08
-        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_15
-        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}}
+        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_01 --output-on-failure
+        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_08 --output-on-failure
+        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_15 --output-on-failure
+        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --output-on-failure
 
