@@ -22,6 +22,7 @@ jobs:
 
     - name: Requirements
       run: |
+          sudo apt-get update
           sudo apt-get install valgrind
 
     - name: Configure CMake
