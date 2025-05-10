@@ -6,7 +6,7 @@
 
 namespace mini_jit
 {
-  class Brgemm;
+class Brgemm;
 }
 
 class mini_jit::Brgemm
@@ -25,14 +25,14 @@ public:
    * - br_stride_a: stride between two A matrices (in elements, not bytes).
    * - br_stride_b: stride between two B matrices (in elements, not bytes).
    */
-  using kernel_t = void (*)(void const *a,
-                            void const *b,
-                            void *c,
-                            int64_t lda,
-                            int64_t ldb,
-                            int64_t ldc,
-                            int64_t br_stride_a,
-                            int64_t br_stride_b);
+  using kernel_t = void (*)(void const* a,
+    void const* b,
+    void* c,
+    int64_t lda,
+    int64_t ldb,
+    int64_t ldc,
+    int64_t br_stride_a,
+    int64_t br_stride_b);
 
   /// data type
   enum class dtype_t : uint32_t
@@ -64,13 +64,13 @@ public:
    * @return error_t::success on success, another error_t value otherwise.
    **/
   error_t generate(uint32_t m,
-                   uint32_t n,
-                   uint32_t k,
-                   uint32_t br_size,
-                   uint32_t trans_a,
-                   uint32_t trans_b,
-                   uint32_t trans_c,
-                   dtype_t dtype);
+    uint32_t n,
+    uint32_t k,
+    uint32_t br_size,
+    uint32_t trans_a,
+    uint32_t trans_b,
+    uint32_t trans_c,
+    dtype_t dtype);
 
   /**
    * @brief Get the generated kernel: C += sum_i(A_i * B_i).
@@ -81,6 +81,16 @@ public:
 private:
   kernel_t kernel = nullptr;
   mini_jit::Kernel native_kernel;
+
+  /**
+   * @brief Fills the kernel with a suitable matmul with no batch size, column major format, and fp32 datatypes
+   *
+   * @param Kernel The kernel to add instructions too.
+   * @param m number of rows in A and C.
+   * @param n number of columns in B and C.
+   * @param k number of columns in A and rows in B.
+   */
+  void fill_with_matmuls_no_batch_dim_column_major_fp32(uint32_t m, uint32_t n, uint32_t k);
 };
 
 #endif

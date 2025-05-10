@@ -93,6 +93,29 @@ Building
 
         Options for ``--config`` are **Release** and **Debug**. :raw-html:`</br>`
         Options for ``--target`` are **benchmarks** and **tests**
+          
+    .. note::
+
+        With the Option ``-D`` toggle options can be activated supported only by this ``CMakeLists.txt``.
+        Available options are:
+
+        +--------------------+--------------------------------------------------------------------------------------------------------------------+
+        | Option             |  Description                                                                                                       |
+        +====================+====================================================================================================================+
+        | SAVE_JITS_TO_FILE  | Saves the jitted kernels into a file if activated.                                                                 |
+        +--------------------+--------------------------------------------------------------------------------------------------------------------+
+
+        To activate an option, the following must be written:
+        
+        .. code-block:: bash
+
+            cmake .. -D <Option>=ON
+
+        For Example:
+
+        .. code-block:: bash
+
+            cmake .. -D SAVE_JITS_TO_FILE=ON
 
 6. Now we can build the project. The most desired command might be
 

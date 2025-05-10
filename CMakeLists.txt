@@ -15,6 +15,17 @@ endif()
 
 message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
 
+# =============================================================
+# Extra build options
+# =============================================================
+option(SAVE_JITS_TO_FILE "Saves the jitted kernels into a file if activated." OFF)
+
+
+if(SAVE_JITS_TO_FILE)
+    message(NOTICE "The saved kernels can be disassembled with: 'objdump -D -b binary -m aarch64 <inputFile> > <outputFile>'")
+    add_compile_definitions(SAVE_JITS_TO_FILE)
+endif()
+
 # ==============================================================
 # Setup compile Flags
 # ==============================================================
@@ -67,6 +78,8 @@ set(KERNEL_FILES
     matmul_16_6_k.h
     matmul_16m_4n_k.h
     matmul_16m_4n_k.cpp
+    matmul_16m_4nRest_k.h
+    matmul_16m_4nRest_k.cpp
 )
 
 set(ARM_INSTRUCTION_FILES
@@ -106,6 +119,7 @@ set(TEST_KERNELS
     matmul_16_6_1.test.cpp
     matmul_16_6_k.test.cpp
     matmul_16m_4n_k.test.cpp
+    matmul_16m_4nRest_k.test.cpp
 )
 
 set(TEST_ARM_INSTRUCTION_FILES

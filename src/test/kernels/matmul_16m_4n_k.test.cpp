@@ -43,7 +43,6 @@ TEST_CASE("Test matmul_16m_4n_k (M=16, N=4*50, K=18) jited gemm correctness rand
     const uint32_t N = 4 * 50;
     GemmMxNxKTestFixture<16, N, K> gemmTest;
     gemmTest.SetUp(TestInfill::Random);
-    CAPTURE(N / 4);
     mini_jit::kernels::matmul_16m_4n_k(gemmTest.native_kernel, 1, N / 4, K);
     gemmTest.RunTest(16, K, 16);
 }
@@ -54,7 +53,6 @@ TEST_CASE("Test matmul_16m_4n_k (M=16, N=4*50, K=18) jited gemm correctness coun
     const uint32_t N = 4 * 50;
     GemmMxNxKTestFixture<16, N, K> gemmTest;
     gemmTest.SetUp(TestInfill::Counting);
-    CAPTURE(N / 4);
     mini_jit::kernels::matmul_16m_4n_k(gemmTest.native_kernel, 1, N / 4, K);
     gemmTest.RunTest(16, K, 16);
 }
@@ -66,7 +64,6 @@ TEST_CASE("Test matmul_16m_4n_k (M=16*7, N=4*10, K=18) jited gemm correctness ra
     const uint32_t M = 16 * 7;
     GemmMxNxKTestFixture<M, N, K> gemmTest;
     gemmTest.SetUp(TestInfill::Random);
-    CAPTURE(M / 16, N / 4);
     mini_jit::kernels::matmul_16m_4n_k(gemmTest.native_kernel, M / 16, N / 4, K);
     gemmTest.RunTest(M, K, M);
 }
@@ -78,7 +75,6 @@ TEST_CASE("Test matmul_16m_4n_k (M=16*7, N=4*10, K=18) jited gemm correctness co
     const uint32_t M = 16 * 7;
     GemmMxNxKTestFixture<M, N, K> gemmTest;
     gemmTest.SetUp(TestInfill::Counting);
-    CAPTURE(M / 16, N / 4);
     mini_jit::kernels::matmul_16m_4n_k(gemmTest.native_kernel, M / 16, N / 4, K);
     gemmTest.RunTest(M, K, M);
 }

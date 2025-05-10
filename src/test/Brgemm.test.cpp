@@ -9,9 +9,9 @@ TEST_CASE("Test gemm generation (1≤M≤64, 1≤N≤64, K∈[1,16,32,64,128],ld
 {
     auto M = GENERATE(range(16u, 64u + 1u, 16u));
     // auto M = GENERATE(range(1u, 64u + 1u, 1u)); // TODO Replace with this if matmuls implemented
-    auto N = GENERATE(range(4u, 64u + 1u, 4u));
-    // auto N = GENERATE(range(1u, 64u + 1u, 1u)); // TODO Replace with this if matmuls implemented
-    auto K = GENERATE(1u, 16u, 32u, 64u, 128u);
+    auto N = GENERATE(range(4u, 64u + 1u, 1u));
+    // auto N = GENERATE(range(1u, 64u + 1u, 1u));// TODO Replace with this if matmuls implemented
+    auto  K = GENERATE(1u, 16u, 32u, 64u, 128u);
 
 
     CAPTURE(M, N, K);

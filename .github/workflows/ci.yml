@@ -7,6 +7,9 @@ on:
   pull_request:
     branches: [ "main" ]
 
+env:
+  parallel_processes: 6 # A good default counts is: available Threads + 2
+
 jobs:
   build:
     runs-on: ubuntu-24.04-arm
@@ -30,17 +33,26 @@ jobs:
     - name: Build
       # Build your program with the given configuration
       run: |
-        cmake --build ${{github.workspace}}/build/submission_25_05_01 --config ${{matrix.build_type}}
-        cmake --build ${{github.workspace}}/build/submission_25_05_08 --config ${{matrix.build_type}}
-        cmake --build ${{github.workspace}}/build/submission_25_05_15 --config ${{matrix.build_type}}
-        cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}}
+        cmake -j ${{env.parallel_processes}} --build ${{github.workspace}}/build/submission_25_05_01 --config ${{matrix.build_type}}
+        cmake -j ${{env.parallel_processes}} --build ${{github.workspace}}/build/submission_25_05_08 --config ${{matrix.build_type}}
+        cmake -j ${{env.parallel_processes}} --build ${{github.workspace}}/build/submission_25_05_15 --config ${{matrix.build_type}}
+        cmake -j ${{env.parallel_processes}} --build ${{github.workspace}}/build --config ${{matrix.build_type}}
 
     - name: Test
       working-directory: ${{github.workspace}}/build
       # Execute tests defined by the CMake configuration.
       run: |
-        ctest -C ${{matrix.build_type}} --test-dir submission_25_05_01
-        ctest -C ${{matrix.build_type}} --test-dir submission_25_05_08
-        ctest -C ${{matrix.build_type}} --test-dir submission_25_05_15
-        ctest -C ${{matrix.build_type}}
+        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir submission_25_05_01
+        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir submission_25_05_08
+        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir submission_25_05_15
+        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}}
+
+    - name: Test + Valgrind
+      working-directory: ${{github.workspace}}/build
+      # Execute tests defined by the CMake configuration.
+      run: |
+        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_01
+        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_08
+        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_15
+        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}}
 

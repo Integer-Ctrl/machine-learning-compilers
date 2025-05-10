@@ -1,7 +1,5 @@
 #include "Brgemm.h"
-#include "kernels/matmul_16_6_1.h"
-#include "kernels/matmul_16_6_k.h"
-#include "kernels/matmul_16m_4n_k.h"
+#include "kernels/matmuls_all.h"
 #include "Kernel.h"
 
 mini_jit::Brgemm::error_t mini_jit::Brgemm::generate(uint32_t m, uint32_t n, uint32_t k, uint32_t br_size, uint32_t trans_a, uint32_t trans_b, uint32_t trans_c, dtype_t  dtype)
@@ -10,7 +8,7 @@ mini_jit::Brgemm::error_t mini_jit::Brgemm::generate(uint32_t m, uint32_t n, uin
     {
         return error_t::err_wrong_dtype;
     }
-    if (m % 16 != 0 || !(n % 4 == 0 || n == 6))
+    if (m % 16 != 0 || (n < 4))
     {
         return error_t::err_wrong_dimension;
     }
@@ -23,19 +21,9 @@ mini_jit::Brgemm::error_t mini_jit::Brgemm::generate(uint32_t m, uint32_t n, uin
         return error_t::err_batch_reduce_size_not_supported;
     }
 
-    if (m == 16 && n == 6 && k == 1)
+    if (br_size == 1 && (trans_a + trans_b + trans_c) == 0 && dtype == dtype_t::fp32)
     {
-        kernels::matmul_16_6_1(native_kernel);
-    }
-
-    if (m == 16 && n == 6)
-    {
-        kernels::matmul_16_6_k(native_kernel, k);
-    }
-
-    if (m % 16 == 0 && n % 4 == 0)
-    {
-        kernels::matmul_16m_4n_k(native_kernel, m / 16, n / 4, k);
+        fill_with_matmuls_no_batch_dim_column_major_fp32(m, n, k);
     }
 
 
@@ -49,3 +37,34 @@ mini_jit::Brgemm::kernel_t mini_jit::Brgemm::get_kernel() const
 {
     return kernel;
 }
+
+void mini_jit::Brgemm::fill_with_matmuls_no_batch_dim_column_major_fp32(uint32_t m, uint32_t n, uint32_t k)
+{
+    // Always sort from the specific to the more general case
+
+    if (m == 16 && n == 6 && k == 1)
+    {
+        kernels::matmul_16_6_1(native_kernel);
+        return;
+    }
+
+    if (m == 16 && n == 6)
+    {
+        kernels::matmul_16_6_k(native_kernel, k);
+        return;
+    }
+
+    if (m >= 16 && m % 16 == 0 && n >= 4 && n % 4 == 0)
+    {
+        kernels::matmul_16m_4n_k(native_kernel, m / 16, n / 4, k);
+        return;
+    }
+
+    if (m >= 16 && m % 16 == 0 && n >= 4)
+    {
+        // At this point n % 4 != 0
+        kernels::matmul_16m_4nRest_k(native_kernel, m / 16, n / 4, k, n % 4);
+        return;
+    }
+}
+
