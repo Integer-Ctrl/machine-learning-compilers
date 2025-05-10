@@ -33,10 +33,10 @@ jobs:
     - name: Build
       # Build your program with the given configuration
       run: |
-        cmake -j ${{env.parallel_processes}} --build ${{github.workspace}}/build/submission_25_05_01 --config ${{matrix.build_type}}
-        cmake -j ${{env.parallel_processes}} --build ${{github.workspace}}/build/submission_25_05_08 --config ${{matrix.build_type}}
-        cmake -j ${{env.parallel_processes}} --build ${{github.workspace}}/build/submission_25_05_15 --config ${{matrix.build_type}}
-        cmake -j ${{env.parallel_processes}} --build ${{github.workspace}}/build --config ${{matrix.build_type}}
+        cmake --build ${{github.workspace}}/build/submission_25_05_01 --config ${{matrix.build_type}} -j ${{env.parallel_processes}} 
+        cmake --build ${{github.workspace}}/build/submission_25_05_08 --config ${{matrix.build_type}} -j ${{env.parallel_processes}} 
+        cmake --build ${{github.workspace}}/build/submission_25_05_15 --config ${{matrix.build_type}} -j ${{env.parallel_processes}} 
+        cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} -j ${{env.parallel_processes}} 
 
     - name: Test
       working-directory: ${{github.workspace}}/build
