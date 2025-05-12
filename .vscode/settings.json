@@ -76,14 +76,28 @@
 
     // Spellchecker
     "cSpell.words": [
+        "cbnz",
+        "fmla",
+        "MATMUL",
         "microkernel",
-        "MATMUL"
+        "madd",
+        "MINIJIT",
+        "Brgemm",
+        "MATMULS",
+        "jited",
+        "NVCC",
+        "NVCOMPILER",
+        "pnacl",
+        "NOLINTNEXTLINE",
+        "heapbytes",
+        "errneous"
     ],
 
     // Include Paths
     "C_Cpp.default.includePath": [
         "${workspaceFolder}/build/_deps/catch2-src/src/**",
         "${workspaceFolder}/build/_deps/google_benchmark-src/include/**",
+        "${workspaceFolder}/src/main/arm_instructions",
         "${workspaceFolder}/src/**"
     ],
     "C_Cpp.default.cppStandard": "c++20",

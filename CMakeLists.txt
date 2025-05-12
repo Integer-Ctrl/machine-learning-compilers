@@ -149,6 +149,8 @@ set(TEST_ARM_INSTRUCTION_FILES
 )
 
 set(BENCH_FILES
+    matmul_16_6_1.bench.cpp
+    matmul_16_6_k.bench.cpp
 )
 
 foreach(file ${SRC_MAIN_FILES})
@@ -176,7 +178,7 @@ foreach(file ${TEST_ARM_INSTRUCTION_FILES})
 endforeach()
     
 foreach(file ${BENCH_FILES})
-    list(APPEND BENCH_FILEPATHS src/bench/${file})
+    list(APPEND BENCH_FILEPATHS src/test/kernels/${file})
 endforeach()
 
 # =============================================================
