@@ -117,12 +117,12 @@ constexpr uint32_t ldr(const R64Bit Xt, const R64Bit Xn)
     return internal::ldrImmediateOffset(static_cast<uint32_t>(Xt), static_cast<uint32_t>(Xn), 0, true);
 }
 
-constexpr uint32_t ldrOffset(const R32Bit Wt, const R64Bit Xn, const int32_t imm12)
+constexpr uint32_t ldrOffset(const R32Bit Wt, const R64Bit Xn, const uint32_t imm12)
 {
     return internal::ldrImmediateOffset(static_cast<uint32_t>(Wt), static_cast<uint32_t>(Xn), imm12, false);
 }
 
-constexpr uint32_t ldrOffset(const R64Bit Xt, const R64Bit Xn, const int32_t imm12)
+constexpr uint32_t ldrOffset(const R64Bit Xt, const R64Bit Xn, const uint32_t imm12)
 {
     return internal::ldrImmediateOffset(static_cast<uint32_t>(Xt), static_cast<uint32_t>(Xn), imm12, true);
 }

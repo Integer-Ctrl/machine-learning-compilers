@@ -58,6 +58,11 @@ void mini_jit::Kernel::add(uint32_t instruction)
 
 void mini_jit::Kernel::add(std::vector<uint32_t> instructions)
 {
+    if (instructions.size() == 0)
+    {
+        return;
+    }
+
     // reserve improves performance
     buffer.reserve(buffer.size() + std::distance(instructions.begin(), instructions.end()));
     buffer.insert(buffer.end(), instructions.begin(), instructions.end());

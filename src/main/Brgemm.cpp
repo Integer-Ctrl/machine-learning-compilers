@@ -76,5 +76,12 @@ void mini_jit::Brgemm::fill_with_matmuls_no_batch_dim_column_major_fp32(uint32_t
         kernels::matmul_16m_4nRest_k(native_kernel, m / 16, n / 4, k, n % 4);
         return;
     }
+
+    if (m >= 16 && n >= 4 && n % 4 == 0)
+    {
+        // At this point m % 16 != 0
+        kernels::matmul_16mRest_4n_k(native_kernel, m / 16, n / 4, k, m % 16);
+        return;
+    }
 }
 

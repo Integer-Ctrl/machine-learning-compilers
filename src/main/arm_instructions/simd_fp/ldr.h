@@ -227,31 +227,31 @@ constexpr uint32_t ldr(const V128Bit Qt, const R64Bit Xn)
         internal::ldrSimdFpDataTypes::v128bit);
 }
 
-constexpr uint32_t ldrOffset(const V8Bit Bt, const R64Bit Xn, const int32_t imm12)
+constexpr uint32_t ldrOffset(const V8Bit Bt, const R64Bit Xn, const uint32_t imm12)
 {
     return internal::ldrSimdFpImmediateOffset(static_cast<uint32_t>(Bt), static_cast<uint32_t>(Xn), imm12,
         internal::ldrSimdFpDataTypes::v8bit);
 }
 
-constexpr uint32_t ldrOffset(const V16Bit Ht, const R64Bit Xn, const int32_t imm12)
+constexpr uint32_t ldrOffset(const V16Bit Ht, const R64Bit Xn, const uint32_t imm12)
 {
     return internal::ldrSimdFpImmediateOffset(static_cast<uint32_t>(Ht), static_cast<uint32_t>(Xn), imm12,
         internal::ldrSimdFpDataTypes::v16bit);
 }
 
-constexpr uint32_t ldrOffset(const V32Bit St, const R64Bit Xn, const int32_t imm12)
+constexpr uint32_t ldrOffset(const V32Bit St, const R64Bit Xn, const uint32_t imm12)
 {
     return internal::ldrSimdFpImmediateOffset(static_cast<uint32_t>(St), static_cast<uint32_t>(Xn), imm12,
         internal::ldrSimdFpDataTypes::v32bit);
 }
 
-constexpr uint32_t ldrOffset(const V64Bit Dt, const R64Bit Xn, const int32_t imm12)
+constexpr uint32_t ldrOffset(const V64Bit Dt, const R64Bit Xn, const uint32_t imm12)
 {
     return internal::ldrSimdFpImmediateOffset(static_cast<uint32_t>(Dt), static_cast<uint32_t>(Xn), imm12,
         internal::ldrSimdFpDataTypes::v64bit);
 }
 
-constexpr uint32_t ldrOffset(const V128Bit Qt, const R64Bit Xn, const int32_t imm12)
+constexpr uint32_t ldrOffset(const V128Bit Qt, const R64Bit Xn, const uint32_t imm12)
 {
     return internal::ldrSimdFpImmediateOffset(static_cast<uint32_t>(Qt), static_cast<uint32_t>(Xn), imm12,
         internal::ldrSimdFpDataTypes::v128bit);

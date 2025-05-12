@@ -80,6 +80,8 @@ set(KERNEL_FILES
     matmul_16m_4n_k.cpp
     matmul_16m_4nRest_k.h
     matmul_16m_4nRest_k.cpp
+    matmul_16mRest_4n_k.h
+    matmul_16mRest_4n_k.cpp
 )
 
 set(ARM_INSTRUCTION_FILES
@@ -106,6 +108,7 @@ set(ARM_INSTRUCTION_FILES
     simd_fp/fmla.h
     simd_fp/ldp.h
     simd_fp/stp.h
+    simd_fp/str.h
 )
 
 set(TEST_FILES
@@ -120,6 +123,7 @@ set(TEST_KERNELS
     matmul_16_6_k.test.cpp
     matmul_16m_4n_k.test.cpp
     matmul_16m_4nRest_k.test.cpp
+    matmul_16mRest_4n_k.test.cpp
 )
 
 set(TEST_ARM_INSTRUCTION_FILES
@@ -141,6 +145,7 @@ set(TEST_ARM_INSTRUCTION_FILES
     simd_fp/ldp.test.cpp
     simd_fp/stp.test.cpp
     simd_fp/ldr.test.cpp
+    simd_fp/str.test.cpp
 )
 
 set(BENCH_FILES

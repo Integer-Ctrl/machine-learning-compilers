@@ -182,8 +182,12 @@ protected:
     void _RunTest(const uint32_t lda, const uint32_t ldb, const uint32_t ldc, const uint32_t batch_stride_a,
         const uint32_t batch_stride_b)
     {
-        INFO("The kernel should contain instructions before the test is executed.");
-        REQUIRE(native_kernel.get_size() > 0);
+        if (native_kernel.get_size() <= 0)
+        {
+            INFO("The kernel should contain instructions before the test is executed.");
+            REQUIRE(native_kernel.get_size() > 0);
+        }
+
 
         // Generate executable kernel
         native_kernel.set_kernel();
