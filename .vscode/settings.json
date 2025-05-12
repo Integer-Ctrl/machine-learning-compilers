@@ -1,0 +1,99 @@
+{
+    "files.associations": {
+        "ratio": "cpp",
+        "cassert": "cpp",
+        "iterator": "cpp",
+        "array": "cpp",
+        "atomic": "cpp",
+        "bit": "cpp",
+        "bitset": "cpp",
+        "cctype": "cpp",
+        "charconv": "cpp",
+        "chrono": "cpp",
+        "cinttypes": "cpp",
+        "clocale": "cpp",
+        "cmath": "cpp",
+        "codecvt": "cpp",
+        "compare": "cpp",
+        "complex": "cpp",
+        "concepts": "cpp",
+        "condition_variable": "cpp",
+        "csignal": "cpp",
+        "cstdarg": "cpp",
+        "cstddef": "cpp",
+        "cstdint": "cpp",
+        "cstdio": "cpp",
+        "cstdlib": "cpp",
+        "cstring": "cpp",
+        "ctime": "cpp",
+        "cwchar": "cpp",
+        "cwctype": "cpp",
+        "deque": "cpp",
+        "list": "cpp",
+        "map": "cpp",
+        "set": "cpp",
+        "string": "cpp",
+        "unordered_map": "cpp",
+        "vector": "cpp",
+        "exception": "cpp",
+        "algorithm": "cpp",
+        "functional": "cpp",
+        "memory": "cpp",
+        "memory_resource": "cpp",
+        "numeric": "cpp",
+        "optional": "cpp",
+        "random": "cpp",
+        "regex": "cpp",
+        "string_view": "cpp",
+        "system_error": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "utility": "cpp",
+        "format": "cpp",
+        "fstream": "cpp",
+        "future": "cpp",
+        "initializer_list": "cpp",
+        "iomanip": "cpp",
+        "iosfwd": "cpp",
+        "iostream": "cpp",
+        "istream": "cpp",
+        "limits": "cpp",
+        "mutex": "cpp",
+        "new": "cpp",
+        "numbers": "cpp",
+        "ostream": "cpp",
+        "semaphore": "cpp",
+        "span": "cpp",
+        "sstream": "cpp",
+        "stdexcept": "cpp",
+        "stop_token": "cpp",
+        "streambuf": "cpp",
+        "text_encoding": "cpp",
+        "thread": "cpp",
+        "typeinfo": "cpp",
+        "variant": "cpp"
+    },
+
+    // Spellchecker
+    "cSpell.words": [
+        "microkernel",
+        "MATMUL"
+    ],
+
+    // Include Paths
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/build/_deps/catch2-src/src/**",
+        "${workspaceFolder}/build/_deps/google_benchmark-src/include/**",
+        "${workspaceFolder}/src/**"
+    ],
+    "C_Cpp.default.cppStandard": "c++20",
+
+    // Formatter
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "ms-vscode.cpptools",
+
+    // Cmake
+    "cmake.configureArgs": [
+        "-DSAVE_JITS_TO_FILE=ON"
+    ]
+}

@@ -1,5 +1,10 @@
+# Ignore
 *.exe
 _build/
 build
 *.o
-.vscode/
+.vscode/*
+*.dis
+
+# Do not ignore
+!.vscode/settings.json
