@@ -2,11 +2,11 @@
 
 extern "C"
 {
-    void hello_assembly();
+  void hello_assembly();
 }
 
 int main()
 {
-    hello_assembly();
-    return 0;
+  hello_assembly();
+  return 0;
 }

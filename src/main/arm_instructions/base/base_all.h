@@ -2,17 +2,17 @@
 #define MINI_JIT_ARM_INSTRUCTIONS_BASE_ALL_H
 
 #include "../register/general_purpose.h"
-#include "ldr.h"
-#include "lsl.h"
 #include "add.h"
-#include "ret.h"
 #include "cbnz.h"
 #include "ldp.h"
-#include "stp.h"
-#include "sub.h"
-#include "orr.h"
+#include "ldr.h"
+#include "lsl.h"
+#include "madd.h"
 #include "mov.h"
 #include "movz.h"
-#include "madd.h"
+#include "orr.h"
+#include "ret.h"
+#include "stp.h"
+#include "sub.h"
 
-#endif // MINI_JIT_ARM_INSTRUCTIONS_BASE_ALL_H
+#endif  // MINI_JIT_ARM_INSTRUCTIONS_BASE_ALL_H

@@ -1,14 +1,16 @@
 #ifndef MINI_JIT_KERNEL_H
 #define MINI_JIT_KERNEL_H
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
-namespace mini_jit {
+namespace mini_jit
+{
 
-class Kernel {
-private:
+  class Kernel
+  {
+  private:
     //! high-level code buffer
     std::vector<uint32_t> buffer;
 
@@ -16,14 +18,14 @@ private:
     std::size_t size_allocate = 0;
 
     //! executable kernel
-    void* kernel = nullptr;
+    void *kernel = nullptr;
 
     /**
      * Allocates memory through POSIX mmap.
      *
      * @param size_bytes size in bytes.
      **/
-    void* allocate_mmap(std::size_t size_bytes) const;
+    void *allocate_mmap(std::size_t size_bytes) const;
 
     /**
      * Release POSIX mmap allocated memory.
@@ -31,7 +33,7 @@ private:
      * @param size_bytes size in bytes.
      * @param memory pointer to memory which is released.
      **/
-    void release_mmap(std::size_t size_bytes, void* memory) const;
+    void release_mmap(std::size_t size_bytes, void *memory) const;
 
     /**
      * Sets the given memory region executable.
@@ -39,28 +41,28 @@ private:
      * @param size_bytes number of bytes.
      * @param memory point to memory.
      **/
-    void set_executable(std::size_t size_bytes, void* memory) const;
+    void set_executable(std::size_t size_bytes, void *memory) const;
 
     /**
      * Release memory of the kernel if allocated.
      **/
     void release_memory();
 
-public:
+  public:
     /**
      * Constructor
      **/
-    Kernel() {};
+    Kernel(){};
 
     /**
      * Destructor
      **/
     ~Kernel() noexcept;
 
-    Kernel(Kernel const&) = delete;
-    Kernel& operator=(Kernel const&) = delete;
-    Kernel(Kernel&&) noexcept = delete;
-    Kernel& operator=(Kernel&&) noexcept = delete;
+    Kernel(Kernel const &) = delete;
+    Kernel &operator=(Kernel const &) = delete;
+    Kernel(Kernel &&) noexcept = delete;
+    Kernel &operator=(Kernel &&) noexcept = delete;
 
     /**
      * Adds an instruction to the code buffer.
@@ -91,15 +93,15 @@ public:
     /**
      * Gets a pointer to the executable kernel.
      **/
-    void const* get_kernel() const;
+    void const *get_kernel() const;
 
     /**
      * Writes the code buffer to the given file.
      *
      * @param path path to the file.
      **/
-    void write(char const* path) const;
-};
+    void write(char const *path) const;
+  };
 
-}
+}  // namespace mini_jit
 #endif

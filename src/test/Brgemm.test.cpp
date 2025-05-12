@@ -1,49 +1,48 @@
+#include "BaseGeneration.test.h"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 #include <catch2/generators/catch_generators_range.hpp>
 #include <cstdint>
-#include "BaseGeneration.test.h"
 
 TEST_CASE("Test gemm generation (1≤M≤64, 1≤N≤64, K∈[1,16,32,64,128],lda=M, ldb=K, and ldc=M) on random data",
-    "[generation][correctness][gemm]")
+          "[generation][correctness][gemm]")
 {
-    auto M = GENERATE(range(16u, 64u + 1u, 16u));
-    // auto M = GENERATE(range(1u, 64u + 1u, 1u)); // TODO Replace with this if matmuls implemented
-    auto N = GENERATE(range(4u, 64u + 1u, 1u));
-    // auto N = GENERATE(range(1u, 64u + 1u, 1u));// TODO Replace with this if matmuls implemented
-    auto  K = GENERATE(1u, 16u, 32u, 64u, 128u);
+  auto M = GENERATE(range(16u, 64u + 1u, 16u));
+  // auto M = GENERATE(range(1u, 64u + 1u, 1u)); // TODO Replace with this if matmuls implemented
+  auto N = GENERATE(range(4u, 64u + 1u, 1u));
+  // auto N = GENERATE(range(1u, 64u + 1u, 1u));// TODO Replace with this if matmuls implemented
+  auto K = GENERATE(1u, 16u, 32u, 64u, 128u);
 
+  CAPTURE(M, N, K);
 
-    CAPTURE(M, N, K);
+  GenerationTest generatorTest(M, N, K);
+  generatorTest.SetUp(TestInfill::Random);
 
-    GenerationTest generatorTest(M, N, K);
-    generatorTest.SetUp(TestInfill::Random);
+  mini_jit::Brgemm gemm;
+  mini_jit::Brgemm::error_t error = gemm.generate(M, N, K, 1, 0, 0, 0, mini_jit::Brgemm::dtype_t::fp32);
 
-    mini_jit::Brgemm gemm;
-    mini_jit::Brgemm::error_t error = gemm.generate(M, N, K, 1, 0, 0, 0, mini_jit::Brgemm::dtype_t::fp32);
+  switch (error)
+  {
+  case mini_jit::Brgemm::error_t::success:
+    break;
+  case mini_jit::Brgemm::error_t::err_batch_reduce_size_not_supported:
+    FAIL("Error batch reduce size not supported.");
+    break;
+  case mini_jit::Brgemm::error_t::err_row_major_order_not_supported:
+    FAIL("Error row major order not supported.");
+    break;
+  case mini_jit::Brgemm::error_t::err_wrong_dimension:
+    FAIL("Error err wrong dimension.");
+    break;
+  case mini_jit::Brgemm::error_t::err_wrong_dtype:
+    FAIL("Error wrong dtype.");
+    break;
+  default:
+    FAIL("Found unprocessed error type");
+    break;
+  }
 
-    switch (error)
-    {
-    case mini_jit::Brgemm::error_t::success:
-        break;
-    case mini_jit::Brgemm::error_t::err_batch_reduce_size_not_supported:
-        FAIL("Error batch reduce size not supported.");
-        break;
-    case mini_jit::Brgemm::error_t::err_row_major_order_not_supported:
-        FAIL("Error row major order not supported.");
-        break;
-    case mini_jit::Brgemm::error_t::err_wrong_dimension:
-        FAIL("Error err wrong dimension.");
-        break;
-    case mini_jit::Brgemm::error_t::err_wrong_dtype:
-        FAIL("Error wrong dtype.");
-        break;
-    default:
-        FAIL("Found unprocessed error type");
-        break;
-    }
-
-    mini_jit::Brgemm::kernel_t kernel = gemm.get_kernel();
-    generatorTest.SetKernel(kernel);
-    generatorTest.RunTest(M, K, M, 0, 0);
+  mini_jit::Brgemm::kernel_t kernel = gemm.get_kernel();
+  generatorTest.SetKernel(kernel);
+  generatorTest.RunTest(M, K, M, 0, 0);
 }
