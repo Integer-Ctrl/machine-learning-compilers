@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <ctime>
+#include <iterator>
 
 extern "C"
 {

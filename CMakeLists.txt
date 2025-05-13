@@ -78,10 +78,12 @@ set(KERNEL_FILES
     matmul_16_6_k.h
     matmul_16m_4n_k.h
     matmul_16m_4n_k.cpp
-    matmul_16m_4nRest_k.h
-    matmul_16m_4nRest_k.cpp
+    matmul_16m_lt4nRest_k.h
+    matmul_16m_lt4nRest_k.cpp
     matmul_16mRest_4n_k.h
     matmul_16mRest_4n_k.cpp
+    matmul_16mRest_4nRest_k.h
+    matmul_16mRest_4nRest_k.cpp
 )
 
 set(ARM_INSTRUCTION_FILES
@@ -122,8 +124,10 @@ set(TEST_KERNELS
     matmul_16_6_1.test.cpp
     matmul_16_6_k.test.cpp
     matmul_16m_4n_k.test.cpp
-    matmul_16m_4nRest_k.test.cpp
-    matmul_16mRest_4n_k.test.cpp
+    matmul_16m_lt4nRest_k.test.cpp
+    matmul_16mRest_4nRest_k.n1.test.cpp
+    matmul_16mRest_4nRest_k.n2.test.cpp
+    matmul_16mRest_4nRest_k.n3.test.cpp
 )
 
 set(TEST_ARM_INSTRUCTION_FILES

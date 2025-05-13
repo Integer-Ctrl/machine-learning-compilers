@@ -6,6 +6,10 @@ void mini_jit::kernels::matmul_16m_4n_k(mini_jit::Kernel &kernel, const uint32_t
 {
   using namespace mini_jit::arm_instructions;
 
+  release_assert(m_loop_16 != 0, "Cannot proccess matrix with m loop of 0.");
+  release_assert(n_loop_4 != 0, "Cannot proccess matrix with n loop of 0.");
+  release_assert(k_loop != 0, "Cannot proccess matrix with k loop of 0.");
+
   kernel.add({
     // /**
     //     * @param x0 = a pointer to column-major 64x64 matrix A.
@@ -167,7 +171,7 @@ void mini_jit::kernels::matmul_16m_4n_k(mini_jit::Kernel &kernel, const uint32_t
     //     // Loop back to M
     cbnz(x16, -46 * 4),  //     cbnz x16, matmul_loop_over_M
 
-    //     // next M iteration on the matrix b and matrix c, both need offset about 4*ldb/ldc values
+    //     // next N iteration on the matrix b and matrix c, both need offset about 4*ldb/ldc values
     //     // also matrix a needs to start at the initial location again
 
     //     // Updates for the matrix b

@@ -43,7 +43,7 @@ BENCHMARK_DEFINE_F(GemmFixture, BM_matmul)(benchmark::State &state)
 
   for (auto _ : state)
   {
-    kernel(matrix_a.data(), matrix_b.data(), matrix_c.data(), M, 1, M, 1, 1);
+    kernel(matrix_a.data(), matrix_b.data(), matrix_c.data(), M, K, M, 1, 1);
   }
 
   flops = M * N * K * 2 * state.iterations();
@@ -68,6 +68,6 @@ static void CustomArguments(benchmark::internal::Benchmark *b)
 
 BENCHMARK_REGISTER_F(GemmFixture, BM_matmul)
   ->ArgNames({"M", "N", "K"})
-  ->ReportAggregatesOnly(true)
+  ->DisplayAggregatesOnly(true)
   ->Apply(CustomArguments)
   ->MinWarmUpTime(1.0);  // WarmUp in seconds

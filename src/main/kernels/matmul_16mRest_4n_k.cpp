@@ -4,59 +4,70 @@
 #include "../release_assert.h"
 
 void mini_jit::kernels::matmul_16mRest_4n_k(mini_jit::Kernel &kernel, const uint32_t m_loop_16, const uint32_t n_loop_4,
-                                            const uint32_t k_loop, const uint32_t m_loop_rest)
+                                            const uint32_t k_loop, const uint32_t m_loop_rest, const bool use_init_and_end)
 {
   using namespace mini_jit::arm_instructions;
+
+  release_assert(m_loop_16 != 0, "Cannot proccess matrix with m loop of 0.");
+  release_assert(n_loop_4 != 0, "Cannot proccess matrix with n loop of 0.");
+  release_assert(k_loop != 0, "Cannot proccess matrix with k loop of 0.");
+  release_assert(m_loop_rest != 0, "Cannot create a matrix with a rest of m equal to 0!");
+  release_assert(m_loop_rest <= 15, "Cannot create a matrix with a rest of m larger than 15!");
 
   // Hold the number of instruction to jump for each loop
   int32_t jump_N_loop = 71;  // start value = amount of instructions outside of control flow
 
+  if (use_init_and_end)
+  {
+    kernel.add({
+      // /**
+      //     * @param x0 = a pointer to column-major 64x64 matrix A.
+      //     * @param x1 = b pointer to column-major 64x64 matrix B.
+      //     * @param x2 = c pointer to column-major 64x64 matrix C.
+      //     * @param x3 = lda leading dimension of A.
+      //     * @param x4 = ldb leading dimension of B.
+      //     * @param x5 = ldc leading dimension of C.
+      // **/
+      // .type matmul_64_48_64, %function
+      // .global matmul_64_48_64
+      // matmul_64_48_64:
+
+      //     // Procedural Call Standard
+      //     // save frame pointer and link register
+      //     // stp fp, lr, [sp, #-16]!
+      //     // update frame pointer to current stack pointer
+      //     // mov fp, sp
+
+      //     // save callee-saved registers
+      //     // stp x19, x20, [sp, #-16]!
+      //     // stp x21, x22, [sp, #-16]!
+      //     // stp x23, x24, [sp, #-16]!
+      //     // stp x25, x26, [sp, #-16]!
+      //     // stp x27, x28, [sp, #-16]!
+
+      stpPre(d8, d9, sp, -16),  //     stp  d8,  d9, [sp, #-16]!
+      //     // stp d10, d11, [sp, #-16]!
+      //     // stp d12, d13, [sp, #-16]!
+      //     // stp d14, d15, [sp, #-16]!
+
+      //     // Offset the used leading dimension by the size of floats
+      lsl(x3, x3, 2),  //     lsl x3, x3, #2 // x3 * 4 = x3 * sizeof(float)
+      lsl(x4, x4, 2),  //     lsl x4, x4, #2 // x4 * 4 = x4 * sizeof(float)
+      lsl(x5, x5, 2),  //     lsl x5, x5, #2 // x5 * 4 = x5 * sizeof(float)
+
+      mov(x6, x1),  //     mov x6, x1 // Store the initial value of x1, to be restored in the K loop iteration
+      mov(x7, x2),  //     mov x7, x2 // Store the initial value of x2, to be restored in the K loop iteration
+
+      mov(x8, x0),  //     mov x8, x0 // Store the initial value of x0, to be restored in the M loop iteration
+      mov(x9, x1),  //     mov x9, x1 // Store the initial value of x1, to be restored in the M loop iteration
+
+      mov(x10, x0),  //     mov x10, x0 // Store the initial value of x0, to be restored in the N loop iteration
+      mov(x11, x2),  //     mov x11, x2 // Store the initial value of x2, to bes restored in the N loop iteration
+      mov(x12, 4),   //     mov x12, #4 // hold the size of N that are processed in one loop, needed for offset calculation
+    });
+  }
+
   kernel.add({
-    // /**
-    //     * @param x0 = a pointer to column-major 64x64 matrix A.
-    //     * @param x1 = b pointer to column-major 64x64 matrix B.
-    //     * @param x2 = c pointer to column-major 64x64 matrix C.
-    //     * @param x3 = lda leading dimension of A.
-    //     * @param x4 = ldb leading dimension of B.
-    //     * @param x5 = ldc leading dimension of C.
-    // **/
-    // .type matmul_64_48_64, %function
-    // .global matmul_64_48_64
-    // matmul_64_48_64:
-
-    //     // Procedural Call Standard
-    //     // save frame pointer and link register
-    //     // stp fp, lr, [sp, #-16]!
-    //     // update frame pointer to current stack pointer
-    //     // mov fp, sp
-
-    //     // save callee-saved registers
-    //     // stp x19, x20, [sp, #-16]!
-    //     // stp x21, x22, [sp, #-16]!
-    //     // stp x23, x24, [sp, #-16]!
-    //     // stp x25, x26, [sp, #-16]!
-    //     // stp x27, x28, [sp, #-16]!
-
-    stpPre(d8, d9, sp, -16),  //     stp  d8,  d9, [sp, #-16]!
-    //     // stp d10, d11, [sp, #-16]!
-    //     // stp d12, d13, [sp, #-16]!
-    //     // stp d14, d15, [sp, #-16]!
-
-    //     // Offset the used leading dimension by the size of floats
-    lsl(x3, x3, 2),  //     lsl x3, x3, #2 // x3 * 4 = x3 * sizeof(float)
-    lsl(x4, x4, 2),  //     lsl x4, x4, #2 // x4 * 4 = x4 * sizeof(float)
-    lsl(x5, x5, 2),  //     lsl x5, x5, #2 // x5 * 4 = x5 * sizeof(float)
-
-    mov(x6, x1),  //     mov x6, x1 // Store the initial value of x1, to be restored in the K loop iteration
-    mov(x7, x2),  //     mov x7, x2 // Store the initial value of x2, to be restored in the K loop iteration
-
-    mov(x8, x0),  //     mov x8, x0 // Store the initial value of x0, to be restored in the M loop iteration
-    mov(x9, x1),  //     mov x9, x1 // Store the initial value of x1, to be restored in the M loop iteration
-
-    mov(x10, x0),  //     mov x10, x0 // Store the initial value of x0, to be restored in the N loop iteration
-    mov(x11, x2),  //     mov x11, x2 // Store the initial value of x2, to bes restored in the N loop iteration
-    mov(x12, 4),   //     mov x12, #4 // hold the size of N that are processed in one loop, needed for offset calculation
-
     mov(x17, n_loop_4),  //     mov x17, #12 // x17 iterator for N loop
     // matmul_loop_over_N:
     sub(x17, x17, 1),  //     sub x17, x17, #1
@@ -198,7 +209,7 @@ void mini_jit::kernels::matmul_16mRest_4n_k(mini_jit::Kernel &kernel, const uint
   std::vector<uint32_t> instructions_fp_load_column_of_matrix_a;
   uint32_t m_loop_full_4s = m_loop_rest / 4;
   uint32_t m_loop_remainder = m_loop_rest % 4;
-  uint32_t offset_from_full_loads = (m_loop_full_4s)*4 * 4;  // count * number of floats * sizeof(float)
+  uint32_t offset_from_full_loads = (m_loop_full_4s) * 4 * 4;  // count * number of floats * sizeof(float)
 
   // For usage reason see case 3 of the below swich statement
   uint32_t revert_offset_x2 =
@@ -593,16 +604,15 @@ void mini_jit::kernels::matmul_16mRest_4n_k(mini_jit::Kernel &kernel, const uint
     // need to restore the first element, as it is not written at this time
     if (m_loop_full_4s == 0)
     {
-      uint32_t apply_offset_x2 =
-        offset_from_full_loads >= 4 ? add(x2, x2, offset_from_full_loads - 4) : sub(x2, x2, 4 - offset_from_full_loads);
-
       // ldrOffset cannot be used as it only supports positive and multiple of 16 numbers.
-      instruction1_fp_store_less_than_4 = {apply_offset_x2, ldr(s29, x2), str(q28, x2), str(s29, x2), revert_offset_x2};
-      instruction2_fp_store_less_than_4 = {apply_offset_x2, ldr(s29, x2), str(q20, x2), str(s29, x2), revert_offset_x2};
-      instruction3_fp_store_less_than_4 = {apply_offset_x2, ldr(s29, x2), str(q24, x2), str(s29, x2), revert_offset_x2};
-      instruction4_fp_store_less_than_4 = {
-        apply_offset_x2, ldr(s29, x2), str(q8, x2), str(s29, x2), revert_offset_x2,
-      };
+      instruction1_fp_store_less_than_4 = {ldrPre(s29, x2, offset_from_full_loads - 4), str(q28, x2),
+                                           strPost(s29, x2, 4 - offset_from_full_loads)};
+      instruction2_fp_store_less_than_4 = {ldrPre(s29, x2, offset_from_full_loads - 4), str(q20, x2),
+                                           strPost(s29, x2, 4 - offset_from_full_loads)};
+      instruction3_fp_store_less_than_4 = {ldrPre(s29, x2, offset_from_full_loads - 4), str(q24, x2),
+                                           strPost(s29, x2, 4 - offset_from_full_loads)};
+      instruction4_fp_store_less_than_4 = {ldrPre(s29, x2, offset_from_full_loads - 4), str(q8, x2),
+                                           strPost(s29, x2, 4 - offset_from_full_loads)};
     }
     else
     {
@@ -792,7 +802,7 @@ void mini_jit::kernels::matmul_16mRest_4n_k(mini_jit::Kernel &kernel, const uint
   // cbnz(x16, -46 * 4), //     cbnz x16, matmul_loop_over_M
 
   kernel.add({
-    //     // next M iteration on the matrix b and matrix c, both need offset about 4*ldb/ldc values
+    //     // next N iteration on the matrix b and matrix c, both need offset about 4*ldb/ldc values
     //     // also matrix a needs to start at the initial location again
 
     //     // Updates for the matrix b
@@ -803,27 +813,31 @@ void mini_jit::kernels::matmul_16mRest_4n_k(mini_jit::Kernel &kernel, const uint
 
     //     // Loop back to N
     cbnz(x17, -jump_N_loop * 4),  //     cbnz x17, matmul_loop_over_N
-
-    //     // Procedural Call Standard
-    //     // restore callee-saved registers
-    //     // ldp d14, d15, [sp], #16
-    //     // ldp d12, d13, [sp], #16
-    //     // ldp d10, d11, [sp], #16
-    ldpPost(d8, d9, sp, 16),  //     ldp  d8,  d9, [sp], #16
-
-    //     // ldp x27, x28, [sp], #16
-    //     // ldp x25, x26, [sp], #16
-    //     // ldp x23, x24, [sp], #16
-    //     // ldp x21, x22, [sp], #16
-    //     // ldp x19, x20, [sp], #16
-
-    //     // restore frame pointer and link register
-    //     // ldp fp, lr, [sp], #16
-
-    ret()  //     ret
-    //     .size matmul_64_48_64, (. - matmul_64_48_64)
-
   });
+
+  if (use_init_and_end)
+  {
+    kernel.add({
+      //     // Procedural Call Standard
+      //     // restore callee-saved registers
+      //     // ldp d14, d15, [sp], #16
+      //     // ldp d12, d13, [sp], #16
+      //     // ldp d10, d11, [sp], #16
+      ldpPost(d8, d9, sp, 16),  //     ldp  d8,  d9, [sp], #16
+
+      //     // ldp x27, x28, [sp], #16
+      //     // ldp x25, x26, [sp], #16
+      //     // ldp x23, x24, [sp], #16
+      //     // ldp x21, x22, [sp], #16
+      //     // ldp x19, x20, [sp], #16
+
+      //     // restore frame pointer and link register
+      //     // ldp fp, lr, [sp], #16
+
+      ret()  //     ret
+      //     .size matmul_64_48_64, (. - matmul_64_48_64)
+    });
+  }
 
 #ifdef SAVE_JITS_TO_FILE
   kernel.write("matmul_16mRest_6n_k.bin");

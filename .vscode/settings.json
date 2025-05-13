@@ -109,5 +109,11 @@
     // Cmake
     "cmake.configureArgs": [
         "-DSAVE_JITS_TO_FILE=ON"
-    ]
+    ],
+
+    "todo-tree.filtering.excludeGlobs": [
+        "**/Doxyfile.in",
+    ],
+
+    "editor.rulers": [140]
 }

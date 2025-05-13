@@ -6,6 +6,8 @@ void mini_jit::kernels::matmul_16_6_k(mini_jit::Kernel &kernel, const uint32_t k
 {
   using namespace mini_jit::arm_instructions;
 
+  release_assert(k_loop != 0, "Cannot proccess matrix with k loop of 0.");
+
   // Procedural Call Standard
   // save frame pointer and link register
   kernel.add({

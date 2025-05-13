@@ -181,7 +181,7 @@ matmul_loop_over_K:
     // Loop back to M
     cbnz x16, matmul_loop_over_M
     
-    // next M iteration on the matrix b and matrix c, both need offset about 4*ldb/ldc values
+    // next N iteration on the matrix b and matrix c, both need offset about 4*ldb/ldc values
     // also matrix a needs to start at the initial location again
     // Updates for the matrix b
     madd x9, x4, x12, x9 // ldb * 4 + initial position
