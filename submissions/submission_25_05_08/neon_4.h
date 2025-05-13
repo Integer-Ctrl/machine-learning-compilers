@@ -2,7 +2,9 @@
 #define NEON_4_H
 
 #include <cstdint>
+#include <cstdlib>
 #include <ctime>
+#include <iterator>
 
 extern "C"
 {
