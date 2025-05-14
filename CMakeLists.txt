@@ -121,13 +121,12 @@ set(TEST_FILES
 
 set(TEST_KERNELS
     matmul.test.h
+    matmul.test.cpp
     matmul_16_6_1.test.cpp
     matmul_16_6_k.test.cpp
     matmul_16m_4n_k.test.cpp
     matmul_16m_lt4nRest_k.test.cpp
-    matmul_16mRest_4nRest_k.n1.test.cpp
-    matmul_16mRest_4nRest_k.n2.test.cpp
-    matmul_16mRest_4nRest_k.n3.test.cpp
+    matmul_16mRest_4nRest_k.test.cpp
 )
 
 set(TEST_ARM_INSTRUCTION_FILES

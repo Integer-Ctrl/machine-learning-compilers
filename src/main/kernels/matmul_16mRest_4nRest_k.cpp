@@ -19,13 +19,15 @@ void mini_jit::kernels::matmul_16mRest_4nRest_k(mini_jit::Kernel &kernel, const 
   release_assert(n_loop_rest <= 3, "Cannot create a matrix with a rest of n larger than 3!");
 
   // Idea: Division of the matrix into sub-matrices and calculated in the following order.
-  // =====================================================
-  // |                        |                          |
-  // |                        | 2. matmul_16m_lt4nRest_k |
-  // | 1. matmul_16mRest_4n_k |                          |
-  // |                        |--------------------------|
-  // |                        | 3. Rest of m and n       |
-  // =====================================================
+  //                       N dimension
+  // ←---------------------------------------------------→
+  // ===================================================== ↑
+  // |                        |                          | |
+  // |                        | 2. matmul_16m_lt4nRest_k | |
+  // | 1. matmul_16mRest_4n_k |                          | | M dimension
+  // |                        |--------------------------| |
+  // |                        | 3. Rest of m and n       | |
+  // ===================================================== ↓
 
   kernel.add({
     // /**

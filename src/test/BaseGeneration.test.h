@@ -59,6 +59,7 @@ private:
   void verify_matmul(const float *__restrict__ expected, const float *__restrict__ result, uint32_t size);
 
 public:
+  GenerationTest() = delete;
   GenerationTest(uint32_t M, uint32_t N, uint32_t K);
   GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t BatchSize);
   ~GenerationTest();

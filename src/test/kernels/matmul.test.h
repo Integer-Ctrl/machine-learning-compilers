@@ -108,46 +108,71 @@ enum class TestInfill
   Counting,
 };
 
-template <uint32_t TMdim, uint32_t TNdim, uint32_t TKdim, uint32_t TBatchDim> class GemmMxNxKxBatchTestFixture
+class GemmMxNxKxBatchTestFixture
 {
+private:
+  uint32_t M;
+  uint32_t N;
+  uint32_t K;
+  uint32_t BatchSize;
+  float *matrix_a;
+  float *matrix_b;
+  float *matrix_c;
+  float *matrix_c_verify;
+
+  /**
+   * @brief Fills the given matrix with random values.
+   *
+   * @param matrix The matrix to fill.
+   * @param size The total size of the matrix.
+   */
+  void fill_random_matrix(float *matrix, uint32_t size);
+
+  /**
+   * @brief Fills the given matrix with counting values starting from 0.
+   *
+   * @param matrix The matrix to fill.
+   * @param size The total size of the matrix.
+   */
+  void fill_counting_matrix(float *matrix, uint32_t size);
+
+  /**
+   * @brief Does a naive matmul for verification usage.
+   *
+   * @param a The a matrix.
+   * @param b The b matrix.
+   * @param c The c matrix.
+   * @param lda The leading dimension of matrix a.
+   * @param ldb The leading dimension of matrix b.
+   * @param ldc The leading dimension of matrix c.
+   * @param batch_stride_a The batch stride of matrix a.
+   * @param batch_stride_b The batch stride of matrix b.
+   */
+  void naive_matmul_M_N_K_Batch(const float *__restrict__ a, const float *__restrict__ b, float *__restrict__ c, int64_t lda, int64_t ldb,
+                                int64_t ldc, int64_t batch_stride_a, int64_t batch_stride_b);
+
+  /**
+   * @brief Compares the two matrices by comparing each values.
+   *
+   * @param expected The matrix results that are expected.
+   * @param result The actual matrix values.
+   * @param size The total size of the matrix.
+   */
+  void verify_matmul(const float *__restrict__ expected, const float *__restrict__ result, uint32_t size);
+
 public:
-  float matrix_a[TMdim * TKdim * TBatchDim];
-  float matrix_b[TKdim * TNdim * TBatchDim];
-  float matrix_c[TMdim * TNdim];
-  float matrix_c_verify[TMdim * TNdim];
-  const uint32_t lda = TMdim;
-  const uint32_t ldb = TKdim;
-  const uint32_t ldc = TMdim;
-  const uint32_t batch_stride_a = TMdim * TKdim;
-  const uint32_t batch_stride_b = TKdim * TNdim;
   mini_jit::Kernel native_kernel;
+
+  GemmMxNxKxBatchTestFixture() = delete;
+  GemmMxNxKxBatchTestFixture(uint32_t M, uint32_t N, uint32_t K, uint32_t BatchSize);
+  ~GemmMxNxKxBatchTestFixture();
 
   /**
    * @brief Set up the test fixture object.
    *
    * @param fillType Fills the matrices with the given infill type.
    */
-  void SetUp(TestInfill fillType)
-  {
-    switch (fillType)
-    {
-    case TestInfill::Random:
-      fill_random_matrix(matrix_a);
-      fill_random_matrix(matrix_b);
-      fill_random_matrix(matrix_c);
-      break;
-    case TestInfill::Counting:
-      fill_counting_matrix(matrix_a);
-      fill_counting_matrix(matrix_b);
-      fill_counting_matrix(matrix_c);
-      break;
-    default:
-      FAIL("Undefined infill type found.");
-      break;
-    }
-
-    copy_matrix(matrix_c, matrix_c_verify);
-  }
+  void SetUp(TestInfill fillType);
 
   /**
    * @brief Executes the Test von an BRGemm with the given input.
@@ -173,36 +198,20 @@ protected:
    * @param br_stride_a: stride between two A matrices (in elements, not bytes).
    * @param br_stride_b: stride between two B matrices (in elements, not bytes).
    */
-  void _RunTest(const uint32_t lda, const uint32_t ldb, const uint32_t ldc, const uint32_t batch_stride_a, const uint32_t batch_stride_b)
-  {
-    if (native_kernel.get_size() <= 0)
-    {
-      INFO("The kernel should contain instructions before the test is executed.");
-      REQUIRE(native_kernel.get_size() > 0);
-    }
-
-    // Generate executable kernel
-    native_kernel.set_kernel();
-    mini_jit::Brgemm::kernel_t kernel = reinterpret_cast<mini_jit::Brgemm::kernel_t>(
-      const_cast<void *>(native_kernel.get_kernel()));  // Properly cast from const void* to kernel_t
-
-    // Run matmuls
-    kernel(matrix_a, matrix_b, matrix_c, lda, ldb, ldc, batch_stride_a, batch_stride_b);
-    naive_matmul_M_N_K_Batch<TMdim, TNdim, TKdim, TBatchDim>(matrix_a, matrix_b, matrix_c_verify, lda, ldb, ldc, batch_stride_a,
-                                                             batch_stride_b);
-
-    verify_matmul(matrix_c_verify, matrix_c);
-  }
+  void _RunTest(const uint32_t lda, const uint32_t ldb, const uint32_t ldc, const uint32_t batch_stride_a, const uint32_t batch_stride_b);
 };
 
-template <uint32_t TMdim, uint32_t TNdim, uint32_t TKdim>
-class GemmMxNxKTestFixture : public GemmMxNxKxBatchTestFixture<TMdim, TNdim, TKdim, 1>
+class GemmMxNxKTestFixture : public GemmMxNxKxBatchTestFixture
 {
 
   void RunTest(const uint32_t lda, const uint32_t ldb, const uint32_t ldc, const uint32_t batch_stride_a,
                const uint32_t batch_stride_b) = delete;  // delete so not visible in a GemmMxNxKTestFixture object.
 
 public:
+  GemmMxNxKTestFixture() = delete;
+  GemmMxNxKTestFixture(uint32_t M, uint32_t N, uint32_t K);
+  ~GemmMxNxKTestFixture();
+
   /**
    * @brief Executes the Test von an BRGemm with the given input.
    *
@@ -212,7 +221,7 @@ public:
    */
   void RunTest(const uint32_t lda, const uint32_t ldb, const uint32_t ldc)
   {
-    GemmMxNxKxBatchTestFixture<TMdim, TNdim, TKdim, 1>::_RunTest(lda, ldb, ldc, 0, 0);
+    GemmMxNxKxBatchTestFixture::_RunTest(lda, ldb, ldc, 0, 0);
   }
 };
 

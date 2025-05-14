@@ -5,7 +5,7 @@
 
 TEST_CASE("Test matmul_16_6_1 jited gemm correctness random data", "[jit][correctness][gemm]")
 {
-  GemmMxNxKTestFixture<16, 6, 1> gemmTest;
+  GemmMxNxKTestFixture gemmTest(16, 6, 1);
   gemmTest.SetUp(TestInfill::Random);
   mini_jit::kernels::matmul_16_6_1(gemmTest.native_kernel);
   gemmTest.RunTest(16, 1, 16);
@@ -13,7 +13,7 @@ TEST_CASE("Test matmul_16_6_1 jited gemm correctness random data", "[jit][correc
 
 TEST_CASE("Test matmul_16_6_1 jited gemm correctness counting data", "[jit][correctness][gemm]")
 {
-  GemmMxNxKTestFixture<16, 6, 1> gemmTest;
+  GemmMxNxKTestFixture gemmTest(16, 6, 1);
   gemmTest.SetUp(TestInfill::Counting);
   mini_jit::kernels::matmul_16_6_1(gemmTest.native_kernel);
   gemmTest.RunTest(16, 1, 16);
