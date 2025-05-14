@@ -166,6 +166,7 @@ set(TEST_ARM_INSTRUCTION_FILES
     base/lsl.test.cpp
     base/ret.test.cpp
     base/add.test.cpp
+    base/cbnz.test.cpp
     base/ldp.test.cpp
     base/stp.test.cpp
     base/sub.test.cpp
