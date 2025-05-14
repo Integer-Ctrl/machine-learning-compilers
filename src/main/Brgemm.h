@@ -79,6 +79,17 @@ private:
    * @param k number of columns in A and rows in B.
    */
   void fill_with_matmuls_no_batch_dim_column_major_fp32(uint32_t m, uint32_t n, uint32_t k);
+
+  /**
+   * @brief Fills the kernel with a suitable matmul with no batch size, column major format, and fp32 datatypes
+   *
+   * @param Kernel The kernel to add instructions too.
+   * @param m number of rows in A and C.
+   * @param n number of columns in B and C.
+   * @param k number of columns in A and rows in B.
+   * @param br_size number of batch dimensions.
+   */
+  void fill_with_matmuls_batch_dim_column_major_fp32(uint32_t m, uint32_t n, uint32_t k, uint32_t br_size);
 };
 
 #endif

@@ -2,6 +2,11 @@
 cmake_minimum_required(VERSION 3.10.0)
 project(MachineLearningCompiler VERSION 0.1.0 LANGUAGES C CXX ASM)
 
+# Set default build type to Release if not specified
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release")
+endif()
+
 get_property(IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if(IS_MULTI_CONFIG)
     message(NOTICE "Using multi-config generator. Compile with: cmake --build . --config [Debug|Release] --target <target>")
@@ -88,6 +93,19 @@ set(KERNEL_FILES
     matmul_lt16_4n_k.cpp
     matmul_lt16_lt4nRest_k.h
     matmul_lt16_lt4nRest_k.cpp
+
+    br_matmul_16m_4n_k.h
+    br_matmul_16m_4n_k.cpp
+    br_matmul_16m_lt4nRest_k.h
+    br_matmul_16m_lt4nRest_k.cpp
+    br_matmul_16mRest_4n_k.h
+    br_matmul_16mRest_4n_k.cpp
+    br_matmul_16mRest_lt4nRest_k.h
+    br_matmul_16mRest_lt4nRest_k.cpp
+    br_matmul_lt16_4n_k.h
+    br_matmul_lt16_4n_k.cpp
+    br_matmul_lt16_lt4nRest_k.h
+    br_matmul_lt16_lt4nRest_k.cpp
 )
 
 set(ARM_INSTRUCTION_FILES
@@ -134,6 +152,13 @@ set(TEST_KERNELS
     matmul_16mRest_lt4nRest_k.test.cpp
     matmul_lt16_4n_k.test.cpp
     matmul_lt16_lt4nRest_k.test.cpp
+
+    br_matmul_16m_4n_k.test.cpp
+    br_matmul_16mRest_4n_k.test.cpp
+    br_matmul_16m_lt4nRest_k.test.cpp
+    br_matmul_16mRest_lt4nRest_k.test.cpp
+    br_matmul_lt16_4n_k.test.cpp
+    br_matmul_lt16_lt4nRest_k.test.cpp
 )
 
 set(TEST_ARM_INSTRUCTION_FILES
