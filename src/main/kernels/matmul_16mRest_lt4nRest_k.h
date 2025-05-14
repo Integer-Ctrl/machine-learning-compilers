@@ -1,5 +1,5 @@
-#ifndef MINI_JIT_KERNELS_MATMUL_16MRest_4NRest_K_H
-#define MINI_JIT_KERNELS_MATMUL_16MRest_4NRest_K_H
+#ifndef MINI_JIT_KERNELS_MATMUL_16MRest_LT4NRest_K_H
+#define MINI_JIT_KERNELS_MATMUL_16MRest_LT4NRest_K_H
 
 #include "../Kernel.h"
 #include <cstdint>
@@ -19,9 +19,9 @@ namespace mini_jit
      * @param m_loop_rest The rest/remainder of the m loop that is not dividable by 16.
      * @param n_loop_rest The rest/remainder of the n loop that is not dividable by 4.
      */
-    void matmul_16mRest_4nRest_k(mini_jit::Kernel &kernel, const uint32_t m_loop_16, const uint32_t n_loop_4, const uint32_t k_loop,
-                                 const uint32_t m_loop_rest, const uint32_t n_loop_rest);
+    void matmul_16mRest_lt4nRest_k(mini_jit::Kernel &kernel, const uint32_t m_loop_16, const uint32_t n_loop_4, const uint32_t k_loop,
+                                   const uint32_t m_loop_rest, const uint32_t n_loop_rest);
 
   }  // namespace kernels
 }  // namespace mini_jit
-#endif  // MINI_JIT_KERNELS_MATMUL_16MRest_4NRest_K_H
+#endif  // MINI_JIT_KERNELS_MATMUL_16MRest_LT4NRest_K_H

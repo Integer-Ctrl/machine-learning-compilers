@@ -11,7 +11,7 @@ mini_jit::Brgemm::error_t mini_jit::Brgemm::generate(uint32_t m, uint32_t n, uin
   {
     return error_t::err_wrong_dtype;
   }
-  if (m < 16 || n < 4 || m == 0 || n == 0 || k == 0)
+  if (m == 0 || n == 0 || k == 0)
   {
     return error_t::err_wrong_dimension;
   }
@@ -83,10 +83,25 @@ void mini_jit::Brgemm::fill_with_matmuls_no_batch_dim_column_major_fp32(uint32_t
     return;
   }
 
-  if (m >= 16 && n >= 4)
+  if (m < 16 && n >= 4 && n % 4 == 0)
   {
-    // At this point m % 16 != 0 and n % 4 != 0
-    kernels::matmul_16mRest_4nRest_k(native_kernel, m / 16, n / 4, k, m % 16, n % 4);
+    kernels::matmul_lt16_4n_k(native_kernel, n / 4, k, m % 16);
     return;
   }
+
+  if (m >= 16)
+  {
+    // At this point m % 16 != 0 and n % 4 != 0
+    kernels::matmul_16mRest_lt4nRest_k(native_kernel, m / 16, n / 4, k, m % 16, n % 4);
+    return;
+  }
+
+  if (m < 16)
+  {
+    // At this point m % 16 != 0 and n % 4 != 0
+    kernels::matmul_lt16_lt4nRest_k(native_kernel, n / 4, k, m % 16, n % 4);
+    return;
+  }
+
+  throw std::logic_error(std::format("Unhandled combination found for MxNxK matmul: m='{}', n='{}', k='{}'", m, n, k));
 }
