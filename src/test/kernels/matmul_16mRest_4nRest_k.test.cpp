@@ -12,6 +12,7 @@ TEST_CASE("Test matmul_16mRest_4nRest_k (M=16+[1-15], N=4+[1-3], K=1) jited gemm
   const uint32_t M = 16 + MRest;
   const uint32_t N = 4 + NRest;
   const uint32_t K = 1;
+  CAPTURE(MRest, NRest);
   GemmMxNxKTestFixture gemmTest(M, N, K);
   gemmTest.SetUp(TestInfill::Random);
   mini_jit::kernels::matmul_16mRest_4nRest_k(gemmTest.native_kernel, M / 16, N / 4, K, M % 16, N % 4);
@@ -25,6 +26,7 @@ TEST_CASE("Test matmul_16mRest_4nRest_k (M=16+[1-15], N=4+[1-3], K=1) jited gemm
   const uint32_t M = 16 + MRest;
   const uint32_t N = 4 + NRest;
   const uint32_t K = 1;
+  CAPTURE(MRest, NRest);
   GemmMxNxKTestFixture gemmTest(M, N, K);
   gemmTest.SetUp(TestInfill::Counting);
   mini_jit::kernels::matmul_16mRest_4nRest_k(gemmTest.native_kernel, M / 16, N / 4, K, M % 16, N % 4);
@@ -38,6 +40,7 @@ TEST_CASE("Test matmul_16mRest_4nRest_k (M=16+[1-15], N=4+[1-3], K=18) jited gem
   const uint32_t M = 16 + MRest;
   const uint32_t N = 4 + NRest;
   const uint32_t K = 18;
+  CAPTURE(MRest, NRest);
   GemmMxNxKTestFixture gemmTest(M, N, K);
   gemmTest.SetUp(TestInfill::Random);
   mini_jit::kernels::matmul_16mRest_4nRest_k(gemmTest.native_kernel, M / 16, N / 4, K, M % 16, N % 4);
@@ -51,6 +54,7 @@ TEST_CASE("Test matmul_16mRest_4nRest_k (M=16+[1-15], N=4+[1-3], K=18) jited gem
   const uint32_t M = 16 + MRest;
   const uint32_t N = 4 + NRest;
   const uint32_t K = 18;
+  CAPTURE(MRest, NRest);
   GemmMxNxKTestFixture gemmTest(M, N, K);
   gemmTest.SetUp(TestInfill::Counting);
   mini_jit::kernels::matmul_16mRest_4nRest_k(gemmTest.native_kernel, M / 16, N / 4, K, M % 16, N % 4);
@@ -64,6 +68,7 @@ TEST_CASE("Test matmul_16mRest_4nRest_k (M=16+[1-15], N=4*50+[1-3], K=18) jited 
   const uint32_t M = 16 + MRest;
   const uint32_t N = 4 * 50 + NRest;
   const uint32_t K = 18;
+  CAPTURE(MRest, NRest);
   GemmMxNxKTestFixture gemmTest(M, N, K);
   gemmTest.SetUp(TestInfill::Random);
   mini_jit::kernels::matmul_16mRest_4nRest_k(gemmTest.native_kernel, M / 16, N / 4, K, M % 16, N % 4);
@@ -77,6 +82,7 @@ TEST_CASE("Test matmul_16mRest_4nRest_k (M=16+[1-15], N=4*50+[1-3], K=18) jited 
   const uint32_t M = 16 + MRest;
   const uint32_t N = 4 * 50 + NRest;
   const uint32_t K = 18;
+  CAPTURE(MRest, NRest);
   GemmMxNxKTestFixture gemmTest(M, N, K);
   gemmTest.SetUp(TestInfill::Counting);
   mini_jit::kernels::matmul_16mRest_4nRest_k(gemmTest.native_kernel, M / 16, N / 4, K, M % 16, N % 4);
@@ -90,6 +96,7 @@ TEST_CASE("Test matmul_16mRest_4nRest_k (M=16*7+[1-15], N=4*10+[1-3], K=18) jite
   const uint32_t M = 16 * 7 + MRest;
   const uint32_t N = 4 * 10 + NRest;
   const uint32_t K = 18;
+  CAPTURE(MRest, NRest);
   GemmMxNxKTestFixture gemmTest(M, N, K);
   gemmTest.SetUp(TestInfill::Random);
   mini_jit::kernels::matmul_16mRest_4nRest_k(gemmTest.native_kernel, M / 16, N / 4, K, M % 16, N % 4);
@@ -104,6 +111,7 @@ TEST_CASE("Test matmul_16mRest_4nRest_k (M=16*7+[1-15], N=4*10+[1-3], K=18) jite
   const uint32_t M = 16 * 7 + MRest;
   const uint32_t N = 4 * 10 + NRest;
   const uint32_t K = 18;
+  CAPTURE(MRest, NRest);
   GemmMxNxKTestFixture gemmTest(M, N, K);
   gemmTest.SetUp(TestInfill::Counting);
   mini_jit::kernels::matmul_16mRest_4nRest_k(gemmTest.native_kernel, M / 16, N / 4, K, M % 16, N % 4);
@@ -117,6 +125,7 @@ TEST_CASE("Test matmul_16mRest_4nRest_k (M=16*4+[1-15], N=4*16+[1-3], K=1) jited
   const uint32_t M = 16 * 4 + MRest;
   const uint32_t N = 4 * 16 + NRest;
   const uint32_t K = 1;
+  CAPTURE(MRest, NRest);
   GemmMxNxKTestFixture gemmTest(M, N, K);
   gemmTest.SetUp(TestInfill::Random);
   mini_jit::kernels::matmul_16mRest_4nRest_k(gemmTest.native_kernel, M / 16, N / 4, K, M % 16, N % 4);
@@ -130,6 +139,7 @@ TEST_CASE("Test matmul_16mRest_4nRest_k (M=16*4+[1-15], N=4*16+[1-3], K=1) jited
   const uint32_t M = 16 * 4 + MRest;
   const uint32_t N = 4 * 16 + NRest;
   const uint32_t K = 1;
+  CAPTURE(MRest, NRest);
   GemmMxNxKTestFixture gemmTest(M, N, K);
   gemmTest.SetUp(TestInfill::Counting);
   mini_jit::kernels::matmul_16mRest_4nRest_k(gemmTest.native_kernel, M / 16, N / 4, K, M % 16, N % 4);

@@ -1,4 +1,3 @@
-
 #ifndef MINI_JIT_KERNELS_MATMUL_16MRest_4NRest_K_H
 #define MINI_JIT_KERNELS_MATMUL_16MRest_4NRest_K_H
 

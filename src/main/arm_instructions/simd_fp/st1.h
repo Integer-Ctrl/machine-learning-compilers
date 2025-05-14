@@ -15,6 +15,15 @@ namespace mini_jit
 
       const uint32_t st1ImmediateRm = 0b11111;
 
+      enum class st1DataTypes
+      {
+        // alias for the opcode used
+        v8bit = 0b000,
+        v16bit = 0b010,
+        v32bit = 0b100,
+        v64bit = 0b1100,  // used as 0b100
+      };
+
       enum class st1Types
       {
         t8b,
@@ -201,6 +210,153 @@ namespace mini_jit
         return st1;
       }
 
+      constexpr uint32_t st1SingleStructures(const uint32_t Vt, const st1DataTypes type, const uint32_t index, const uint32_t Xn)
+      {
+        release_assert((Vt & mask5) == Vt, "Vt is only allowed to have a size of 5 bit.");
+        release_assert((Xn & mask5) == Xn, "Xn is only allowed to have a size of 5 bit.");
+
+        uint32_t q = 0xff;     // should change
+        uint32_t s = 0xff;     // should change
+        uint32_t size = 0xff;  // should change
+        switch (type)
+        {
+        case st1DataTypes::v8bit:
+          release_assert(index <= 15, "index is maximum is 15.");
+
+          q = (index >> 3) & mask1;
+          s = (index >> 2) & mask1;
+          size = index & mask2;
+          break;
+        case st1DataTypes::v16bit:
+          release_assert(index <= 7, "index is maximum is 7.");
+
+          q = (index >> 2) & mask1;
+          s = (index >> 1) & mask1;
+          size = 0b0;
+          size |= (index & mask1) << 1;
+          break;
+        case st1DataTypes::v32bit:
+          release_assert(index <= 3, "index is maximum is 3.");
+
+          q = (index >> 1) & mask1;
+          s = index & mask1;
+          size = 0b00;
+          break;
+        case st1DataTypes::v64bit:
+          release_assert(index <= 1, "index is maximum is 1.");
+          q = index & mask1;
+          s = 0;
+          size = 0b01;
+          break;
+        default:
+          release_assert(false, "Undefined st1 data type found.");
+          break;
+        }
+        release_assert(q != 0xff, "Q should be retrieved from a type.");
+        release_assert(s != 0xff, "S should be retrieved from a type.");
+        release_assert(size != 0xff, "Size should be retrieved from a type.");
+        release_assert((q & mask1) == q, "Q is only allowed to have a size of 1 bit.");
+        release_assert((s & mask1) == s, "S is only allowed to have a size of 1 bit.");
+        release_assert((size & mask2) == size, "Size is only allowed to have a size of 2 bit.");
+
+        uint32_t st1 = 0;
+        st1 |= 0b0 << 31;
+        st1 |= (q & mask1) << 30;
+        st1 |= 0b00110100000000 << 16;
+        st1 |= (static_cast<uint32_t>(type) & mask3) << 13;  // opcode
+        st1 |= (s & mask1) << 12;
+        st1 |= (size & mask2) << 10;
+        st1 |= (Xn & mask5) << 5;
+        st1 |= (Vt & mask5) << 0;
+        return st1;
+      }
+
+      constexpr uint32_t st1SingleStructuresPost(const uint32_t Vt, const st1DataTypes type, const uint32_t index, const uint32_t Xn,
+                                                 const uint32_t imm, const uint32_t Xm)
+      {
+        release_assert((Vt & mask5) == Vt, "Vt is only allowed to have a size of 5 bit.");
+        release_assert((Xn & mask5) == Xn, "Xn is only allowed to have a size of 5 bit.");
+        release_assert((Xm & mask5) == Xm, "Xm is only allowed to have a size of 5 bit.");
+
+        if (Xm == st1ImmediateRm)
+        {
+          switch (type)
+          {
+          case st1DataTypes::v8bit:
+            release_assert(imm == 1, "immm is only allowed to be 1 for the v8bit type.");
+            break;
+          case st1DataTypes::v16bit:
+            release_assert(imm == 2, "immm is only allowed to be 2 for the v8bit type.");
+            break;
+          case st1DataTypes::v32bit:
+            release_assert(imm == 4, "immm is only allowed to be 4 for the v8bit type.");
+            break;
+          case st1DataTypes::v64bit:
+            release_assert(imm == 8, "immm is only allowed to be 8 for the v8bit type.");
+            break;
+          default:
+            release_assert(false, "Undefined st1 data type found.");
+            break;
+          }
+        }
+
+        uint32_t q = 0xff;     // should change
+        uint32_t s = 0xff;     // should change
+        uint32_t size = 0xff;  // should change
+        switch (type)
+        {
+        case st1DataTypes::v8bit:
+          release_assert(index <= 15, "index is maximum is 15.");
+
+          q = (index >> 3) & mask1;
+          s = (index >> 2) & mask1;
+          size = index & mask2;
+          break;
+        case st1DataTypes::v16bit:
+          release_assert(index <= 7, "index is maximum is 7.");
+
+          q = (index >> 2) & mask1;
+          s = (index >> 1) & mask1;
+          size = 0b0;
+          size |= (index & mask1) << 1;
+          break;
+        case st1DataTypes::v32bit:
+          release_assert(index <= 3, "index is maximum is 3.");
+
+          q = (index >> 1) & mask1;
+          s = index & mask1;
+          size = 0b00;
+          break;
+        case st1DataTypes::v64bit:
+          release_assert(index <= 1, "index is maximum is 1.");
+          q = index & mask1;
+          s = 0;
+          size = 0b01;
+          break;
+        default:
+          release_assert(false, "Undefined st1 data type found.");
+          break;
+        }
+        release_assert(q != 0xff, "Q should be retrieved from a type.");
+        release_assert(s != 0xff, "S should be retrieved from a type.");
+        release_assert(size != 0xff, "Size should be retrieved from a type.");
+        release_assert((q & mask1) == q, "Q is only allowed to have a size of 1 bit.");
+        release_assert((s & mask1) == s, "S is only allowed to have a size of 1 bit.");
+        release_assert((size & mask2) == size, "Size is only allowed to have a size of 2 bit.");
+
+        uint32_t st1 = 0;
+        st1 |= 0b0 << 31;
+        st1 |= (q & mask1) << 30;
+        st1 |= 0b001101100 << 21;
+        st1 |= (Xm & mask5) << 16;
+        st1 |= (static_cast<uint32_t>(type) & mask3) << 13;  // opcode
+        st1 |= (s & mask1) << 12;
+        st1 |= (size & mask2) << 10;
+        st1 |= (Xn & mask5) << 5;
+        st1 |= (Vt & mask5) << 0;
+        return st1;
+      }
+
     }  // namespace internal
 
     template <typename T> constexpr uint32_t st1(const VGeneral Vt, const T, const R64Bit Xn)
@@ -330,6 +486,74 @@ namespace mini_jit
       internal::st1Types type = internal::_st1ParseType<T>();
       return internal::st1MultipleStructuresPost(static_cast<uint32_t>(Vt), type, static_cast<uint32_t>(Xn), 0, static_cast<uint32_t>(Xm),
                                                  4);
+    }
+
+    constexpr uint32_t st1(const V8Bit bt, const uint32_t index, const R64Bit Xn)
+    {
+      return internal::st1SingleStructures(static_cast<uint32_t>(bt), internal::st1DataTypes::v8bit, index, static_cast<uint32_t>(Xn));
+    }
+
+    constexpr uint32_t st1(const V16Bit bt, const uint32_t index, const R64Bit Xn)
+    {
+      return internal::st1SingleStructures(static_cast<uint32_t>(bt), internal::st1DataTypes::v16bit, index, static_cast<uint32_t>(Xn));
+    }
+
+    constexpr uint32_t st1(const V32Bit bt, const uint32_t index, const R64Bit Xn)
+    {
+      return internal::st1SingleStructures(static_cast<uint32_t>(bt), internal::st1DataTypes::v32bit, index, static_cast<uint32_t>(Xn));
+    }
+
+    constexpr uint32_t st1(const V64Bit bt, const uint32_t index, const R64Bit Xn)
+    {
+      return internal::st1SingleStructures(static_cast<uint32_t>(bt), internal::st1DataTypes::v64bit, index, static_cast<uint32_t>(Xn));
+    }
+
+    constexpr uint32_t st1Post(const V8Bit bt, const uint32_t index, const R64Bit Xn, const uint32_t imm)
+    {
+      return internal::st1SingleStructuresPost(static_cast<uint32_t>(bt), internal::st1DataTypes::v8bit, index, static_cast<uint32_t>(Xn),
+                                               imm, internal::st1ImmediateRm);
+    }
+
+    constexpr uint32_t st1Post(const V16Bit bt, const uint32_t index, const R64Bit Xn, const uint32_t imm)
+    {
+      return internal::st1SingleStructuresPost(static_cast<uint32_t>(bt), internal::st1DataTypes::v16bit, index, static_cast<uint32_t>(Xn),
+                                               imm, internal::st1ImmediateRm);
+    }
+
+    constexpr uint32_t st1Post(const V32Bit bt, const uint32_t index, const R64Bit Xn, const uint32_t imm)
+    {
+      return internal::st1SingleStructuresPost(static_cast<uint32_t>(bt), internal::st1DataTypes::v32bit, index, static_cast<uint32_t>(Xn),
+                                               imm, internal::st1ImmediateRm);
+    }
+
+    constexpr uint32_t st1Post(const V64Bit bt, const uint32_t index, const R64Bit Xn, const uint32_t imm)
+    {
+      return internal::st1SingleStructuresPost(static_cast<uint32_t>(bt), internal::st1DataTypes::v64bit, index, static_cast<uint32_t>(Xn),
+                                               imm, internal::st1ImmediateRm);
+    }
+
+    constexpr uint32_t st1Post(const V8Bit bt, const uint32_t index, const R64Bit Xn, const R64Bit Xm)
+    {
+      return internal::st1SingleStructuresPost(static_cast<uint32_t>(bt), internal::st1DataTypes::v8bit, index, static_cast<uint32_t>(Xn),
+                                               0, static_cast<uint32_t>(Xm));
+    }
+
+    constexpr uint32_t st1Post(const V16Bit bt, const uint32_t index, const R64Bit Xn, const R64Bit Xm)
+    {
+      return internal::st1SingleStructuresPost(static_cast<uint32_t>(bt), internal::st1DataTypes::v16bit, index, static_cast<uint32_t>(Xn),
+                                               0, static_cast<uint32_t>(Xm));
+    }
+
+    constexpr uint32_t st1Post(const V32Bit bt, const uint32_t index, const R64Bit Xn, const R64Bit Xm)
+    {
+      return internal::st1SingleStructuresPost(static_cast<uint32_t>(bt), internal::st1DataTypes::v32bit, index, static_cast<uint32_t>(Xn),
+                                               0, static_cast<uint32_t>(Xm));
+    }
+
+    constexpr uint32_t st1Post(const V64Bit bt, const uint32_t index, const R64Bit Xn, const R64Bit Xm)
+    {
+      return internal::st1SingleStructuresPost(static_cast<uint32_t>(bt), internal::st1DataTypes::v64bit, index, static_cast<uint32_t>(Xn),
+                                               0, static_cast<uint32_t>(Xm));
     }
   }  // namespace arm_instructions
 }  // namespace mini_jit

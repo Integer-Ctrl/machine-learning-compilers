@@ -501,10 +501,161 @@ TEST_CASE("Test ld1 register offset four register 64bit instruction", "[codegen]
   INFO("expected: " << std::bitset<32>(expected));
   REQUIRE(value == expected);
 }
+
 TEST_CASE("Test ld1 register offset internal instruction", "[codegen][internal]")
 {
   uint32_t value = internal::ld1MultipleStructuresPost(5, internal::ld1Types::t16b, 17, 0, 28, 1);
   uint32_t expected = 0b0'1'001100110'11100'0111'00'10001'00101;
+
+  INFO("value:    " << std::bitset<32>(value));
+  INFO("expected: " << std::bitset<32>(expected));
+  REQUIRE(value == expected);
+}
+
+TEST_CASE("Test ld1 no offset single 8bit instruction", "[codegen][8Bit]")
+{
+  uint32_t value = ld1(b5, 5, x8);
+  uint32_t expected = 0b0'00110101000000'000'1'01'01000'00101;
+
+  INFO("value:    " << std::bitset<32>(value));
+  INFO("expected: " << std::bitset<32>(expected));
+  REQUIRE(value == expected);
+}
+
+TEST_CASE("Test ld1 no offset single 16bit instruction", "[codegen][16Bit]")
+{
+  uint32_t value = ld1(h5, 2, x8);
+  uint32_t expected = 0b0'00110101000000'010'1'00'01000'00101;
+
+  INFO("value:    " << std::bitset<32>(value));
+  INFO("expected: " << std::bitset<32>(expected));
+  REQUIRE(value == expected);
+}
+
+TEST_CASE("Test ld1 no offset single 32bit instruction", "[codegen][32Bit]")
+{
+  uint32_t value = ld1(s5, 1, x8);
+  uint32_t expected = 0b0'00110101000000'100'1'00'01000'00101;
+
+  INFO("value:    " << std::bitset<32>(value));
+  INFO("expected: " << std::bitset<32>(expected));
+  REQUIRE(value == expected);
+}
+
+TEST_CASE("Test ld1 no offset single 64bit instruction", "[codegen][64Bit]")
+{
+  uint32_t value = ld1(d5, 0, x8);
+  uint32_t expected = 0b0'00110101000000'100'0'01'01000'00101;
+
+  INFO("value:    " << std::bitset<32>(value));
+  INFO("expected: " << std::bitset<32>(expected));
+  REQUIRE(value == expected);
+}
+
+TEST_CASE("Test ld1 single internal instruction", "[codegen][internal]")
+{
+  uint32_t value = internal::ld1SingleStructures(5, internal::ld1DataTypes::v64bit, 0, 8);
+  uint32_t expected = 0b0'00110101000000'100'0'01'01000'00101;
+
+  INFO("value:    " << std::bitset<32>(value));
+  INFO("expected: " << std::bitset<32>(expected));
+  REQUIRE(value == expected);
+}
+
+TEST_CASE("Test ld1 offset single 8bit instruction", "[codegen][8Bit]")
+{
+  uint32_t value = ld1Post(b5, 5, x8, 1);
+  uint32_t expected = 0b0'001101110'11111'000'1'01'01000'00101;
+
+  INFO("value:    " << std::bitset<32>(value));
+  INFO("expected: " << std::bitset<32>(expected));
+  REQUIRE(value == expected);
+}
+
+TEST_CASE("Test ld1 offset single 16bit instruction", "[codegen][16Bit]")
+{
+  uint32_t value = ld1Post(h5, 2, x8, 2);
+  uint32_t expected = 0b0'001101110'11111'010'1'00'01000'00101;
+
+  INFO("value:    " << std::bitset<32>(value));
+  INFO("expected: " << std::bitset<32>(expected));
+  REQUIRE(value == expected);
+}
+
+TEST_CASE("Test ld1 offset single 32bit instruction", "[codegen][32Bit]")
+{
+  uint32_t value = ld1Post(s5, 1, x8, 4);
+  uint32_t expected = 0b0'001101110'11111'100'1'00'01000'00101;
+
+  INFO("value:    " << std::bitset<32>(value));
+  INFO("expected: " << std::bitset<32>(expected));
+  REQUIRE(value == expected);
+}
+
+TEST_CASE("Test ld1 offset single 64bit instruction", "[codegen][64Bit]")
+{
+  uint32_t value = ld1Post(d5, 0, x8, 8);
+  uint32_t expected = 0b0'001101110'11111'100'0'01'01000'00101;
+
+  INFO("value:    " << std::bitset<32>(value));
+  INFO("expected: " << std::bitset<32>(expected));
+  REQUIRE(value == expected);
+}
+
+TEST_CASE("Test ld1 single internal post imm instruction", "[codegen][internal]")
+{
+  uint32_t value = internal::ld1SingleStructuresPost(5, internal::ld1DataTypes::v64bit, 0, 8, 8, internal::ld1ImmediateRm);
+  uint32_t expected = 0b0'001101110'11111'100'0'01'01000'00101;
+
+  INFO("value:    " << std::bitset<32>(value));
+  INFO("expected: " << std::bitset<32>(expected));
+  REQUIRE(value == expected);
+}
+
+TEST_CASE("Test ld1 register single 8bit instruction", "[codegen][8Bit]")
+{
+  uint32_t value = ld1Post(b5, 5, x8, x20);
+  uint32_t expected = 0b0'001101110'10100'000'1'01'01000'00101;
+
+  INFO("value:    " << std::bitset<32>(value));
+  INFO("expected: " << std::bitset<32>(expected));
+  REQUIRE(value == expected);
+}
+
+TEST_CASE("Test ld1 register single 16bit instruction", "[codegen][16Bit]")
+{
+  uint32_t value = ld1Post(h5, 2, x8, x20);
+  uint32_t expected = 0b0'001101110'10100'010'1'00'01000'00101;
+
+  INFO("value:    " << std::bitset<32>(value));
+  INFO("expected: " << std::bitset<32>(expected));
+  REQUIRE(value == expected);
+}
+
+TEST_CASE("Test ld1 register single 32bit instruction", "[codegen][32Bit]")
+{
+  uint32_t value = ld1Post(s5, 1, x8, x20);
+  uint32_t expected = 0b0'001101110'10100'100'1'00'01000'00101;
+
+  INFO("value:    " << std::bitset<32>(value));
+  INFO("expected: " << std::bitset<32>(expected));
+  REQUIRE(value == expected);
+}
+
+TEST_CASE("Test ld1 register single 64bit instruction", "[codegen][64Bit]")
+{
+  uint32_t value = ld1Post(d5, 0, x8, x20);
+  uint32_t expected = 0b0'001101110'10100'100'0'01'01000'00101;
+
+  INFO("value:    " << std::bitset<32>(value));
+  INFO("expected: " << std::bitset<32>(expected));
+  REQUIRE(value == expected);
+}
+
+TEST_CASE("Test ld1 single internal post register instruction", "[codegen][internal]")
+{
+  uint32_t value = internal::ld1SingleStructuresPost(5, internal::ld1DataTypes::v64bit, 0, 8, 0, 20);
+  uint32_t expected = 0b0'001101110'10100'100'0'01'01000'00101;
 
   INFO("value:    " << std::bitset<32>(value));
   INFO("expected: " << std::bitset<32>(expected));

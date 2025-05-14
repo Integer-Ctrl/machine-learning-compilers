@@ -129,14 +129,14 @@ void mini_jit::kernels::matmul_16mRest_4nRest_k(mini_jit::Kernel &kernel, const 
   std::vector<uint32_t> instruction2_fp_loads_less_than_4;
   std::vector<uint32_t> instruction3_fp_loads_less_than_4;
   std::vector<uint32_t> instructions_fp_load_column_of_matrix_a;
-  uint32_t m_loop_full_4s = m_loop_rest / 4;
-  uint32_t m_loop_remainder = m_loop_rest % 4;
-  uint32_t offset_from_full_loads = (m_loop_full_4s) * 4 * 4;  // count * number of floats * sizeof(float)
+  const uint32_t m_loop_full_4s = m_loop_rest / 4;
+  const uint32_t m_loop_remainder = m_loop_rest % 4;
+  const uint32_t offset_from_full_loads = (m_loop_full_4s) * 4 * 4;  // count * number of floats * sizeof(float)
 
   // For usage reason see case 3 of the below swich statement
-  uint32_t revert_offset_x2 =
+  const uint32_t revert_offset_x2 =
     offset_from_full_loads >= 4 ? sub(x2, x2, offset_from_full_loads - 4) : add(x2, x2, 4 - offset_from_full_loads);
-  uint32_t revert_offset_x0 =
+  const uint32_t revert_offset_x0 =
     offset_from_full_loads >= 4 ? sub(x0, x0, offset_from_full_loads - 4) : add(x0, x0, 4 - offset_from_full_loads);
 
   switch (m_loop_remainder)
