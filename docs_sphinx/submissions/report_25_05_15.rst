@@ -1,0 +1,131 @@
+Submission 2025-05-15
+=====================
+
+Batch-Reduce GEMM
+-----------------
+
+This section considers a batch-reduce matrix-matrix multiplication that has a fourth dimension in addition to the known M, N, and K dimensions.
+
+1. Implement a batch-reduce kernel matmul_64_48_64_16
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+File: ``neon_6_1.s``
+
+We started by implementing a kernel ``matmul_64_48_64`` with a batch dimension of one which is in the file ``neon_6_1_batch1.s``.
+
+.. code-block::asm
+    :linenos:
+    :emphasize-lines: 18
+
+    ...
+        mov x17, #12 // x17 iterator for N loop
+    matmul_loop_over_N:
+        sub x17, x17, #1
+
+        ...
+
+        mov x16, #4 // x16 iterator for M loop
+    matmul_loop_over_M:
+        sub x16, x16, #1
+
+        ...
+
+        mov x15, #64 // x15 iterator for K loop
+    matmul_loop_over_K:
+        sub x15, x15, #1
+
+        ... matmul_16_4_1 kernel ...
+
+        // Loop back to K
+        cbnz x15, matmul_loop_over_K
+
+        ...
+
+        // Loop back to M
+        cbnz x16, matmul_loop_over_M
+        
+        ...
+
+        // Loop back to N
+        cbnz x17, matmul_loop_over_N
+
+Then we wrapped the ``matmul_64_48_64`` kernel inside another batch loop of size 16:
+
+.. code-block::asm
+    :linenos:
+    :emphasize-lines: 3, 41
+
+    ...
+        mov x19, #16 // x19 iterator for the batch dimension
+    matmul_loop_batch_dimension:
+        sub x19, x19, #1
+
+        ...
+
+        mov x17, #12 // x17 iterator for N loop
+    matmul_loop_over_N:
+        sub x17, x17, #1
+
+        ...
+
+        mov x16, #4 // x16 iterator for M loop
+    matmul_loop_over_M:
+        sub x16, x16, #1
+
+        ...
+
+        mov x15, #64 // x15 iterator for K loop
+    matmul_loop_over_K:
+        sub x15, x15, #1
+
+        ...
+
+        // Loop back to K
+        cbnz x15, matmul_loop_over_K
+
+        ... matmul_16_4_1 kernel ...
+
+        // Loop back to M
+        cbnz x16, matmul_loop_over_M
+        
+        ...
+
+        // Loop back to N
+        cbnz x17, matmul_loop_over_N
+
+        ...
+
+        // Loop back to batch dimension
+        cbnz x19, matmul_loop_batch_dimension
+
+
+2. Test and optimize
+^^^^^^^^^^^^^^^^^^^^
+
+We tested a variation in which the batch loop was positioned between the M and K loops. This approach achieved around :math:`73` GFLOPS. 
+We suspect that the reason for this was that the matrices did not fit into the cache.
+We do not follow this approach due to the poor performance, and we lost the file due to a false ``rm`` statement.
+
+However, this leads us to assume that our result of putting the batch loop outside is satisfactory.
+
+.. code-block::
+    :emphasize-lines: 4, 8
+
+    -----------------------------------------------------------------------------------------------------------------------------------------------
+    Benchmark                                                                                          Time             CPU   Iterations      FLOPS
+    -----------------------------------------------------------------------------------------------------------------------------------------------
+    GemmMxNxKxBatchFixture<64, 48, 64, 1>/BM_matmul_64_48_64/min_warmup_time:1.000_mean             3104 ns         3093 ns           10 127.138G/s
+    GemmMxNxKxBatchFixture<64, 48, 64, 1>/BM_matmul_64_48_64/min_warmup_time:1.000_median           3102 ns         3092 ns           10  127.19G/s
+    GemmMxNxKxBatchFixture<64, 48, 64, 1>/BM_matmul_64_48_64/min_warmup_time:1.000_stddev           10.1 ns         8.08 ns           10 331.319M/s
+    GemmMxNxKxBatchFixture<64, 48, 64, 1>/BM_matmul_64_48_64/min_warmup_time:1.000_cv               0.33 %          0.26 %            10      0.26%
+    GemmMxNxKxBatchFixture<64, 48, 64, 16>/BM_matmul_64_48_64_16/min_warmup_time:1.000_mean        51072 ns        50890 ns           10 123.628G/s
+    GemmMxNxKxBatchFixture<64, 48, 64, 16>/BM_matmul_64_48_64_16/min_warmup_time:1.000_median      51027 ns        50840 ns           10 123.749G/s
+    GemmMxNxKxBatchFixture<64, 48, 64, 16>/BM_matmul_64_48_64_16/min_warmup_time:1.000_stddev        120 ns          119 ns           10 287.993M/s
+    GemmMxNxKxBatchFixture<64, 48, 64, 16>/BM_matmul_64_48_64_16/min_warmup_time:1.000_cv           0.24 %          0.23 %            10      0.23%
+
+
+- **matmul_64_48_64** kernel: :math:`127.1` GFLOPS
+- **matmul_64_48_64_16** kernel: :math:`123.6` GFLOPS
+
+
+
