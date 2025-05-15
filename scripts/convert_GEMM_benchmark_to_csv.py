@@ -5,8 +5,8 @@ import os
 # Input and output file paths
 project_dir = os.path.dirname(os.path.dirname(__file__))
 build_dir = os.path.join(project_dir, "build")
-input_file = os.path.join(build_dir, "GEMM_benchmarks.json")
-output_file = os.path.join(build_dir, "GEMM_benchmarks.csv")
+input_file = os.path.join(build_dir, "BR_GEMM_benchmarks.json")
+output_file = os.path.join(build_dir, "BR_GEMM_benchmarks.csv")
 
 
 # Read the JSON file
@@ -29,14 +29,15 @@ with open(output_file, "w", newline="") as csv_file:
     # Write each benchmark result
     for benchmark in benchmarks:
 
-        _, name, m_str, n_str, k_str, _ = benchmark["name"].split("/")
+        _, name, m_str, n_str, k_str, br_size_str, _ = benchmark["name"].split("/")
 
-        if(name != "BM_matmul"):
+        if(name != "BM_brMatmul"):
             continue
 
         m = int(m_str.split(":")[-1])
         n = int(n_str.split(":")[-1])
         k = int(k_str.split(":")[-1])
+        b = int(br_size_str.split(":")[-1])
 
         nano_seconds_to_seconds = 1e-9
         total_time = benchmark["real_time"] * benchmark["iterations"] * nano_seconds_to_seconds
@@ -45,7 +46,7 @@ with open(output_file, "w", newline="") as csv_file:
             m,  # m
             n,  # n
             k,  # k
-            1,  # br_size
+            b,  # br_size
             0,  # trans_a
             0,  # trans_b
             0,  # trans_c
