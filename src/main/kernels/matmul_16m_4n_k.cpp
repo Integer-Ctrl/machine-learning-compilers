@@ -205,6 +205,6 @@ void mini_jit::kernels::matmul_16m_4n_k(mini_jit::Kernel &kernel, const uint32_t
   });
 
 #ifdef SAVE_JITS_TO_FILE
-  kernel.write("matmul_16m_6n_k.bin");
+  kernel.write("matmul_16m_4n_k.bin");
 #endif  // SAVE_JITS_TO_FILE
 }
