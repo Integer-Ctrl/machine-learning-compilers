@@ -1,8 +1,8 @@
 Submission 2025-05-15
 =====================
 
-Batch-Reduce GEMM
------------------
+Neon Batch-Reduce GEMM
+----------------------
 
 This section considers a batch-reduce matrix-matrix multiplication that has a fourth dimension in addition to the known M, N, and K dimensions.
 
@@ -13,7 +13,7 @@ File: ``neon_6_1.s``
 
 We started by implementing a kernel ``matmul_64_48_64`` with a batch dimension of one which is in the file ``neon_6_1_batch1.s``.
 
-.. code-block::asm
+.. code-block:: asm
     :linenos:
     :emphasize-lines: 18
 
@@ -51,10 +51,10 @@ We started by implementing a kernel ``matmul_64_48_64`` with a batch dimension o
 
 Then we wrapped the ``matmul_64_48_64`` kernel inside another batch loop of size 16:
 
-.. code-block::asm
+.. code-block:: asm
     :linenos:
     :emphasize-lines: 3, 41
-
+  
     ...
         mov x19, #16 // x19 iterator for the batch dimension
     matmul_loop_batch_dimension:
@@ -134,11 +134,11 @@ GEMM
 1. Extend generate to support M-N-K combinations for column-major format :math:`1 \leq M,N \leq 1024, 1 \leq K \leq 2028`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To support all M-N-K combinations we take a kernel as base and dynamically generate the rest handling of not multiple of M, N and K.
-As a base we took the ``matmul_16m_4n_k`` kernel, which reached around ``130 GFLOPS`` as 64_48_64 kernel (i.e. the same as kernel from the previous 
-section with the batch dimension of one). 
+To support all combinations of M, N and K, we use one kernel as a base and dynamically generate the rest of the handling for numbers that are not multiples of M, N or K.
+As a base we took the ``matmul_16m_4n_k`` kernel, which reached around ``130 GFLOPS`` as 64_48_64 kernel (i.e. the same as the kernel from the
+previous section, with a batch dimension of one.). 
 The k dimension is always a multiple of 1 therefore we don't need a special case for this dimension. 
-To get full coverage on the remaining dimension, we implemented the variations:
+To get full coverage on the remaining dimension, we implemented the following variations:
 
 - `matmul_16m_lt4nRest_k`: 
     - M dimension must be multiple of 16 
@@ -173,14 +173,79 @@ Together with the `matmul_16m_4n_k`, we have 6 kernels to cover the complete dim
 2. Verify all matrices for ``1≤M≤64``, ``1≤N≤64``, ``K∈[1,16,32,64,128]``,``lda=M``, ``ldb=K``, and ``ldc=M``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-All GEMM generation and execution with these configuration work with counting upwards and random data.
+All GEMM generation and execution using this configuration works with counting upwards and random data.
 
 3. Verify all matrices for ``1≤M≤64``, ``1≤N≤64``, ``K∈[1,16,32,64,128]``,``lda>M``, ``ldb>K``, and ``ldc>M``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-All GEMM generation and execution with these configuration work with counting upwards and random data.
+All GEMM generation and execution using this configuration works with counting upwards and random data.
 
 4. Benchmark for ``1≤M≤64``, ``1≤N≤64``, ``K∈[1,16,32,64,128]``,``lda=M``, ``ldb=K``, and ``ldc=M``. 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Running the Benchmark in approximately 8 hours total. We produced the following results: :download:`GEMM_benchmarks.csv <../_static/resources/report_25_05_15/BR_GEMM_benchmarks.csv>` 
+The benchmark took approximately eight hours in total to run. The following results were produced: :download:`GEMM_benchmarks.csv <../_static/resources/report_25_05_15/GEMM_benchmarks.csv>`
+
+
+Batch-Reduce GEMM
+-----------------
+
+1. Extend generate to support batch dimension 1≤batch_size≤1024
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In order to support an additional batch dimension in our implemented kernels, we placed all kernels within an additional batch loop.
+Consequently, the logic in our ``Brgemm.cpp`` was extended to check whether the batch dimension is greater than one.
+
+.. code-block:: cpp
+    :linenos:
+    :emphasize-lines: 19
+
+    ...
+    if (dtype != dtype_t::fp32)
+    {
+      return error_t::err_wrong_dtype;
+    }
+    if (m == 0 || n == 0 || k == 0)
+    {
+      return error_t::err_wrong_dimension;
+    }
+    if ((trans_a + trans_b + trans_c) != 0)
+    {
+      return error_t::err_row_major_order_not_supported;
+    }
+
+    if (br_size == 1 && (trans_a + trans_b + trans_c) == 0 && dtype == dtype_t::fp32)
+    {
+      fill_with_matmuls_no_batch_dim_column_major_fp32(m, n, k);
+    }
+    else if (br_size > 1 && (trans_a + trans_b + trans_c) == 0 && dtype == dtype_t::fp32)
+    {
+      fill_with_matmuls_batch_dim_column_major_fp32(m, n, k, br_size);
+    }
+    else
+    {
+      throw std::logic_error(
+        std::format("Unhandled parameter combination found: m='{}', n='{}', k='{}', br_size='{}', trans_a='{}', trans_b='{}', "
+                    "trans_c = '{}', dtype = '{}'",
+                    m, n, k, br_size, trans_a, trans_b, trans_c, static_cast<int32_t>(dtype)));
+    }
+    ...
+
+This ``else if`` branch distributes to our extended ``br_matmul_*`` kernels with a larger batch dimension.
+
+- `br_matmul_16m_lt4nRest_k`
+- `br_matmul_16mRest_4n_k`
+- `br_matmul_16mRest_lt4nRest_k`
+- `br_matmul_lt16_4n_k`
+- `br_matmul_lt16_lt4nRest_k`
+
+2. Verify against reference implementation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+All kernels were tested. The tests are located in the file ``src/test/kernels/br_matmul_*.test.cpp``.
+
+The batched MatMul generation was tested for 1≤M≤64, 1≤N≤64, K∈[1,16,32,64,128], 1≤BatchSize≤16, lda=M, ldb=K, and ldc=M. The test is located in the file ``src/test/Brgemm.test.cpp``.
+
+3. Benchmark for 1≤M≤64, 1≤N≤64, K∈[1,16,32,64,128],lda=M, ldb=K,ldc=M , batch_size=16
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The benchmark took approximately eight hours in total to run. The following results were produced: :download:`GEMM_benchmarks.csv <../_static/resources/report_25_05_15/BR_GEMM_benchmarks.csv>`
