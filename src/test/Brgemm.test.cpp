@@ -173,3 +173,79 @@ TEST_CASE("Test gemm generation (1≤M≤64, 1≤N≤64, K∈[1,16,32,64,128],ld
   generatorTest.SetKernel(kernel);
   generatorTest.RunTest(lda, ldb, ldc, lda * K, ldb * N);
 }
+
+TEST_CASE("Test gemm generation (1≤M≤64, 1≤N≤64, K∈[1,16,32,64,128], 1≤BatchSize≤16, lda=M, ldb=K, and ldc=M) on random data",
+          "[generation][correctness][gemm]")
+{
+  auto M = GENERATE(range(1u, 64u + 1u, 1u));
+  auto N = GENERATE(range(1u, 64u + 1u, 1u));
+  auto K = GENERATE(1u, 16u, 32u, 64u, 128u);
+  auto BatchSize = GENERATE(range(1u, 16u + 1u, 1u));
+
+  CAPTURE(M, N, K, BatchSize);
+
+  mini_jit::Brgemm gemm;
+  mini_jit::Brgemm::error_t error = gemm.generate(M, N, K, BatchSize, 0, 0, 0, mini_jit::Brgemm::dtype_t::fp32);
+
+  switch (error)
+  {
+  case mini_jit::Brgemm::error_t::success:
+    break;
+  case mini_jit::Brgemm::error_t::err_batch_reduce_size_not_supported:
+    FAIL("Error batch reduce size not supported.");
+    break;
+  case mini_jit::Brgemm::error_t::err_row_major_order_not_supported:
+    FAIL("Error row major order not supported.");
+    break;
+  case mini_jit::Brgemm::error_t::err_wrong_dimension:
+    FAIL("Error err wrong dimension.");
+    break;
+  case mini_jit::Brgemm::error_t::err_wrong_dtype:
+    FAIL("Error wrong dtype.");
+    break;
+  default:
+    FAIL("Found unprocessed error type");
+    break;
+  }
+
+  mini_jit::Brgemm::kernel_t kernel = gemm.get_kernel();
+  REQUIRE(kernel != nullptr);
+}
+
+TEST_CASE("Test gemm generation (1≤M≤64, 1≤N≤64, K∈[1,16,32,64,128], 1≤BatchSize≤16, lda=M, ldb=K, and ldc=M) on counting data",
+          "[generation][correctness][gemm]")
+{
+  auto M = GENERATE(range(1u, 64u + 1u, 1u));
+  auto N = GENERATE(range(1u, 64u + 1u, 1u));
+  auto K = GENERATE(1u, 16u, 32u, 64u, 128u);
+  auto BatchSize = GENERATE(range(1u, 16u + 1u, 1u));
+
+  CAPTURE(M, N, K, BatchSize);
+
+  mini_jit::Brgemm gemm;
+  mini_jit::Brgemm::error_t error = gemm.generate(M, N, K, BatchSize, 0, 0, 0, mini_jit::Brgemm::dtype_t::fp32);
+
+  switch (error)
+  {
+  case mini_jit::Brgemm::error_t::success:
+    break;
+  case mini_jit::Brgemm::error_t::err_batch_reduce_size_not_supported:
+    FAIL("Error batch reduce size not supported.");
+    break;
+  case mini_jit::Brgemm::error_t::err_row_major_order_not_supported:
+    FAIL("Error row major order not supported.");
+    break;
+  case mini_jit::Brgemm::error_t::err_wrong_dimension:
+    FAIL("Error err wrong dimension.");
+    break;
+  case mini_jit::Brgemm::error_t::err_wrong_dtype:
+    FAIL("Error wrong dtype.");
+    break;
+  default:
+    FAIL("Found unprocessed error type");
+    break;
+  }
+
+  mini_jit::Brgemm::kernel_t kernel = gemm.get_kernel();
+  REQUIRE(kernel != nullptr);
+}

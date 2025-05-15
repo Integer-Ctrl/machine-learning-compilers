@@ -19,15 +19,12 @@ mini_jit::Brgemm::error_t mini_jit::Brgemm::generate(uint32_t m, uint32_t n, uin
   {
     return error_t::err_row_major_order_not_supported;
   }
-  if (br_size != 1)
-  {
-    return error_t::err_batch_reduce_size_not_supported;
-  }
+
   if (br_size == 1 && (trans_a + trans_b + trans_c) == 0 && dtype == dtype_t::fp32)
   {
     fill_with_matmuls_no_batch_dim_column_major_fp32(m, n, k);
   }
-  if (br_size > 1 && (trans_a + trans_b + trans_c) == 0 && dtype == dtype_t::fp32)
+  else if (br_size > 1 && (trans_a + trans_b + trans_c) == 0 && dtype == dtype_t::fp32)
   {
     fill_with_matmuls_batch_dim_column_major_fp32(m, n, k, br_size);
   }
@@ -152,4 +149,7 @@ void mini_jit::Brgemm::fill_with_matmuls_batch_dim_column_major_fp32(uint32_t m,
     kernels::br_matmul_lt16_lt4nRest_k(native_kernel, n / 4, k, br_size, m % 16, n % 4);
     return;
   }
+
+  throw std::logic_error(
+    std::format("Unhandled combination found for MxNxKxBatch matmul: m='{}', n='{}', k='{}', batch='{}'", m, n, k, br_size));
 }

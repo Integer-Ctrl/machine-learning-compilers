@@ -28,7 +28,7 @@ option(SAVE_JITS_TO_FILE "Saves the jitted kernels into a file if activated." OF
 
 if(SAVE_JITS_TO_FILE)
     message(NOTICE "The saved kernels can be disassembled with: 'objdump -D -b binary -m aarch64 <inputFile> > <outputFile>'")
-    add_compile_definitions(SAVE_JITS_TO_FILE)
+    # set per target
 endif()
 
 # ==============================================================
@@ -222,10 +222,12 @@ endforeach()
 # TARGETS
 # =============================================================
 add_executable(tests "${SOURCE_FILEPATHS}" "${TEST_FILEPATHS}")
+if(SAVE_JITS_TO_FILE)
+target_compile_definitions(tests PUBLIC SAVE_JITS_TO_FILE)
+endif(SAVE_JITS_TO_FILE)
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
 
 add_executable(benchmarks "${SOURCE_FILEPATHS}" "${BENCH_FILEPATHS}")
-target_compile_definitions(benchmarks PUBLIC SAVE_JITS_TO_FILE=0)
 target_link_libraries(benchmarks benchmark::benchmark_main)
 
 # ==============================================================

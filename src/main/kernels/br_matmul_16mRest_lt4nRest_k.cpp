@@ -12,7 +12,6 @@ void mini_jit::kernels::br_matmul_16mRest_lt4nRest_k(mini_jit::Kernel &kernel, c
   using namespace mini_jit::arm_instructions;
 
   release_assert(m_loop_16 != 0, "Cannot proccess matrix with m loop of 0.");
-  release_assert(n_loop_4 != 0, "Cannot proccess matrix with n loop of 0.");
   release_assert(k_loop != 0, "Cannot proccess matrix with k loop of 0.");
   release_assert(m_loop_rest != 0, "Cannot create a matrix with a rest of m equal to 0!");
   release_assert(m_loop_rest <= 15, "Cannot create a matrix with a rest of m larger than 15!");
@@ -106,7 +105,10 @@ void mini_jit::kernels::br_matmul_16mRest_lt4nRest_k(mini_jit::Kernel &kernel, c
   // ========================================================================================
   // Calculate m + rest but n is multiple of 4
   // ========================================================================================
-  matmul_16mRest_4n_k(kernel, m_loop_16, n_loop_4, k_loop, m_loop_rest, false);
+  if (n_loop_4 != 0)
+  {
+    matmul_16mRest_4n_k(kernel, m_loop_16, n_loop_4, k_loop, m_loop_rest, false);
+  }
 
   // Offset to the next matrix block
   // Here we want to start with the initial m value but n should be offset by the already calculated amount.
