@@ -1,23 +1,20 @@
-#include "br_matmul_16mRest_lt4nRest_k.h"
 #include "../Kernel.h"
 #include "../arm_instructions/arm_all.h"
 #include "../release_assert.h"
-#include "matmul_16mRest_4n_k.h"
-#include "matmul_16m_lt4nRest_k.h"
+#include "br_matmul_lt16_4n_k.h"
+#include "br_matmul_lt16_lt4nRest_k.h"
+#include <iostream>
 
-void mini_jit::kernels::br_matmul_16mRest_lt4nRest_k(mini_jit::Kernel &kernel, const uint32_t m_loop_16, const uint32_t n_loop_4,
-                                                     const uint32_t k_loop, const uint32_t br_size, const uint32_t m_loop_rest,
-                                                     const uint32_t n_loop_rest)
+void mini_jit::kernels::br_matmul_lt16_lt4nRest_k(mini_jit::Kernel &kernel, const uint32_t n_loop_4, const uint32_t k_loop,
+                                                  const uint32_t br_size, const uint32_t m_loop_rest, const uint32_t n_loop_rest)
 {
   using namespace mini_jit::arm_instructions;
 
-  release_assert(m_loop_16 != 0, "Cannot proccess matrix with m loop of 0.");
-  release_assert(n_loop_4 != 0, "Cannot proccess matrix with n loop of 0.");
   release_assert(k_loop != 0, "Cannot proccess matrix with k loop of 0.");
   release_assert(m_loop_rest != 0, "Cannot create a matrix with a rest of m equal to 0!");
   release_assert(m_loop_rest <= 15, "Cannot create a matrix with a rest of m larger than 15!");
   release_assert(n_loop_rest != 0, "Cannot create a matrix with a rest of n equal to 0!");
-  release_assert(n_loop_rest <= 3, "Cannot create a matrix with a rest of n larger than 3!");
+  release_assert(n_loop_rest <= 4, "Cannot create a matrix with a rest of n larger than 4!");
   release_assert(br_size != 0, "Cannot proccess batch dimension of 0.");
 
   // Hold the number of instruction to jump for each loop
@@ -25,15 +22,15 @@ void mini_jit::kernels::br_matmul_16mRest_lt4nRest_k(mini_jit::Kernel &kernel, c
   int32_t jump_batch_loop = 5;
 
   // Idea: Division of the matrix into sub-matrices and calculated in the following order.
-  //                       N dimension
-  // ←---------------------------------------------------→
-  // ===================================================== ↑
-  // |                        |                          | |
-  // |                        | 2. matmul_16m_lt4nRest_k | |
-  // | 1. matmul_16mRest_4n_k |                          | | M dimension
-  // |                        |--------------------------| |
-  // |                        | 3. Rest of m and n       | |
-  // ===================================================== ↓
+  // 1. matmul_lt16_4n_k is omitted if n is less than 4;
+  //
+  //                    N dimension
+  // ←-------------------------------------------→
+  // ============================================= ↑
+  // |                        |                  | |
+  // |  1. matmul_lt16_4n_k   | 2. m < 16, n < 4 | | M < 16 dimension
+  // |                        |                  | |
+  // ============================================= ↓
 
   kernel.add({
     // /**
@@ -57,7 +54,7 @@ void mini_jit::kernels::br_matmul_16mRest_lt4nRest_k(mini_jit::Kernel &kernel, c
     //     // save callee-saved registers
     stpPre(x19, x20, sp, -16),  //     // stp x19, x20, [sp, #-16]!
     stpPre(x21, x22, sp, -16),  //     // stp x21, x22, [sp, #-16]!
-    // stpPre(x23, x24, sp, -16),  //     // stp x23, x24, [sp, #-16]!
+    stpPre(x23, x24, sp, -16),  //     // stp x23, x24, [sp, #-16]!
     //     // stp x25, x26, [sp, #-16]!
     stpPre(x27, x28, sp, -16),  //     // stp x27, x28, [sp, #-16]!
 
@@ -85,7 +82,43 @@ void mini_jit::kernels::br_matmul_16mRest_lt4nRest_k(mini_jit::Kernel &kernel, c
 
     mov(x20, x1),  // Store the initial value of x1, to be restored in the Batch loop iteration
     mov(x21, x2),  // Store the initial value of x2, to be restored in the Batch loop iteration
+
+    mov(x22, x0),  //     mov x0 // Store the initial value of x0, to be restored in the N loop iteration
+    mov(x23, x1),  //     mov x1 // Store the initial value of x0, to be restored in the N loop iteration
+    mov(x24, x2),  //     mov x2 // Store the initial value of x2, to bes restored in the N loop iteration
   });
+
+  // ========================================================================================
+  // Calculation of the n loop
+  // ========================================================================================
+
+  if (n_loop_4 != 0)
+  {
+    br_matmul_lt16_4n_k(kernel, n_loop_4, k_loop, br_size, m_loop_rest, false);
+  }
+
+  kernel.add({
+    // Restore for batch loop
+    mov(x27, x23),  //     mov x27, x1 // Store the initial value of x1, to be restored in the K loop iteration
+    mov(x28, x24),  //     mov x28, x2 // Store the initial value of x2, to be restored in the K loop iteration
+
+    mov(x8, x22),  //     mov x8, x0 // Store the initial value of x0, to be restored in the M loop iteration
+    mov(x9, x23),  //     mov x9, x1 // Store the initial value of x1, to be restored in the M loop iteration
+
+    mov(x10, x22),           //     mov x10, x0 // Store the initial value of x0, to be restored in the N loop iteration
+    mov(x11, x24),           //     mov x11, x2 // Store the initial value of x2, to bes restored in the N loop iteration
+    mov(x12, n_loop_4 * 4),  //     mov x12, #4 // hold the size of N that are processed in one loop, needed for offset calculation
+
+    mov(x20, x23),  // Store the initial value of x1, to be restored in the Batch loop iteration
+    mov(x21, x24),  // Store the initial value of x2, to be restored in the Batch loop iteration
+
+    madd(x20, x4, x12, x20),
+    madd(x21, x5, x12, x21),
+  });
+
+  // ========================================================================================
+  // Rest Calculation of m and n loop
+  // ========================================================================================
 
   kernel.add({
     mov(x19, br_size),  // mov x19, #16 // x19 iterator for the batch dimension
@@ -98,39 +131,17 @@ void mini_jit::kernels::br_matmul_16mRest_lt4nRest_k(mini_jit::Kernel &kernel, c
 
     // Update for the matrix c
     mov(x11, x21),  // mov x11, x21 // Update the restore register of x2 for the N loop
-
   });
 
   kernel_size_stamp = kernel.get_instruction_count();
 
-  // ========================================================================================
-  // Calculate m + rest but n is multiple of 4
-  // ========================================================================================
-  matmul_16mRest_4n_k(kernel, m_loop_16, n_loop_4, k_loop, m_loop_rest, false);
-
-  // Offset to the next matrix block
-  // Here we want to start with the initial m value but n should be offset by the already calculated amount.
-  // we should be at the right position calculated through 16mRest_4n_k
-
-  // ========================================================================================
-  // Rest Calculation of n loop i.e. n < 4 but m > 16
-  // ========================================================================================
-  matmul_16m_lt4nRest_k(kernel, m_loop_16, 0, k_loop, n_loop_rest, false);
-
-  // Now we want to make sure to not restore the position of the m as it is in the right position.
-  // Therefore we should restore the register above the m_loop
-
-  // ========================================================================================
-  // Rest Calculation of m and n loop
-  // ========================================================================================
-
   kernel.add({
     //     // Restore for the loop jumps
     //     // Update for the matrix a
-    // mov(x8, x10),  //     mov x8, x10 // Update the restore register for x0 for the M loop
+    mov(x8, x10),  //     mov x8, x10 // Update the restore register for x0 for the M loop
 
     //     // Updates for the matrix c
-    // mov(x28, x11),  //     mov x28, x11 // Update the restore register of x2 for the K loop
+    mov(x28, x11),  //     mov x28, x11 // Update the restore register of x2 for the K loop
 
     // =================================================================
     // We do not loop through M as we currently processing the rest of M
@@ -156,15 +167,19 @@ void mini_jit::kernels::br_matmul_16mRest_lt4nRest_k(mini_jit::Kernel &kernel, c
   std::vector<uint32_t> instruction2_fp_loads_less_than_4;
   std::vector<uint32_t> instruction3_fp_loads_less_than_4;
   std::vector<uint32_t> instructions_fp_load_column_of_matrix_a;
-  uint32_t m_loop_full_4s = m_loop_rest / 4;
-  uint32_t m_loop_remainder = m_loop_rest % 4;
-  uint32_t offset_from_full_loads = (m_loop_full_4s) * 4 * 4;  // count * number of floats * sizeof(float)
+  const uint32_t m_loop_full_4s = m_loop_rest / 4;
+  const uint32_t m_loop_remainder = m_loop_rest % 4;
+  const uint32_t offset_from_full_loads = (m_loop_full_4s) * 4 * 4;  // count * number of floats * sizeof(float)
 
   // For usage reason see case 3 of the below swich statement
-  uint32_t revert_offset_x2 =
+  const uint32_t revert_offset_x2_gt1full =
     offset_from_full_loads >= 4 ? sub(x2, x2, offset_from_full_loads - 4) : add(x2, x2, 4 - offset_from_full_loads);
-  uint32_t revert_offset_x0 =
+  const uint32_t revert_offset_x0_gt1full =
     offset_from_full_loads >= 4 ? sub(x0, x0, offset_from_full_loads - 4) : add(x0, x0, 4 - offset_from_full_loads);
+  const uint32_t apply_offset_x2 = add(x2, x2, offset_from_full_loads + 4);
+  const uint32_t revert_offset_x2 = sub(x2, x2, offset_from_full_loads);  // we ldrPost with a -4 to be at the correct position for next ld1
+  const uint32_t apply_offset_x0 = add(x0, x0, offset_from_full_loads + 4);
+  const uint32_t revert_offset_x0 = sub(x0, x0, offset_from_full_loads);  // we ldrPost with a -4 to be at the correct position for next ld1
 
   switch (m_loop_remainder)
   {
@@ -185,17 +200,35 @@ void mini_jit::kernels::br_matmul_16mRest_lt4nRest_k(mini_jit::Kernel &kernel, c
     instructions_fp_load_column_of_matrix_a.push_back(ldrOffset(d3, x0, offset_from_full_loads));
     break;
   case 3:  // 3s
-    // Idea load 4 float elements, but only output the three last
-    // Note we need to be carful when we store back so that the already calculated 1. element does not get overwritten
-    // Solution load single already calculated 1. element to unused register. Save the whole 4s of this calculation
-    // Overwrite the first 1. element from the freshly load register.
+    if (m_loop_full_4s == 0)
+    {
+      // We need to load 3 float elements in the same register we can load the first two using ldr and the 3. using ld1 single
+      // structure i.e. |       | 2. ld1 | 1. ldr | 1. ldr |
+      // We can not load more than 3 elements (in reverser direction), as we can not guarantee that we look out of memory.
 
-    // ldrOffset cannot be used as it only supports positive and multiple of 16 numbers.
-    instruction1_fp_loads_less_than_4 = {ldrPre(q28, x2, offset_from_full_loads - 4), revert_offset_x2};
-    instruction2_fp_loads_less_than_4 = {ldrPre(q20, x2, offset_from_full_loads - 4), revert_offset_x2};
-    instruction3_fp_loads_less_than_4 = {ldrPre(q24, x2, offset_from_full_loads - 4), revert_offset_x2};
-    instructions_fp_load_column_of_matrix_a.push_back(ldrPre(q3, x0, offset_from_full_loads - 4));
-    instructions_fp_load_column_of_matrix_a.push_back(revert_offset_x0);
+      // ldrOffset cannot be used as it only supports positive and multiple of 16 numbers.
+      instruction1_fp_loads_less_than_4 = {apply_offset_x2, ldrPost(d28, x2, -4), ld1(s28, 2, x2), revert_offset_x2};
+      instruction2_fp_loads_less_than_4 = {apply_offset_x2, ldrPost(d20, x2, -4), ld1(s20, 2, x2), revert_offset_x2};
+      instruction3_fp_loads_less_than_4 = {apply_offset_x2, ldrPost(d24, x2, -4), ld1(s24, 2, x2), revert_offset_x2};
+      instructions_fp_load_column_of_matrix_a.push_back(apply_offset_x0);
+      instructions_fp_load_column_of_matrix_a.push_back(ldrPost(d3, x0, -4));
+      instructions_fp_load_column_of_matrix_a.push_back(ld1(s3, 2, x0));
+      instructions_fp_load_column_of_matrix_a.push_back(revert_offset_x0);
+    }
+    else
+    {
+      // Idea load 4 float elements, but only output the three last
+      // Note we need to be carful when we store back so that the already calculated 1. element does not get overwritten
+      // Solution load single already calculated 1. element to unused register. Save the whole 4s of this calculation
+      // Overwrite the first 1. element from the freshly load register.
+
+      // ldrOffset cannot be used as it only supports positive and multiple of 16 numbers.
+      instruction1_fp_loads_less_than_4 = {ldrPre(q28, x2, offset_from_full_loads - 4), revert_offset_x2_gt1full};
+      instruction2_fp_loads_less_than_4 = {ldrPre(q20, x2, offset_from_full_loads - 4), revert_offset_x2_gt1full};
+      instruction3_fp_loads_less_than_4 = {ldrPre(q24, x2, offset_from_full_loads - 4), revert_offset_x2_gt1full};
+      instructions_fp_load_column_of_matrix_a.push_back(ldrPre(q3, x0, offset_from_full_loads - 4));
+      instructions_fp_load_column_of_matrix_a.push_back(revert_offset_x0_gt1full);
+    }
 
     break;
   default:
@@ -528,6 +561,10 @@ void mini_jit::kernels::br_matmul_16mRest_lt4nRest_k(mini_jit::Kernel &kernel, c
   std::vector<uint32_t> instruction2_fp_store_less_than_4;
   std::vector<uint32_t> instruction3_fp_store_less_than_4;
 
+  // Dynamically saving back to memory
+  // jump_batch_loop += jump_K_loop;
+  // jump_batch_loop += 1;  // line 533: mov(x2, x28),  //     mov x2, x28
+
   switch (m_loop_remainder)
   {
   case 0:
@@ -553,20 +590,21 @@ void mini_jit::kernels::br_matmul_16mRest_lt4nRest_k(mini_jit::Kernel &kernel, c
     // need to restore the first element, as it is not written at this time
     if (m_loop_full_4s == 0)
     {
+      // Remember: We need to load 3 float elements in the same register we can load the first two using ldr and the 3. using ld1 single
+      // structure i.e. |       | 2. ld1 | 1. ldr | 1. ldr |
+      // We can not load more than 3 elements (in reverser direction), as we can not guarantee that we look out of memory.
+
       // ldrOffset cannot be used as it only supports positive and multiple of 16 numbers.
-      instruction1_fp_store_less_than_4 = {ldrPre(s29, x2, offset_from_full_loads - 4), str(q28, x2),
-                                           strPost(s29, x2, 4 - offset_from_full_loads)};
-      instruction2_fp_store_less_than_4 = {ldrPre(s29, x2, offset_from_full_loads - 4), str(q20, x2),
-                                           strPost(s29, x2, 4 - offset_from_full_loads)};
-      instruction3_fp_store_less_than_4 = {ldrPre(s29, x2, offset_from_full_loads - 4), str(q24, x2),
-                                           strPost(s29, x2, 4 - offset_from_full_loads)};
+      instruction1_fp_store_less_than_4 = {apply_offset_x2, strPost(d28, x2, -4), st1(s28, 2, x2), revert_offset_x2};
+      instruction2_fp_store_less_than_4 = {apply_offset_x2, strPost(d20, x2, -4), st1(s20, 2, x2), revert_offset_x2};
+      instruction3_fp_store_less_than_4 = {apply_offset_x2, strPost(d24, x2, -4), st1(s24, 2, x2), revert_offset_x2};
     }
     else
     {
       // ldrOffset cannot be used as it only supports positive and multiple of 16 numbers.
-      instruction1_fp_store_less_than_4 = {strPre(q28, x2, offset_from_full_loads - 4), revert_offset_x2};
-      instruction2_fp_store_less_than_4 = {strPre(q20, x2, offset_from_full_loads - 4), revert_offset_x2};
-      instruction3_fp_store_less_than_4 = {strPre(q24, x2, offset_from_full_loads - 4), revert_offset_x2};
+      instruction1_fp_store_less_than_4 = {strPre(q28, x2, offset_from_full_loads - 4), revert_offset_x2_gt1full};
+      instruction2_fp_store_less_than_4 = {strPre(q20, x2, offset_from_full_loads - 4), revert_offset_x2_gt1full};
+      instruction3_fp_store_less_than_4 = {strPre(q24, x2, offset_from_full_loads - 4), revert_offset_x2_gt1full};
     }
 
     break;
@@ -811,7 +849,7 @@ void mini_jit::kernels::br_matmul_16mRest_lt4nRest_k(mini_jit::Kernel &kernel, c
 
     ldpPost(x27, x28, sp, 16),  //     // ldp x27, x28, [sp], #16
     //     // ldp x25, x26, [sp], #16
-    // ldpPost(x23, x24, sp, 16),  //     // ldp x23, x24, [sp], #16
+    ldpPost(x23, x24, sp, 16),  //     // ldp x23, x24, [sp], #16
     ldpPost(x21, x22, sp, 16),  //     // ldp x21, x22, [sp], #16
     ldpPost(x19, x20, sp, 16),  //     // ldp x19, x20, [sp], #16
 
@@ -824,6 +862,6 @@ void mini_jit::kernels::br_matmul_16mRest_lt4nRest_k(mini_jit::Kernel &kernel, c
   });
 
 #ifdef SAVE_JITS_TO_FILE
-  kernel.write("br_matmul_16mRest_lt4nRest_k.bin");
+  kernel.write("br_matmul_lt16_lt4nRest_k.bin");
 #endif  // SAVE_JITS_TO_FILE
 }

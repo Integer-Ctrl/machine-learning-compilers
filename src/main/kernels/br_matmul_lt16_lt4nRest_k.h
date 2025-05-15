@@ -15,6 +15,7 @@ namespace mini_jit
      * @param kernel The kernel to add instructions to.
      * @param n_loop_4 The repetitions of the n block of size 4.
      * @param k_loop The loops in the k dimensions.
+     * @param br_size number of batch dimensions.
      * @param m_loop_rest The rest/remainder of the m loop that is not dividable by 16.
      * @param n_loop_rest The rest/remainder of the n loop that is not dividable by 4.
      */
