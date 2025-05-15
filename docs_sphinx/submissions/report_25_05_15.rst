@@ -128,4 +128,59 @@ However, this leads us to assume that our result of putting the batch loop outsi
 - **matmul_64_48_64_16** kernel: :math:`123.6` GFLOPS
 
 
+GEMM
+----
 
+1. Extend generate to support M-N-K combinations for column-major format :math:`1 \leq M,N \leq 1024, 1 \leq K \leq 2028`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To support all M-N-K combinations we take a kernel as base and dynamically generate the rest handling of not multiple of M, N and K.
+As a base we took the ``matmul_16m_4n_k`` kernel, which reached around ``130 GFLOPS`` as 64_48_64 kernel (i.e. the same as kernel from the previous 
+section with the batch dimension of one). 
+The k dimension is always a multiple of 1 therefore we don't need a special case for this dimension. 
+To get full coverage on the remaining dimension, we implemented the variations:
+
+- `matmul_16m_lt4nRest_k`: 
+    - M dimension must be multiple of 16 
+    - N dimension can be less than 4 or larger, multiple of 4 are processed at once, N mod 4 are processed at the end at once
+
+- `matmul_16mRest_4n_k`:
+    - M dimension can be larger than 16, multiple of 16 are processed at once, M mod 16 are processed at the end at once
+    - N dimension must be multiple of 4
+
+- `matmul_16mRest_lt4nRest_k`:
+    - M dimension can be larger than 16, multiple of 16 are processed at once, M mod 16 are processed at the end at once
+    - N dimension can be less than 4 or larger, multiple of 4 are processed at once, N mod 4 are processed at the end at once
+
+- `matmul_lt16_4n_k`:
+    - M dimension must be less than 16
+    - N dimension must be multiple of 4
+
+- `matmul_lt16_lt4nRest_k`:
+    - M dimension must be less than 16
+    - N dimension can be less than 4 or larger, multiple of 4 are processed at once, N mod 4 are processed at the end at once
+
+Together with the `matmul_16m_4n_k`, we have 6 kernels to cover the complete dimension space.
+
+.. image:: ../_static/images/report_25_05_15/matmul_coverage_light.svg
+    :align: center
+    :class: only-light
+
+.. image:: ../_static/images/report_25_05_15/matmul_coverage_dark.svg
+    :align: center
+    :class: only-dark
+
+2. Verify all matrices for ``1≤M≤64``, ``1≤N≤64``, ``K∈[1,16,32,64,128]``,``lda=M``, ``ldb=K``, and ``ldc=M``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+All GEMM generation and execution with these configuration work with counting upwards and random data.
+
+3. Verify all matrices for ``1≤M≤64``, ``1≤N≤64``, ``K∈[1,16,32,64,128]``,``lda>M``, ``ldb>K``, and ``ldc>M``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+All GEMM generation and execution with these configuration work with counting upwards and random data.
+
+4. Benchmark for ``1≤M≤64``, ``1≤N≤64``, ``K∈[1,16,32,64,128]``,``lda=M``, ``ldb=K``, and ``ldc=M``. 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Running the Benchmark in approximately 8 hours total. We produced the following results: :download:`GEMM_benchmarks.csv <../_static/resources/report_25_05_15/GEMM_benchmarks.csv>` 
