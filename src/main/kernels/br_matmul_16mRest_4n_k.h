@@ -16,8 +16,8 @@ namespace mini_jit
      * @param m_loop_16 The repetitions of the m block of size 16.
      * @param n_loop_4 The repetitions of the n block of size 4.
      * @param k_loop The loops in the k dimensions.
-     * @param m_loop_rest The rest/remainder of the m loop that is not dividable by 16
      * @param br_size number of batch dimensions.
+     * @param m_loop_rest The rest/remainder of the m loop that is not dividable by 16
      * @param use_init_and_end Indicates if the procedural call standard, initializing setup and the ret instruction are used. Defaults to
      * true.
      */
