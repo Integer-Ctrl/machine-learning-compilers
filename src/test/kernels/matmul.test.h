@@ -6,6 +6,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <cstdint>
+#include <limits>
 
 /**
  * @brief Fill the given matrix with random values.
@@ -18,7 +19,19 @@ template <uint32_t TSize> void fill_random_matrix(float (&matrix)[TSize])
   std::srand(std::time(0));
   for (size_t i = 0; i < TSize; i++)
   {
-    matrix[i] = (static_cast<float>(std::rand())) / (static_cast<float>(std::rand()));
+    float denominator = 1;
+    do
+    {
+      denominator = static_cast<float>(std::rand());
+    } while (denominator == 0);
+
+    float numerator = 1;
+    do
+    {
+      numerator = static_cast<float>(std::rand());
+    } while (numerator == 0);
+
+    matrix[i] = numerator / denominator;
   }
 }
 
@@ -110,11 +123,16 @@ enum class TestInfill
 
 class GemmMxNxKxBatchTestFixture
 {
-private:
+protected:
   uint32_t M;
   uint32_t N;
   uint32_t K;
   uint32_t BatchSize;
+  uint32_t lda = 0;
+  uint32_t ldb = 0;
+  uint32_t ldc = 0;
+  uint32_t batch_stride_a = 0;
+  uint32_t batch_stride_b = 0;
   float *matrix_a;
   float *matrix_b;
   float *matrix_c;
@@ -165,6 +183,8 @@ public:
 
   GemmMxNxKxBatchTestFixture() = delete;
   GemmMxNxKxBatchTestFixture(uint32_t M, uint32_t N, uint32_t K, uint32_t BatchSize);
+  GemmMxNxKxBatchTestFixture(uint32_t M, uint32_t N, uint32_t K, uint32_t BatchSize, uint32_t lda, uint32_t ldb, uint32_t ldc,
+                             uint32_t batch_stride_a, uint32_t bach_stride_b);
   ~GemmMxNxKxBatchTestFixture();
 
   /**
@@ -210,6 +230,7 @@ class GemmMxNxKTestFixture : public GemmMxNxKxBatchTestFixture
 public:
   GemmMxNxKTestFixture() = delete;
   GemmMxNxKTestFixture(uint32_t M, uint32_t N, uint32_t K);
+  GemmMxNxKTestFixture(uint32_t M, uint32_t N, uint32_t K, uint32_t lda, uint32_t ldb, uint32_t ldc);
   ~GemmMxNxKTestFixture();
 
   /**
@@ -221,7 +242,7 @@ public:
    */
   void RunTest(const uint32_t lda, const uint32_t ldb, const uint32_t ldc)
   {
-    GemmMxNxKxBatchTestFixture::_RunTest(lda, ldb, ldc, 0, 0);
+    GemmMxNxKxBatchTestFixture::_RunTest(lda, ldb, ldc, lda * K, ldb * N);
   }
 };
 

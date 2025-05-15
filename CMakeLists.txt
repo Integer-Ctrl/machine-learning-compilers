@@ -225,6 +225,7 @@ add_executable(tests "${SOURCE_FILEPATHS}" "${TEST_FILEPATHS}")
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
 
 add_executable(benchmarks "${SOURCE_FILEPATHS}" "${BENCH_FILEPATHS}")
+target_compile_definitions(benchmarks PUBLIC SAVE_JITS_TO_FILE=0)
 target_link_libraries(benchmarks benchmark::benchmark_main)
 
 # ==============================================================

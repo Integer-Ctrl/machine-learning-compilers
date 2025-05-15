@@ -12,6 +12,11 @@ private:
   uint32_t N;
   uint32_t K;
   uint32_t BatchSize;
+  uint32_t lda = 0;  // lda != 0 Use as indicator if any leading dimension higher than a size is used
+  uint32_t ldb = 0;
+  uint32_t ldc = 0;
+  uint32_t batch_stride_a = 0;
+  uint32_t batch_stride_b = 0;
   float *matrix_a;
   float *matrix_b;
   float *matrix_c;
@@ -61,7 +66,10 @@ private:
 public:
   GenerationTest() = delete;
   GenerationTest(uint32_t M, uint32_t N, uint32_t K);
+  GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t lda, uint32_t ldb, uint32_t ldc);
   GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t BatchSize);
+  GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t BatchSize, uint32_t lda, uint32_t ldb, uint32_t ldc, uint32_t batch_stride_a,
+                 uint32_t batch_stride_b);
   ~GenerationTest();
 
   /**

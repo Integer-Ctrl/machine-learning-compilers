@@ -1,12 +1,25 @@
 #include "BaseGeneration.test.h"
 #include "kernels/matmul.test.h"
+#include <cmath>
 
 void GenerationTest::fill_random_matrix(float *matrix, uint32_t size)
 {
   std::srand(std::time(0));
   for (size_t i = 0; i < size; i++)
   {
-    matrix[i] = (static_cast<float>(std::rand())) / (static_cast<float>(std::rand()));
+    float denominator = 1;
+    do
+    {
+      denominator = static_cast<float>(std::rand());
+    } while (denominator == 0);
+
+    float numerator = 1;
+    do
+    {
+      numerator = static_cast<float>(std::rand());
+    } while (numerator == 0);
+
+    matrix[i] = numerator / denominator;
   }
 }
 
@@ -41,11 +54,24 @@ void GenerationTest::verify_matmul(const float *__restrict__ expected, const flo
   for (size_t i = 0; i < size; i++)
   {
     CAPTURE(i, result[i], expected[i]);
-    REQUIRE_THAT(result[i], Catch::Matchers::WithinRel(expected[i]));
+
+    if (std::isnan(expected[i]))
+    {
+      REQUIRE_THAT(result[i], Catch::Matchers::IsNaN());
+    }
+    else
+    {
+      REQUIRE_THAT(result[i], Catch::Matchers::WithinRel(expected[i]));
+    }
   }
 }
 
 GenerationTest::GenerationTest(uint32_t M, uint32_t N, uint32_t K) : GenerationTest(M, N, K, 1)
+{
+}
+
+GenerationTest::GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t lda, uint32_t ldb, uint32_t ldc)
+    : GenerationTest(M, N, K, 1, lda, ldb, ldc, lda * K, ldb * N)
 {
 }
 
@@ -58,6 +84,16 @@ GenerationTest::GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t Batc
   matrix_c_verify = new float[M * N];
 }
 
+GenerationTest::GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t BatchSize, uint32_t lda, uint32_t ldb, uint32_t ldc,
+                               uint32_t batch_stride_a, uint32_t batch_stride_b)
+    : M(M), N(N), K(K), BatchSize(BatchSize), lda(lda), ldb(ldb), ldc(ldc), batch_stride_a(batch_stride_a), batch_stride_b(batch_stride_b)
+{
+  matrix_a = new float[batch_stride_a * BatchSize];
+  matrix_b = new float[batch_stride_b * BatchSize];
+  matrix_c = new float[ldc * N];
+  matrix_c_verify = new float[ldc * N];
+}
+
 GenerationTest::~GenerationTest()
 {
   delete[] matrix_a;
@@ -68,24 +104,46 @@ GenerationTest::~GenerationTest()
 
 void GenerationTest::SetUp(TestInfill fillType)
 {
-  switch (fillType)
+  if (lda != 0)
   {
-  case TestInfill::Random:
-    fill_random_matrix(matrix_a, M * K * BatchSize);
-    fill_random_matrix(matrix_b, K * N * BatchSize);
-    fill_random_matrix(matrix_c, M * N);
-    break;
-  case TestInfill::Counting:
-    fill_counting_matrix(matrix_a, M * K * BatchSize);
-    fill_counting_matrix(matrix_b, K * N * BatchSize);
-    fill_counting_matrix(matrix_c, M * N);
-    break;
-  default:
-    FAIL("Undefined infill type found.");
-    break;
+    switch (fillType)
+    {
+    case TestInfill::Random:
+      fill_random_matrix(matrix_a, batch_stride_a * BatchSize);
+      fill_random_matrix(matrix_b, batch_stride_b * BatchSize);
+      fill_random_matrix(matrix_c, ldc * N);
+      break;
+    case TestInfill::Counting:
+      fill_counting_matrix(matrix_a, batch_stride_a * BatchSize);
+      fill_counting_matrix(matrix_b, batch_stride_b * BatchSize);
+      fill_counting_matrix(matrix_c, ldc * N);
+      break;
+    default:
+      FAIL("Undefined infill type found.");
+      break;
+    }
+    std::copy(matrix_c, matrix_c + ldc * N, matrix_c_verify);
   }
-
-  std::copy(matrix_c, matrix_c + M * N, matrix_c_verify);
+  else
+  {
+    switch (fillType)
+    {
+    case TestInfill::Random:
+      fill_random_matrix(matrix_a, M * K * BatchSize);
+      fill_random_matrix(matrix_b, K * N * BatchSize);
+      fill_random_matrix(matrix_c, M * N);
+      break;
+    case TestInfill::Counting:
+      fill_counting_matrix(matrix_a, M * K * BatchSize);
+      fill_counting_matrix(matrix_b, K * N * BatchSize);
+      fill_counting_matrix(matrix_c, M * N);
+      break;
+    default:
+      FAIL("Undefined infill type found.");
+      break;
+    }
+    std::copy(matrix_c, matrix_c + M * N, matrix_c_verify);
+  }
 }
 
 void GenerationTest::SetKernel(mini_jit::Brgemm::kernel_t kernel)
@@ -102,10 +160,27 @@ void GenerationTest::RunTest(const uint32_t lda, const uint32_t ldb, const uint3
     FAIL("The kernel should be set before the test is executed.");
   }
 
+  if (GenerationTest::lda != 0)
+  {
+    // Verification of same lda, ldb, batch_stride_a, batch_stride_b
+    REQUIRE(GenerationTest::lda == lda);
+    REQUIRE(GenerationTest::ldb == ldb);
+    REQUIRE(GenerationTest::ldc == ldc);
+    REQUIRE(GenerationTest::batch_stride_a == batch_stride_a);
+    REQUIRE(GenerationTest::batch_stride_b == batch_stride_b);
+  }
+
   // Run matmuls
   kernel(matrix_a, matrix_b, matrix_c, lda, ldb, ldc, batch_stride_a, batch_stride_b);
 
   naive_matmul_M_N_K_Batch(matrix_a, matrix_b, matrix_c_verify, lda, ldb, ldc, batch_stride_a, batch_stride_b);
 
-  verify_matmul(matrix_c_verify, matrix_c, M * N);
+  if (lda != 0)
+  {
+    verify_matmul(matrix_c_verify, matrix_c, ldc * N);
+  }
+  else
+  {
+    verify_matmul(matrix_c_verify, matrix_c, M * N);
+  }
 }

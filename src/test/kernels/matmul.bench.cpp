@@ -51,20 +51,11 @@ BENCHMARK_DEFINE_F(GemmFixture, BM_matmul)(benchmark::State &state)
 
 static void CustomArguments(benchmark::internal::Benchmark *b)
 {
-  for (int M = 16; M <= 64; M += 16)
-    for (int N = 16; N <= 64; N += 16)
+  for (int M = 1; M <= 64; M += 1)
+    for (int N = 1; N <= 64; N += 1)
       for (int K : {1, 16, 32, 64, 128})
         b->Args({M, N, K});
 }
-
-// ########## UNCOMMENT WHEN brgemm.generate() supports m, n < 16 ##########
-// static void CustomArguments(benchmark::internal::Benchmark *b)
-// {
-//   for (int M = 1; M <= 64; M += 1)
-//     for (int N = 1; N <= 64; N += 1)
-//       for (int K : {1, 16, 32, 64, 128})
-//         b->Args({M, N, K});
-// }
 
 BENCHMARK_REGISTER_F(GemmFixture, BM_matmul)
   ->ArgNames({"M", "N", "K"})
