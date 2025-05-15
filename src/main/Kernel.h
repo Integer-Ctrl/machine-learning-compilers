@@ -52,7 +52,7 @@ namespace mini_jit
     /**
      * Constructor
      **/
-    Kernel(){};
+    Kernel() {};
 
     /**
      * Destructor
@@ -84,6 +84,13 @@ namespace mini_jit
      * @return size of the code buffer in bytes.
      **/
     std::size_t get_size() const;
+
+    /**
+     * Gets the number of instruction in the code buffer.
+     *
+     * @return number of instruction in the code buffer.
+     **/
+    std::size_t get_instruction_count() const;
 
     /**
      * Sets the kernel based on the code buffer.

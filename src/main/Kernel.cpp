@@ -77,6 +77,11 @@ std::size_t mini_jit::Kernel::get_size() const
   return buffer.size() * sizeof(uint32_t);
 }
 
+std::size_t mini_jit::Kernel::get_instruction_count() const
+{
+  return buffer.size();
+}
+
 void mini_jit::Kernel::set_kernel()
 {
   release_memory();

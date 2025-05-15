@@ -44,6 +44,16 @@ TEST_CASE("Test cbnz 64bit instruction with offset (-143*4)", "[codegen][64bit]"
   REQUIRE(value == expected);
 }
 
+TEST_CASE("Test cbnz 64bit instruction with offset (-26*4)", "[codegen][64bit]")
+{
+  uint32_t value = cbnz(x25, -26*4);
+  uint32_t expected = 0b1'0110101'1111111111111100110'11001;
+
+  INFO("value:    " << std::bitset<32>(value));
+  INFO("expected: " << std::bitset<32>(expected));
+  REQUIRE(value == expected);
+}
+
 TEST_CASE("Test cbnz internal instruction", "[codegen][internal]")
 {
   uint32_t value = internal::cbnz(25, -32*4, true);

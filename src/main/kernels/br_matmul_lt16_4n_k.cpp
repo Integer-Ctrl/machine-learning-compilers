@@ -36,11 +36,11 @@ void mini_jit::kernels::br_matmul_lt16_4n_k(mini_jit::Kernel &kernel, const uint
       //     // mov fp, sp
 
       //     // save callee-saved registers
-      //     // stp x19, x20, [sp, #-16]!
-      //     // stp x21, x22, [sp, #-16]!
+      stpPre(x19, x20, sp, -16),  //     // stp x19, x20, [sp, #-16]!
+      stpPre(x21, x22, sp, -16),  //     // stp x21, x22, [sp, #-16]!
       //     // stp x23, x24, [sp, #-16]!
       //     // stp x25, x26, [sp, #-16]!
-      //     // stp x27, x28, [sp, #-16]!
+      stpPre(x27, x28, sp, -16),  //     // stp x27, x28, [sp, #-16]!
 
       stpPre(d8, d9, sp, -16),  //     stp  d8,  d9, [sp, #-16]!
       //     // stp d10, d11, [sp, #-16]!
@@ -51,9 +51,11 @@ void mini_jit::kernels::br_matmul_lt16_4n_k(mini_jit::Kernel &kernel, const uint
       lsl(x3, x3, 2),  //     lsl x3, x3, #2 // x3 * 4 = x3 * sizeof(float)
       lsl(x4, x4, 2),  //     lsl x4, x4, #2 // x4 * 4 = x4 * sizeof(float)
       lsl(x5, x5, 2),  //     lsl x5, x5, #2 // x5 * 4 = x5 * sizeof(float)
+      lsl(x6, x6, 2),  //     lsl x6, x6, #2 // x6 * 4 = x6 * sizeof(float)
+      lsl(x7, x7, 2),  //     lsl x7, x7, #2 // x7 * 4 = x7 * sizeof(float)
 
-      mov(x6, x1),  //     mov x6, x1 // Store the initial value of x1, to be restored in the K loop iteration
-      mov(x7, x2),  //     mov x7, x2 // Store the initial value of x2, to be restored in the K loop iteration
+      mov(x27, x1),  //     mov x27, x1 // Store the initial value of x1, to be restored in the K loop iteration
+      mov(x28, x2),  //     mov x28, x2 // Store the initial value of x2, to be restored in the K loop iteration
 
       mov(x8, x0),  //     mov x8, x0 // Store the initial value of x0, to be restored in the M loop iteration
       mov(x9, x1),  //     mov x9, x1 // Store the initial value of x1, to be restored in the M loop iteration
@@ -61,6 +63,9 @@ void mini_jit::kernels::br_matmul_lt16_4n_k(mini_jit::Kernel &kernel, const uint
       mov(x10, x0),  //     mov x10, x0 // Store the initial value of x0, to be restored in the N loop iteration
       mov(x11, x2),  //     mov x11, x2 // Store the initial value of x2, to bes restored in the N loop iteration
       mov(x12, 4),   //     mov x12, #4 // hold the size of N that are processed in one loop, needed for offset calculation
+
+      mov(x20, x1),  // Store the initial value of x1, to be restored in the Batch loop iteration
+      mov(x21, x2),  // Store the initial value of x2, to be restored in the Batch loop iteration
     });
   }
 
@@ -69,9 +74,21 @@ void mini_jit::kernels::br_matmul_lt16_4n_k(mini_jit::Kernel &kernel, const uint
   // ========================================================================================
 
   // Hold the number of instruction to jump for each loop
+  int32_t jump_batch_loop = 7;
   int32_t jump_N_loop = 23;  // start value = amount of instructions outside of control flow
 
   kernel.add({
+    mov(x19, br_size),  // mov x19, #16 // x19 iterator for the batch dimension
+    // matmul_loop_batch_dimension:
+    sub(x19, x19, 1),  // sub x19, x19, #1
+
+    // Restore for the loop jumps
+    // Update for the matrix b
+    mov(x9, x20),  // mov x9, x20 // Update the restore register of x1 for the N loop
+
+    // Update for the matrix c
+    mov(x11, x21),  // mov x11, x21 // Update the restore register of x2 for the N loop
+
     mov(x17, n_loop_4),  //     mov x17, #12 // x17 iterator for N loop
     // matmul_loop_over_N:
     sub(x17, x17, 1),  //     sub x17, x17, #1
@@ -81,7 +98,7 @@ void mini_jit::kernels::br_matmul_lt16_4n_k(mini_jit::Kernel &kernel, const uint
     mov(x8, x10),  //     mov x8, x10 // Update the restore register for x0 for the M loop
 
     //     // Updates for the matrix c
-    mov(x7, x11),  //     mov x7, x11 // Update the restore register of x2 for the K loop
+    mov(x28, x11),  //     mov x28, x11 // Update the restore register of x2 for the K loop
 
     // ============================================================
     // We are currently calculating the rest of the m loop
@@ -91,13 +108,13 @@ void mini_jit::kernels::br_matmul_lt16_4n_k(mini_jit::Kernel &kernel, const uint
     // sub(x16, x16, 1),  //     sub x16, x16, #1
 
     //     // Updates for the matrix b
-    // Restore the x6 loop offset
-    mov(x6, x9),
+    // Restore the x27 loop offset
+    mov(x27, x9),
     // Also restore the incremented register x0 again
     mov(x1, x9),
 
-    // Restore the x2 register for the loads of matrix c, x7 has correct position!
-    mov(x2, x7),
+    // Restore the x2 register for the loads of matrix c, x28 has correct position!
+    mov(x2, x28),
 
     // Restore the x0 register for the loads of matrix a, x8 has correct position!
     mov(x0, x8),
@@ -484,17 +501,17 @@ void mini_jit::kernels::br_matmul_lt16_4n_k(mini_jit::Kernel &kernel, const uint
   }
 
   kernel.add({
-    //     // offset x6 to the next element in the column
-    add(x6, x6, 4),  //     add x6, x6, #4 // #4 = sizeof(float)
+    //     // offset x27 to the next element in the column
+    add(x27, x27, 4),  //     add x27, x27, #4 // #4 = sizeof(float)
 
     //     // Restore x1 to be incremented again
-    mov(x1, x6),  //     mov x1, x6
+    mov(x1, x27),  //     mov x1, x27
 
     //     // Loop back to K
     cbnz(x15, -jump_K_loop * 4),  //     cbnz x15, matmul_loop_over_K
 
     //     // Restore initial value of x2 that was changed by the loads
-    mov(x2, x7),  //     mov x2, x7
+    mov(x2, x28),  //     mov x2, x28
   });
 
   std::vector<uint32_t> instruction1_fp_store_less_than_4;
@@ -718,13 +735,15 @@ void mini_jit::kernels::br_matmul_lt16_4n_k(mini_jit::Kernel &kernel, const uint
   //     // next M iteration on the matrix c and matrix a, both need offset about 16 values
   //     // also matrix b needs to start at the initial location again
   //     // Updates for the matrix c
-  // add(x7, x7, 16 * 4), //     add x7, x7, #16*4 // column height * sizeof(float)
+  // add(x28, x28, 16 * 4), //     add x28, x28, #16*4 // column height * sizeof(float)
 
   //     // Updates for the matrix a
   // add(x8, x8, 16 * 4), //     add x8, x8, #16*4 // column height * sizeof(float)
 
   //     // Loop back to M
   // cbnz(x16, -46 * 4), //     cbnz x16, matmul_loop_over_M
+
+  jump_batch_loop += jump_N_loop;
 
   kernel.add({
     //     // next N iteration on the matrix b and matrix c, both need offset about 4*ldb/ldc values
@@ -738,6 +757,17 @@ void mini_jit::kernels::br_matmul_lt16_4n_k(mini_jit::Kernel &kernel, const uint
 
     //     // Loop back to N
     cbnz(x17, -jump_N_loop * 4),  //     cbnz x17, matmul_loop_over_N
+
+    // next batch iteration the matrix a and b need to offset about the batch_stride_a (x6) and batch_stride_b (x7)
+    // the matrix c need to start at the initial location again
+    // Update matrix a
+    add(x10, x10, x6),  // add x10, x10, x6 // Offset to next matrix a in batch
+
+    // Update matrix b
+    add(x20, x20, x7),  // add x20, x20, x7 // Offset to next matrix b in batch
+
+    // Loop back to batch dimension
+    cbnz(x19, -jump_batch_loop * 4),  // cbnz x19, matmul_loop_batch_dimension
   });
 
   if (use_init_and_end)
@@ -752,11 +782,11 @@ void mini_jit::kernels::br_matmul_lt16_4n_k(mini_jit::Kernel &kernel, const uint
       //     // ldp d10, d11, [sp], #16
       ldpPost(d8, d9, sp, 16),  //     ldp  d8,  d9, [sp], #16
 
-      //     // ldp x27, x28, [sp], #16
+      ldpPost(x27, x28, sp, 16),  //     // ldp x27, x28, [sp], #16
       //     // ldp x25, x26, [sp], #16
       //     // ldp x23, x24, [sp], #16
-      //     // ldp x21, x22, [sp], #16
-      //     // ldp x19, x20, [sp], #16
+      ldpPost(x21, x22, sp, 16),  //     // ldp x21, x22, [sp], #16
+      ldpPost(x19, x20, sp, 16),  //     // ldp x19, x20, [sp], #16
 
       //     // restore frame pointer and link register
       //     // ldp fp, lr, [sp], #16
