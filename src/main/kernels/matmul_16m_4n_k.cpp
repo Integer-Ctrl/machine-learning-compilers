@@ -34,7 +34,7 @@ void mini_jit::kernels::matmul_16m_4n_k(mini_jit::Kernel &kernel, const uint32_t
     //     // stp x21, x22, [sp, #-16]!
     //     // stp x23, x24, [sp, #-16]!
     //     // stp x25, x26, [sp, #-16]!
-    //     // stp x27, x28, [sp, #-16]!
+    stpPre(x27, x28, sp, -16),  //     // stp x27, x28, [sp, #-16]!
 
     stpPre(d8, d9, sp, -16),  //     stp  d8,  d9, [sp, #-16]!
     //     // stp d10, d11, [sp, #-16]!
@@ -46,8 +46,8 @@ void mini_jit::kernels::matmul_16m_4n_k(mini_jit::Kernel &kernel, const uint32_t
     lsl(x4, x4, 2),  //     lsl x4, x4, #2 // x4 * 4 = x4 * sizeof(float)
     lsl(x5, x5, 2),  //     lsl x5, x5, #2 // x5 * 4 = x5 * sizeof(float)
 
-    mov(x6, x1),  //     mov x6, x1 // Store the initial value of x1, to be restored in the K loop iteration
-    mov(x7, x2),  //     mov x7, x2 // Store the initial value of x2, to be restored in the K loop iteration
+    mov(x27, x1),  //     mov x27, x1 // Store the initial value of x1, to be restored in the K loop iteration
+    mov(x28, x2),  //     mov x28, x2 // Store the initial value of x2, to be restored in the K loop iteration
 
     mov(x8, x0),  //     mov x8, x0 // Store the initial value of x0, to be restored in the M loop iteration
     mov(x9, x1),  //     mov x9, x1 // Store the initial value of x1, to be restored in the M loop iteration
@@ -65,7 +65,7 @@ void mini_jit::kernels::matmul_16m_4n_k(mini_jit::Kernel &kernel, const uint32_t
     mov(x8, x10),  //     mov x8, x10 // Update the restore register for x0 for the M loop
 
     //     // Updates for the matrix c
-    mov(x7, x11),  //     mov x7, x11 // Update the restore register of x2 for the K loop
+    mov(x28, x11),  //     mov x28, x11 // Update the restore register of x2 for the K loop
 
     mov(x16, m_loop_16),  //     mov x16, #4 // x16 iterator for M loop
     // matmul_loop_over_M:
@@ -73,14 +73,14 @@ void mini_jit::kernels::matmul_16m_4n_k(mini_jit::Kernel &kernel, const uint32_t
 
     //     // Restore for the loop jumps
     //     // Updates for the matrix c
-    mov(x2, x7),  //     mov x2, x7 // also apply offset to x2
+    mov(x2, x28),  //     mov x2, x28 // also apply offset to x2
 
     //     // Updates for the matrix a
     mov(x0, x8),  //     mov x0, x8 // also apply offset to x0
 
     //     // Updates for the matrix b
-    mov(x6, x9),  //     mov x6, x9 // Update the restore register for x1 for the K loop
-    mov(x1, x9),  //     mov x1, x9 // Update the x1 register itself
+    mov(x27, x9),  //     mov x27, x9 // Update the restore register for x1 for the K loop
+    mov(x1, x9),   //     mov x1, x9 // Update the x1 register itself
 
     //     // Load first column from the 16x6 matrix c
     ld1Post(v25, t4s, v26, t4s, v27, t4s, v28, t4s, x2, x5),  //     ld1 {v25.4s, v26.4s, v27.4s, v28.4s}, [x2], x5
@@ -139,17 +139,17 @@ void mini_jit::kernels::matmul_16m_4n_k(mini_jit::Kernel &kernel, const uint32_t
     fmla(v7, t4s, v2, t4s, v4, 0),  //     fmla v7.4s, v2.4s, v4.s[0]
     fmla(v8, t4s, v3, t4s, v4, 0),  //     fmla v8.4s, v3.4s, v4.s[0]
 
-    //     // offset x6 to the next element in the column
-    add(x6, x6, 4),  //     add x6, x6, #4 // #4 = sizeof(float)
+    //     // offset x27 to the next element in the column
+    add(x27, x27, 4),  //     add x27, x27, #4 // #4 = sizeof(float)
 
     //     // Restore x1 to be incremented again
-    mov(x1, x6),  //     mov x1, x6
+    mov(x1, x27),  //     mov x1, x27
 
     //     // Loop back to K
     cbnz(x15, -28 * 4),  //     cbnz x15, matmul_loop_over_K
 
     //     // Restore initial value of x2 that was changed by the loads
-    mov(x2, x7),  //     mov x2, x7
+    mov(x2, x28),  //     mov x2, x28
 
     //     // Store first column back to memory
     st1Post(v25, t4s, v26, t4s, v27, t4s, v28, t4s, x2, x5),  //     st1 {v25.4s, v26.4s, v27.4s, v28.4s}, [x2], x5
@@ -163,7 +163,7 @@ void mini_jit::kernels::matmul_16m_4n_k(mini_jit::Kernel &kernel, const uint32_t
     //     // next M iteration on the matrix c and matrix a, both need offset about 16 values
     //     // also matrix b needs to start at the initial location again
     //     // Updates for the matrix c
-    add(x7, x7, 16 * 4),  //     add x7, x7, #16*4 // column height * sizeof(float)
+    add(x28, x28, 16 * 4),  //     add x28, x28, #16*4 // column height * sizeof(float)
 
     //     // Updates for the matrix a
     add(x8, x8, 16 * 4),  //     add x8, x8, #16*4 // column height * sizeof(float)
@@ -190,7 +190,7 @@ void mini_jit::kernels::matmul_16m_4n_k(mini_jit::Kernel &kernel, const uint32_t
     //     // ldp d10, d11, [sp], #16
     ldpPost(d8, d9, sp, 16),  //     ldp  d8,  d9, [sp], #16
 
-    //     // ldp x27, x28, [sp], #16
+    ldpPost(x27, x28, sp, 16),  //     // ldp x27, x28, [sp], #16
     //     // ldp x25, x26, [sp], #16
     //     // ldp x23, x24, [sp], #16
     //     // ldp x21, x22, [sp], #16
