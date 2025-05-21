@@ -10,5 +10,10 @@
 #include "st1.h"
 #include "stp.h"
 #include "str.h"
+#include "fmax.h"
+#include "trn1.h"
+#include "trn2.h"
+#include "zip1.h"
+#include "zip2.h"
 
 #endif  // MINI_JIT_ARM_INSTRUCTIONS_SIMD_FP_ALL_H

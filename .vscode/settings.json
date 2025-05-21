@@ -76,21 +76,23 @@
 
     // Spellchecker
     "cSpell.words": [
-        "cbnz",
-        "fmla",
-        "MATMUL",
-        "microkernel",
-        "madd",
-        "MINIJIT",
         "Brgemm",
-        "MATMULS",
+        "cbnz",
+        "errneous",
+        "fmax",
+        "fmla",
+        "heapbytes",
         "jited",
+        "madd",
+        "MATMUL",
+        "MATMULS",
+        "microkernel",
+        "MINIJIT",
+        "movz",
+        "NOLINTNEXTLINE",
         "NVCC",
         "NVCOMPILER",
-        "pnacl",
-        "NOLINTNEXTLINE",
-        "heapbytes",
-        "errneous"
+        "pnacl"
     ],
 
     // Include Paths
