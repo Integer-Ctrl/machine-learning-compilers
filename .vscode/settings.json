@@ -92,7 +92,8 @@
         "NOLINTNEXTLINE",
         "NVCC",
         "NVCOMPILER",
-        "pnacl"
+        "pnacl",
+        "relu"
     ],
 
     // Include Paths

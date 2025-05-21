@@ -31,7 +31,7 @@ BENCHMARK_DEFINE_F(Trans8x8Fixture, BT_tran_8_8)(benchmark::State &state)
     trans_neon_8_8(matrix_a, matrix_b, 8, 8);
   }
 
-  bytes = (8 * 8) * 4;  // 8x8 matrix with 4 byte (32 bit) elements
+  bytes = (8 * 8) * 4 * 2;  // 8x8 matrix with 4 byte (32 bit) elements * 2 (load & store)
   bytes *= state.iterations();
 };
 
