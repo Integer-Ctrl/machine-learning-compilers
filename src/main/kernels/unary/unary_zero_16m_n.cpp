@@ -1,12 +1,12 @@
-#include "unary_zero_4m_n.h"
+#include "unary_zero_16m_n.h"
 #include "../../arm_instructions/arm_all.h"
 
-void mini_jit::kernels::unary_zero_4m_n(mini_jit::Kernel &kernel, const uint32_t m_loop_4, const uint32_t n_loop,
-                                        const bool use_init_and_end)
+void mini_jit::kernels::unary_zero_16m_n(mini_jit::Kernel &kernel, const uint32_t m_loop_16, const uint32_t n_loop,
+                                         const bool use_init_and_end)
 {
   using namespace mini_jit::arm_instructions;
 
-  release_assert(m_loop_4 != 0, "Cannot use a matrix with a m loop of size zero.");
+  release_assert(m_loop_16 != 0, "Cannot use a matrix with a m loop of size zero.");
   release_assert(n_loop != 0, "Cannot use a matrix with a n loop of size zero.");
 
   if (use_init_and_end)
@@ -40,8 +40,8 @@ void mini_jit::kernels::unary_zero_4m_n(mini_jit::Kernel &kernel, const uint32_t
       // Offset the used leading dimension by the size of floats
       lsl(x3, x3, 2),  // x3 * 4 = x3 * sizeof(float)
 
-      mov(x8, x1),      // Store the inital value of x1, to be restored in the N loop
-      mov(x9, 4 * 16),  // 4 * 16Byte Hold the number of bytes that are stored in the loop
+      mov(x8, x1),         // Store the inital value of x1, to be restored in the N loop
+      mov(x9, 4 * 4 * 4),  // 4 * 4 * sizeof(float) Hold the number of bytes that are stored in the loop
 
       // Zero four register so we can fill the matrix with zeros
       eor(v0, t16b, v0, t16b, v0, t16b),  // Zero the v0 register
@@ -57,10 +57,10 @@ void mini_jit::kernels::unary_zero_4m_n(mini_jit::Kernel &kernel, const uint32_t
     // loop over n
     sub(x16, x16, 1),
 
-    mov(x1, x9),  // Restore x1 for the m loop
+    mov(x1, x8),  // Restore x1 for the m loop
 
     // x17 iterator for the m_loop
-    mov(x17, m_loop_4),
+    mov(x17, m_loop_16),
     // loop over m
     sub(x17, x17, 1),
 
@@ -70,7 +70,7 @@ void mini_jit::kernels::unary_zero_4m_n(mini_jit::Kernel &kernel, const uint32_t
     cbnz(x17, -2 * 4),
 
     // Updates for the matrix B
-    add(x9, x3, x9),  // lda + initial position
+    add(x8, x3, x8),  // lda + initial position
 
     // loop back to n
     cbnz(x16, -7 * 4),

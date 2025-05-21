@@ -110,8 +110,8 @@ set(KERNEL_FILES
     br_matmul_lt16_lt4nRest_k.cpp
 
     unary/unary_all.h
-    unary/unary_zero_4m_n.h
-    unary/unary_zero_4m_n.cpp
+    unary/unary_zero_16m_n.h
+    unary/unary_zero_16m_n.cpp
 )
 
 set(ARM_INSTRUCTION_FILES
@@ -174,7 +174,7 @@ set(TEST_KERNELS
 
     unary/unary.test.h
     unary/unary.test.cpp
-    unary/unary_zero_4m_n.test.cpp
+    unary/unary_zero_16m_n.test.cpp
 )
 
 set(TEST_ARM_INSTRUCTION_FILES
