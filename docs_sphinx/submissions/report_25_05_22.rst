@@ -122,10 +122,10 @@ From the lecture, we already know the 4x4 transpose kernel. Therefore, we have t
     --------------------------------------------------------------------------------------------------------------
     Benchmark                                                         Time             CPU   Iterations       Byte
     --------------------------------------------------------------------------------------------------------------
-    Trans8x8Fixture/BT_tran_8_8/min_warmup_time:1.000_mean         5.08 ns         5.07 ns           10 50.5296G/s
-    Trans8x8Fixture/BT_tran_8_8/min_warmup_time:1.000_median       5.08 ns         5.07 ns           10 50.5329G/s
-    Trans8x8Fixture/BT_tran_8_8/min_warmup_time:1.000_stddev      0.038 ns        0.038 ns           10  375.02M/s
-    Trans8x8Fixture/BT_tran_8_8/min_warmup_time:1.000_cv           0.75 %          0.74 %            10      0.74%
+    Trans8x8Fixture/BT_tran_8_8/min_warmup_time:1.000_mean         5.09 ns         5.08 ns           10 100.863G/s
+    Trans8x8Fixture/BT_tran_8_8/min_warmup_time:1.000_median       5.10 ns         5.08 ns           10 100.818G/s
+    Trans8x8Fixture/BT_tran_8_8/min_warmup_time:1.000_stddev      0.036 ns        0.036 ns           10 713.309M/s
+    Trans8x8Fixture/BT_tran_8_8/min_warmup_time:1.000_cv           0.71 %          0.71 %            10      0.71%
 
 
 - **tran_8_8** kernel: :math:`50.5` GiB/s
@@ -133,3 +133,29 @@ From the lecture, we already know the 4x4 transpose kernel. Therefore, we have t
 
 Unary Primitives
 ----------------
+
+Zero Primitive
+^^^^^^^^^^^^^^
+
+.. code-block::
+    :emphasize-lines: 4, 8, 12, 16
+
+    ---------------------------------------------------------------------------------------------------------------------------
+    Benchmark                                                                      Time             CPU   Iterations      Bytes
+    ---------------------------------------------------------------------------------------------------------------------------
+    UnaryFixture/BM_unary_zero/M:50/N:50/min_warmup_time:1.000_mean              105 ns          105 ns           10   191.4G/s
+    UnaryFixture/BM_unary_zero/M:50/N:50/min_warmup_time:1.000_median            105 ns          105 ns           10 190.677G/s
+    UnaryFixture/BM_unary_zero/M:50/N:50/min_warmup_time:1.000_stddev           2.52 ns         2.51 ns           10 4.62404G/s
+    UnaryFixture/BM_unary_zero/M:50/N:50/min_warmup_time:1.000_cv               2.41 %          2.40 %            10      2.42%
+    UnaryFixture/BM_unary_zero/M:64/N:64/min_warmup_time:1.000_mean              182 ns          182 ns           10 180.443G/s
+    UnaryFixture/BM_unary_zero/M:64/N:64/min_warmup_time:1.000_median            184 ns          183 ns           10 178.782G/s
+    UnaryFixture/BM_unary_zero/M:64/N:64/min_warmup_time:1.000_stddev           6.39 ns         6.37 ns           10 6.36714G/s
+    UnaryFixture/BM_unary_zero/M:64/N:64/min_warmup_time:1.000_cv               3.50 %          3.50 %            10      3.53%
+    UnaryFixture/BM_unary_zero/M:512/N:512/min_warmup_time:1.000_mean           8913 ns         8885 ns           10 236.087G/s
+    UnaryFixture/BM_unary_zero/M:512/N:512/min_warmup_time:1.000_median         8876 ns         8848 ns           10 237.018G/s
+    UnaryFixture/BM_unary_zero/M:512/N:512/min_warmup_time:1.000_stddev          142 ns          142 ns           10 3.73573G/s
+    UnaryFixture/BM_unary_zero/M:512/N:512/min_warmup_time:1.000_cv             1.60 %          1.60 %            10      1.58%
+    UnaryFixture/BM_unary_zero/M:2048/N:2048/min_warmup_time:1.000_mean       275344 ns       274164 ns           10 123.036G/s
+    UnaryFixture/BM_unary_zero/M:2048/N:2048/min_warmup_time:1.000_median     272584 ns       271452 ns           10 123.611G/s
+    UnaryFixture/BM_unary_zero/M:2048/N:2048/min_warmup_time:1.000_stddev      21471 ns        21379 ns           10 9.25595G/s
+    UnaryFixture/BM_unary_zero/M:2048/N:2048/min_warmup_time:1.000_cv           7.80 %          7.80 %            10      7.52%

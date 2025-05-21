@@ -55,7 +55,6 @@ mini_jit::Unary::error_t mini_jit::Unary::generate(uint32_t m, uint32_t n, uint3
 
 void mini_jit::Unary::fill_with_zero_unary_column_major_fp32(uint32_t m, uint32_t n)
 {
-  if (m == 16 && n == 4)
-  {
-  }
+  kernels::unary_zero(native_kernel, m / 16, n, m % 16);  // logic of zero_16m_n combined with rest processing
+  return;
 }
