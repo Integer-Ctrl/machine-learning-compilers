@@ -3,6 +3,7 @@
 
 #include "../register/general_purpose.h"
 #include "../register/vector.h"
+#include "eor.h"
 #include "fmla.h"
 #include "ld1.h"
 #include "ldp.h"

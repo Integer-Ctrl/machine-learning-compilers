@@ -1,0 +1,142 @@
+#include "unary.test.h"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
+#include <cmath>
+
+UnaryTestFixture::UnaryTestFixture(uint32_t M, uint32_t N) : UnaryTestFixture(M, N, M, M)
+{
+}
+
+UnaryTestFixture::UnaryTestFixture(uint32_t M, uint32_t N, uint32_t lda, uint32_t ldb) : M(M), N(N), lda(lda), ldb(ldb)
+{
+  REQUIRE(lda >= M);
+  REQUIRE(ldb >= M);
+
+  matrix_a = new float[lda * N];
+  matrix_b = new float[ldb * N];
+  matrix_b_verify = new float[ldb * N];
+}
+
+UnaryTestFixture::~UnaryTestFixture()
+{
+  delete[] matrix_a;
+  delete[] matrix_b;
+  delete[] matrix_b_verify;
+}
+
+void UnaryTestFixture::SetUp(TestInfill fillType)
+{
+  switch (fillType)
+  {
+  case TestInfill::Random:
+    fill_random_matrix(matrix_a, lda * N);
+    fill_random_matrix(matrix_b, ldb * N);
+    break;
+  case TestInfill::Counting:
+    fill_counting_matrix(matrix_a, lda * N);
+    fill_counting_matrix(matrix_b, ldb * N);
+    break;
+  default:
+    FAIL("Undefined infill type found.");
+    break;
+  }
+
+  std::copy(matrix_b, matrix_b + ldb * N, matrix_b_verify);
+}
+
+void UnaryTestFixture::RunTest(const uint32_t lda, const uint32_t ldb, UnaryType type)
+{
+  if (native_kernel.get_size() <= 0)
+  {
+    INFO("The kernel should contain instructions before the test is executed.");
+    REQUIRE(native_kernel.get_size() > 0);
+  }
+
+  // Generate executable kernel
+  native_kernel.set_kernel();
+  mini_jit::Unary::kernel_t kernel = reinterpret_cast<mini_jit::Unary::kernel_t>(
+    const_cast<void *>(native_kernel.get_kernel()));  // Properly cast from const void* to kernel_t
+
+  // Verification of same lda, ldb
+  REQUIRE(UnaryTestFixture::lda == lda);
+  REQUIRE(UnaryTestFixture::ldb == ldb);
+
+  kernel(matrix_a, matrix_b, lda, ldb);
+  naive_unary_M_N(matrix_a, matrix_b_verify, lda, ldb, type);
+
+  verify_matrix(matrix_b_verify, matrix_b, ldb * N);
+}
+
+void UnaryTestFixture::naive_unary_M_N(const float *__restrict__ a, float *__restrict__ b, int64_t lda, int64_t ldb, UnaryType type)
+{
+  for (size_t iN = 0; iN < N; iN++)
+  {
+    for (size_t iM = 0; iM < M; iM++)
+    {
+      switch (type)
+      {
+      case UnaryType::Zero:
+        b[ldb * iN + iM] = 0;
+        break;
+
+      case UnaryType::Identity:
+        b[ldb * iN + iM] = a[lda * iN + iM];
+        break;
+
+      case UnaryType::ReLu:
+        b[ldb * iN + iM] = std::max(a[lda * iN + iM], 0.f);
+        break;
+
+      default:
+        FAIL("Found unary invalid type for testing");
+        break;
+      }
+    }
+  }
+}
+
+void UnaryTestFixture::verify_matrix(const float *__restrict__ expected, const float *__restrict__ result, uint32_t size)
+{
+  for (size_t i = 0; i < size; i++)
+  {
+    CAPTURE(i, result[i], expected[i]);
+
+    if (std::isnan(expected[i]))
+    {
+      REQUIRE_THAT(result[i], Catch::Matchers::IsNaN());
+    }
+    else
+    {
+      REQUIRE_THAT(result[i], Catch::Matchers::WithinRel(expected[i]));
+    }
+  }
+}
+
+void UnaryTestFixture::fill_random_matrix(float *matrix, uint32_t size)
+{
+  std::srand(std::time(0));
+  for (size_t i = 0; i < size; i++)
+  {
+    float denominator = 1;
+    do
+    {
+      denominator = static_cast<float>(std::rand());
+    } while (denominator == 0);
+
+    float numerator = 1;
+    do
+    {
+      numerator = static_cast<float>(std::rand());
+    } while (numerator == 0);
+
+    matrix[i] = numerator / denominator;
+  }
+}
+
+void UnaryTestFixture::fill_counting_matrix(float *matrix, uint32_t size)
+{
+  for (size_t i = 0; i < size; i++)
+  {
+    matrix[i] = i;
+  }
+}

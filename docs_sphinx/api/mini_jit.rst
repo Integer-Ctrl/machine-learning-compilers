@@ -26,3 +26,12 @@ internal
    :members:
    :private-members:
    :undoc-members:
+
+kernels
+-------
+.. doxygennamespace:: mini_jit::kernels
+   :project: Machine Learning Compilers
+   :content-only:
+   :members:
+   :private-members:
+   :undoc-members:

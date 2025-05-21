@@ -36,7 +36,7 @@ endif()
 # ==============================================================
 add_compile_options(-Werror -Wall -Wextra -Wpedantic)
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -Og")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
@@ -74,6 +74,8 @@ set(SRC_MAIN_FILES
     Brgemm.cpp
     Brgemm.h
     release_assert.h
+    Unary.h
+    Unary.cpp
 )
 
 set(KERNEL_FILES
@@ -106,6 +108,10 @@ set(KERNEL_FILES
     br_matmul_lt16_4n_k.cpp
     br_matmul_lt16_lt4nRest_k.h
     br_matmul_lt16_lt4nRest_k.cpp
+
+    unary/unary_all.h
+    unary/unary_zero_4m_n.h
+    unary/unary_zero_4m_n.cpp
 )
 
 set(ARM_INSTRUCTION_FILES
@@ -133,6 +139,7 @@ set(ARM_INSTRUCTION_FILES
     simd_fp/ldp.h
     simd_fp/stp.h
     simd_fp/str.h
+    simd_fp/eor.h
 )
 
 set(TEST_FILES
@@ -159,6 +166,10 @@ set(TEST_KERNELS
     br_matmul_16mRest_lt4nRest_k.test.cpp
     br_matmul_lt16_4n_k.test.cpp
     br_matmul_lt16_lt4nRest_k.test.cpp
+
+    unary/unary.test.h
+    unary/unary.test.cpp
+    unary/unary_zero_4m_n.test.cpp
 )
 
 set(TEST_ARM_INSTRUCTION_FILES
@@ -182,6 +193,7 @@ set(TEST_ARM_INSTRUCTION_FILES
     simd_fp/stp.test.cpp
     simd_fp/ldr.test.cpp
     simd_fp/str.test.cpp
+    simd_fp/eor.test.cpp
 )
 
 set(BENCH_FILES
