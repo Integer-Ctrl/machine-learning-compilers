@@ -1,7 +1,7 @@
-#include "unary_identity_transpose.h"
+#include "unary_relu.h"
 #include "../../arm_instructions/arm_all.h"
 
-void mini_jit::kernels::unary_identity_transpose(mini_jit::Kernel &kernel, const uint32_t m_loop, const uint32_t n_loop)
+void mini_jit::kernels::unary_relu(mini_jit::Kernel &kernel, const uint32_t m_loop, const uint32_t n_loop)
 {
   using namespace mini_jit::arm_instructions;
 
@@ -37,12 +37,9 @@ void mini_jit::kernels::unary_identity_transpose(mini_jit::Kernel &kernel, const
     lsl(x2, x2, 2),  // x2 * 4 = x2 * sizeof(float)
     lsl(x3, x3, 2),  // x3 * 4 = x3 * sizeof(float)
 
-    // hold addresses to A and B in work registers for the transpose
-    mov(x4, x0),  // mov x4, x0 // A
-    mov(x5, x1),  // mov x5, x1 // B
-
-    mov(x7, x0),  // Store the inital value of x0, to be restored in the N loop
-    mov(x8, x1),  // Store the inital value of x1, to be restored in the N loop
+    mov(x7, x0),         // Store the inital value of x0, to be restored in the N loop
+    mov(x8, x1),         // Store the inital value of x1, to be restored in the N loop
+    mov(x9, 4 * 4 * 4),  // 4 * 4 * sizeof(float) Hold the number of bytes that are stored in the loop
 
     // x16 iterator for the n_loop
     mov(x16, n_loop),
@@ -52,9 +49,10 @@ void mini_jit::kernels::unary_identity_transpose(mini_jit::Kernel &kernel, const
     mov(x0, x7),  // Restore x0 for the m loop
     mov(x1, x8),  // Restore x1 for the m loop
 
+    eor(v5, t16b, v5, t16b, v5, t16b),  // Zero the v5 register to use fmax vector
   });
 
-  int32_t n_jump_start = kernel.get_instruction_count() - 3;
+  int32_t n_jump_start = kernel.get_instruction_count() - 4;
 
   if (m_loop < 16)
   {
@@ -64,6 +62,13 @@ void mini_jit::kernels::unary_identity_transpose(mini_jit::Kernel &kernel, const
       mov(x17, m_loop / 16),
       // loop over m
       sub(x17, x17, 1),
+
+      ld1Post(v0, t4s, v1, t4s, v2, t4s, v3, t4s, x0, x9),  // increase x0 after load with value of x9 i.e. x0 += 4 * 4 * sizeof(float)
+      fmax(v0, t4s, v0, t4s, v5, t4s),
+      fmax(v1, t4s, v1, t4s, v5, t4s),
+      fmax(v2, t4s, v2, t4s, v5, t4s),
+      fmax(v3, t4s, v3, t4s, v5, t4s),
+      st1Post(v0, t4s, v1, t4s, v2, t4s, v3, t4s, x1, x9),  // increase x1 after store with value of x9 i.e. x1 += 4 * 4 * sizeof(float)
 
       // loop back to m
       cbnz(x17, -3 * 4),
@@ -87,6 +92,7 @@ void mini_jit::kernels::unary_identity_transpose(mini_jit::Kernel &kernel, const
       kernel.add({
         mov(x9, 1 * 4 * 4),        // 1 * 4 * sizeof(float)
         ld1Post(v0, t4s, x0, x9),  // increase x0 after load with value of x9 i.e. x0 += 1 * 4 * sizeof(float)
+        fmax(v0, t4s, v0, t4s, v5, t4s),
         st1Post(v0, t4s, x1, x9),  // increase x1 after store with value of x9 i.e. x1 += 1 * 4 * sizeof(float)
       });
       break;
@@ -95,6 +101,7 @@ void mini_jit::kernels::unary_identity_transpose(mini_jit::Kernel &kernel, const
       kernel.add({
         mov(x9, 2 * 4 * 4),                 // 2 * 4 * sizeof(float)
         ld1Post(v0, t4s, v1, t4s, x0, x9),  // increase x0 after load with value of x9 i.e. x0 += 4 * 4 * sizeof(float)
+        fmax(v0, t4s, v0, t4s, v5, t4s), fmax(v1, t4s, v1, t4s, v5, t4s),
         st1Post(v0, t4s, v1, t4s, x1, x9),  // increase x1 after store with value of x9 i.e. x1 += 4 * 4 * sizeof(float)
       });
       break;
@@ -103,6 +110,7 @@ void mini_jit::kernels::unary_identity_transpose(mini_jit::Kernel &kernel, const
       kernel.add({
         mov(x9, 3 * 4 * 4),                          // 3 * 4 * sizeof(float)
         ld1Post(v0, t4s, v1, t4s, v2, t4s, x0, x9),  // increase x0 after load with value of x9 i.e. x0 += 4 * 4 * sizeof(float)
+        fmax(v0, t4s, v0, t4s, v5, t4s), fmax(v1, t4s, v1, t4s, v5, t4s), fmax(v2, t4s, v2, t4s, v5, t4s),
         st1Post(v0, t4s, v1, t4s, v2, t4s, x1, x9),  // increase x1 after store with value of x9 i.e. x1 += 4 * 4 * sizeof(float)
       });
       break;
@@ -123,6 +131,7 @@ void mini_jit::kernels::unary_identity_transpose(mini_jit::Kernel &kernel, const
       kernel.add({
         // load single element
         ldrPost(s0, x0, 4),
+        fmax(s0, s0, s5),
         strPost(s0, x1, 4),
       });
       break;
@@ -131,6 +140,8 @@ void mini_jit::kernels::unary_identity_transpose(mini_jit::Kernel &kernel, const
       kernel.add({
         // load two elements
         ldpPost(s0, s1, x0, 4 * 2),
+        fmax(s0, s0, s5),
+        fmax(s1, s1, s5),
         stpPost(s0, s1, x1, 4 * 2),
       });
       break;
@@ -139,8 +150,11 @@ void mini_jit::kernels::unary_identity_transpose(mini_jit::Kernel &kernel, const
       kernel.add({
         // load three elements
         ldpPost(s0, s1, x0, 4 * 2),
+        fmax(s0, s0, s5),
+        fmax(s1, s1, s5),
         stpPost(s0, s1, x1, 4 * 2),
         ldrPost(s0, x0, 4),
+        fmax(s0, s0, s5),
         strPost(s0, x1, 4),
       });
       break;
@@ -180,57 +194,6 @@ void mini_jit::kernels::unary_identity_transpose(mini_jit::Kernel &kernel, const
   });
 
 #ifdef SAVE_JITS_TO_FILE
-  kernel.write("unary_identity.bin");
+  kernel.write("unary_relu.bin");
 #endif  // SAVE_JITS_TO_FILE
-}
-
-void mini_jit::kernels::internal::transpose_symmetric(mini_jit::Kernel &kernel, const uint32_t m_position, const uint32_t n_position,
-                                                      const uint32_t, const uint32_t)
-{
-  using namespace mini_jit::arm_instructions;
-
-  kernel.add({});
-
-  if (m_position == n_position)
-  {
-    // We work on the same space of 4x4 memory
-    // /*
-    // * Part 1:
-    // * Load 4x4 sub-matrix A.
-    // * Transpose 4x4 block.
-    // * Store 4x4 block of A into B.
-    // */
-    // // Load
-    // ldr q0, [x4]
-    // add x4, x4, x2
-    // ldr q1, [x4]
-    // add x4, x4, x2
-    // ldr q2, [x4]
-    // add x4, x4, x2
-    // ldr q3, [x4]
-
-    // // Transpose
-    // trn1 v4.4s, v0.4s, v1.4s
-    // trn2 v5.4s, v0.4s, v1.4s
-    // trn1 v6.4s, v2.4s, v3.4s
-    // trn2 v7.4s, v2.4s, v3.4s
-
-    // zip1  v8.2d, v4.2d, v6.2d
-    // zip1  v9.2d, v5.2d, v7.2d
-    // zip2 v10.2d, v4.2d, v6.2d
-    // zip2 v11.2d, v5.2d, v7.2d
-
-    // // Store
-    // str q8, [x5]
-    // add x5, x5, x3
-    // str q9, [x5]
-    // add x5, x5, x3
-    // str q10, [x5]
-    // add x5, x5, x3
-    // str q11, [x5]
-  }
-  else
-  {
-    // We work on two different spaces of 4x4 memory
-  }
 }

@@ -115,7 +115,7 @@ void UnaryTestFixture::verify_matrix(const float *__restrict__ expected, const f
 void UnaryTestFixture::fill_random_matrix(float *matrix, uint32_t size)
 {
   std::srand(std::time(0));
-  for (size_t i = 0; i < size; i++)
+  for (int64_t i = 0; i < size; i++)
   {
     float denominator = 1;
     do
@@ -129,7 +129,7 @@ void UnaryTestFixture::fill_random_matrix(float *matrix, uint32_t size)
       numerator = static_cast<float>(std::rand());
     } while (numerator == 0);
 
-    matrix[i] = numerator / denominator;
+    matrix[i] = numerator / denominator * (1 - (2 * (i % 2)));
   }
 }
 

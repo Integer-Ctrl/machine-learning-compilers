@@ -118,6 +118,8 @@ set(KERNEL_FILES
     unary/unary_identity_transpose.cpp
     unary/unary_zero.h
     unary/unary_zero.cpp
+    unary/unary_relu.h
+    unary/unary_relu.cpp
 )
 
 set(ARM_INSTRUCTION_FILES
@@ -184,6 +186,7 @@ set(TEST_KERNELS
     unary/unary_identity.test.cpp
     unary/unary_identity_transpose.test.cpp
     unary/unary_zero.test.cpp
+    unary/unary_relu.test.cpp
 )
 
 set(TEST_ARM_INSTRUCTION_FILES

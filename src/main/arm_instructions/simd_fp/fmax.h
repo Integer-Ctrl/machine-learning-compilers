@@ -21,6 +21,12 @@ namespace mini_jit
         q0 = 0b0,
         q1 = 0b1
       };
+      enum class fmaxFType : uint32_t
+      {
+        ftype00 = 0b00,
+        ftype01 = 0b01,
+        ftype11 = 0b11,
+      };
 
       constexpr uint32_t fmaxVector(const uint32_t Vd, const uint32_t Vn, const uint32_t Vm, const fmaxSzType sz_type,
                                     const fmaxQType q_type)
@@ -36,6 +42,22 @@ namespace mini_jit
         fmax |= (static_cast<uint32_t>(sz_type) & mask1) << 22;
         fmax |= (Vm & mask5) << 16;
         fmax |= 0b111101 << 10;
+        fmax |= (Vn & mask5) << 5;
+        fmax |= (Vd & mask5) << 0;
+        return fmax;
+      }
+
+      constexpr uint32_t fmaxScalar(const uint32_t Vd, const uint32_t Vn, const uint32_t Vm, const fmaxFType f_type)
+      {
+        release_assert((Vd & mask5) == Vd, "Vd is only allowed to have a size of 5 bit.");
+        release_assert((Vn & mask5) == Vn, "Vn is only allowed to have a size of 5 bit.");
+        release_assert((Vm & mask5) == Vm, "Vm is only allowed to have a size of 5 bit.");
+
+        uint32_t fmax = 0;
+        fmax |= 0b00011110001 << 21;  // 00011110ftype1 ftype (2 bits)!
+        fmax |= (static_cast<uint32_t>(f_type) & mask2) << 22;
+        fmax |= (Vm & mask5) << 16;
+        fmax |= 0b010010 << 10;
         fmax |= (Vn & mask5) << 5;
         fmax |= (Vd & mask5) << 0;
         return fmax;
@@ -62,6 +84,24 @@ namespace mini_jit
     {
       return internal::fmaxVector(static_cast<uint32_t>(Vd), static_cast<uint32_t>(Vn), static_cast<uint32_t>(Vm),
                                   internal::fmaxSzType::sz1, internal::fmaxQType::q1);
+    }
+
+    constexpr uint32_t fmax(const V16Bit Vd, const V16Bit Vn, const V16Bit Vm)
+    {
+      return internal::fmaxScalar(static_cast<uint32_t>(Vd), static_cast<uint32_t>(Vn), static_cast<uint32_t>(Vm),
+                                  internal::fmaxFType::ftype11);
+    }
+
+    constexpr uint32_t fmax(const V32Bit Vd, const V32Bit Vn, const V32Bit Vm)
+    {
+      return internal::fmaxScalar(static_cast<uint32_t>(Vd), static_cast<uint32_t>(Vn), static_cast<uint32_t>(Vm),
+                                  internal::fmaxFType::ftype00);
+    }
+
+    constexpr uint32_t fmax(const V64Bit Vd, const V64Bit Vn, const V64Bit Vm)
+    {
+      return internal::fmaxScalar(static_cast<uint32_t>(Vd), static_cast<uint32_t>(Vn), static_cast<uint32_t>(Vm),
+                                  internal::fmaxFType::ftype01);
     }
   }  // namespace arm_instructions
 }  // namespace mini_jit
