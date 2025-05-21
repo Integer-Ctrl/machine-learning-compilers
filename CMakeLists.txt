@@ -139,6 +139,11 @@ set(ARM_INSTRUCTION_FILES
     simd_fp/ldp.h
     simd_fp/stp.h
     simd_fp/str.h
+    simd_fp/fmax.h
+    simd_fp/trn1.h
+    simd_fp/trn2.h
+    simd_fp/zip1.h
+    simd_fp/zip2.h
     simd_fp/eor.h
 )
 
@@ -193,6 +198,11 @@ set(TEST_ARM_INSTRUCTION_FILES
     simd_fp/stp.test.cpp
     simd_fp/ldr.test.cpp
     simd_fp/str.test.cpp
+    simd_fp/fmax.test.cpp
+    simd_fp/trn1.test.cpp
+    simd_fp/trn2.test.cpp
+    simd_fp/zip1.test.cpp
+    simd_fp/zip2.test.cpp
     simd_fp/eor.test.cpp
 )
 
