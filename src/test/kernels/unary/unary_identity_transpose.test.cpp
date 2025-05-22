@@ -19,7 +19,7 @@ TEST_CASE("Test unary identity transpose no rest jited correctness random data",
 TEST_CASE("Test unary identity transpose rest jited correctness random data", "[jit][correctness][unary]")
 {
   //   auto MRest = GENERATE(range(1u, 15u + 1u, 1u));
-  //   auto M = GENERATE(64u, 512u, 2048u);
+  //   auto M = GENERATE(16u, 48u);
   //   auto N = M;
   //   CAPTURE(M, N, MRest);
   //   auto _M = M + MRest;

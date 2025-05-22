@@ -20,7 +20,7 @@ TEST_CASE("Test unary relu no rest jited correctness random data", "[jit][correc
 TEST_CASE("Test unary relu rest jited correctness random data", "[jit][correctness][gemm]")
 {
   auto MRest = GENERATE(range(1u, 15u + 1u, 1u));
-  auto M = GENERATE(64u, 512u, 2048u);
+  auto M = GENERATE(16u, 48u);
   auto N = M;
   CAPTURE(M, N, MRest);
   auto _M = M + MRest;

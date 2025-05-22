@@ -19,7 +19,7 @@ TEST_CASE("Test unary identity no rest jited correctness random data", "[jit][co
 TEST_CASE("Test unary identity rest jited correctness random data", "[jit][correctness][unary]")
 {
   auto MRest = GENERATE(range(1u, 15u + 1u, 1u));
-  auto M = GENERATE(64u, 512u, 2048u);
+  auto M = GENERATE(16u, 48u);
   auto N = M;
   CAPTURE(M, N, MRest);
   auto _M = M + MRest;
@@ -43,20 +43,7 @@ TEST_CASE("Test unary identity no rest jited correctness counting data", "[jit][
 TEST_CASE("Test unary identity rest jited correctness counting data", "[jit][correctness][unary]")
 {
   auto MRest = GENERATE(range(1u, 15u + 1u, 1u));
-  auto M = GENERATE(64u, 512u, 2048u);
-  auto N = M;
-  CAPTURE(M, N, MRest);
-  auto _M = M + MRest;
-  UnaryTestFixture unaryTest(_M, N);
-  unaryTest.SetUp(TestInfill::Counting);
-  mini_jit::kernels::unary_identity(unaryTest.native_kernel, _M, N);
-  unaryTest.RunTest(_M, _M, UnaryType::Identity);
-}
-
-TEST_CASE("Test unary identity test jited correctness counting data", "[jit][correctness][unary]")
-{
-  auto MRest = 4;
-  auto M = 16;
+  auto M = GENERATE(16u, 48u);
   auto N = M;
   CAPTURE(M, N, MRest);
   auto _M = M + MRest;

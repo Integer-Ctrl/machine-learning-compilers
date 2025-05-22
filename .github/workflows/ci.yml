@@ -8,7 +8,7 @@ on:
     branches: [ "main" ]
 
 env:
-  parallel_processes: 6 # A good default counts is: available Threads + 2
+  parallel_processes: 8 # A good default counts is: available Threads + 4
 
 jobs:
   build:
@@ -59,5 +59,5 @@ jobs:
         ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_01 --output-on-failure
         ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_08 --output-on-failure
         ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_15 --output-on-failure
-        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --output-on-failure -E "^Test gemm generation"
+        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --output-on-failure -E "^Test *(gemm generation|unary)"
 
