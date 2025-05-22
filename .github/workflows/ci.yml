@@ -33,6 +33,7 @@ jobs:
         cmake -S ${{github.workspace}}/submissions/submission_25_05_01 -B ${{github.workspace}}/build/submission_25_05_01 -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
         cmake -S ${{github.workspace}}/submissions/submission_25_05_08 -B ${{github.workspace}}/build/submission_25_05_08 -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
         cmake -S ${{github.workspace}}/submissions/submission_25_05_15 -B ${{github.workspace}}/build/submission_25_05_15 -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+        cmake -S ${{github.workspace}}/submissions/submission_25_05_22 -B ${{github.workspace}}/build/submission_25_05_22 -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
         cmake -S ${{github.workspace}} -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
 
     - name: Build
