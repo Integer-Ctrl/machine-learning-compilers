@@ -1,5 +1,5 @@
-#ifndef MINI_JIT_KERNELS_UNARY_identity_H
-#define MINI_JIT_KERNELS_UNARY_identity_H
+#ifndef MINI_JIT_KERNELS_UNARY_IDENTITY_TRANSPOSE_H
+#define MINI_JIT_KERNELS_UNARY_IDENTITY_TRANSPOSE_H
 
 #include "../../Kernel.h"
 #include <cstdint>

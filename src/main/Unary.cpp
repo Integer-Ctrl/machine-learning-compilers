@@ -33,13 +33,28 @@ mini_jit::Unary::error_t mini_jit::Unary::generate(uint32_t m, uint32_t n, uint3
     break;
 
   case ptype_t::identity:
-    throw std::logic_error(std::format("Unhandled parameter combination found: m='{}', n='{}', trans_b='{}', dtype = '{}', ptype = '{}'", m,
-                                       n, trans_b, static_cast<int32_t>(dtype), static_cast<int32_t>(ptype)));
+    if (trans_b == 0 || trans_b == 1)
+    {
+      identity_unary_fp32(m, n, trans_b);
+    }
+    else
+    {
+      throw std::logic_error(std::format("Unhandled parameter combination found: m='{}', n='{}', trans_b='{}', dtype = '{}', ptype = '{}'",
+                                         m, n, trans_b, static_cast<int32_t>(dtype), static_cast<int32_t>(ptype)));
+    }
     break;
 
   case ptype_t::relu:
-    throw std::logic_error(std::format("Unhandled parameter combination found: m='{}', n='{}', trans_b='{}', dtype = '{}', ptype = '{}'", m,
-                                       n, trans_b, static_cast<int32_t>(dtype), static_cast<int32_t>(ptype)));
+    if (trans_b == 0 || trans_b == 1)
+    {
+      relu_unary_fp32(m, n, trans_b);
+    }
+    else
+    {
+      throw std::logic_error(std::format("Unhandled parameter combination found: m='{}', n='{}', trans_b='{}', dtype = '{}', ptype = '{}'",
+                                         m, n, trans_b, static_cast<int32_t>(dtype), static_cast<int32_t>(ptype)));
+    }
+
     break;
 
   default:
@@ -56,5 +71,31 @@ mini_jit::Unary::error_t mini_jit::Unary::generate(uint32_t m, uint32_t n, uint3
 void mini_jit::Unary::fill_with_zero_unary_column_major_fp32(uint32_t m, uint32_t n)
 {
   kernels::unary_zero(native_kernel, m / 16, n, m % 16);  // logic of zero_16m_n combined with rest processing
+  return;
+}
+
+void mini_jit::Unary::identity_unary_fp32(uint32_t m, uint32_t n, uint32_t trans_b)
+{
+  if (trans_b == 1)
+  {
+    kernels::unary_identity_transpose(native_kernel, m, n);
+  }
+  else
+  {
+    kernels::unary_identity(native_kernel, m, n);  // logic of zero_16m_n combined with rest processing
+  }
+  return;
+}
+
+void mini_jit::Unary::relu_unary_fp32(uint32_t m, uint32_t n, uint32_t trans_b)
+{
+  if (trans_b == 1)
+  {
+    kernels::unary_relu_transpose(native_kernel, m, n);
+  }
+  else
+  {
+    kernels::unary_relu(native_kernel, m, n);  // logic of zero_16m_n combined with rest processing
+  }
   return;
 }

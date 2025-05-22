@@ -57,6 +57,24 @@ private:
    */
   void fill_with_zero_unary_column_major_fp32(uint32_t m, uint32_t n);
 
+  /**
+   * @brief Does a identity unary on a matrix in column major format, and fp32 datatype
+   *
+   * @param m numbers of rows in A and B.
+   * @param n numbers of columns in A and B.
+   * @param trans_b transpose A (0 no, 1 yes)
+   */
+  void identity_unary_fp32(uint32_t m, uint32_t n, uint32_t trans_b);
+
+  /**
+   * @brief Does a relu unary on a matrix in column major format, and fp32 datatype
+   *
+   * @param m numbers of rows in A and B.
+   * @param n numbers of columns in A and B.
+   * @param trans_b transpose A (0 no, 1 yes)
+   */
+  void relu_unary_fp32(uint32_t m, uint32_t n, uint32_t trans_b);
+
 public:
   /**
    * @brief Generate a kernel for a unary primitive.
