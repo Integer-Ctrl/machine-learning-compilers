@@ -91,10 +91,10 @@ void UnaryTestFixture::RunTest(const uint32_t lda, const uint32_t ldb, UnaryType
   REQUIRE(UnaryTestFixture::ldb == ldb);
 
   naive_unary_M_N(matrix_a, matrix_b_verify, lda, ldb, type);
-  UnaryTestFixture::print_matrix(matrix_b_verify, M, N, ldb, "Expected");
+  // UnaryTestFixture::print_matrix(matrix_b_verify, M, N, ldb, "Expected");
 
   kernel(matrix_a, matrix_b, lda, ldb);
-  UnaryTestFixture::print_matrix(matrix_a, M, N, ldb, "Result");
+  // UnaryTestFixture::print_matrix(matrix_a, M, N, ldb, "Result");
 
   verify_matrix(matrix_b_verify, matrix_b, ldb * N);
 }
