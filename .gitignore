@@ -8,3 +8,4 @@ build
 
 # Do not ignore
 !.vscode/settings.json
+!.vscode/arm.code-snippets

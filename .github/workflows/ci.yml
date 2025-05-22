@@ -41,6 +41,7 @@ jobs:
         cmake --build ${{github.workspace}}/build/submission_25_05_01 --config ${{matrix.build_type}} -j ${{env.parallel_processes}} 
         cmake --build ${{github.workspace}}/build/submission_25_05_08 --config ${{matrix.build_type}} -j ${{env.parallel_processes}} 
         cmake --build ${{github.workspace}}/build/submission_25_05_15 --config ${{matrix.build_type}} -j ${{env.parallel_processes}} 
+        cmake --build ${{github.workspace}}/build/submission_25_05_22 --config ${{matrix.build_type}} -j ${{env.parallel_processes}} 
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} -j ${{env.parallel_processes}} 
 
     - name: Test
@@ -50,6 +51,7 @@ jobs:
         ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir submission_25_05_01 --output-on-failure
         ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir submission_25_05_08 --output-on-failure
         ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir submission_25_05_15 --output-on-failure
+        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir submission_25_05_22 --output-on-failure
         ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --output-on-failure
 
     - name: Test + Valgrind
@@ -59,5 +61,6 @@ jobs:
         ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_01 --output-on-failure
         ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_08 --output-on-failure
         ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_15 --output-on-failure
+        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_22 --output-on-failure
         ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --output-on-failure -E "^Test *(gemm generation|unary)"
 

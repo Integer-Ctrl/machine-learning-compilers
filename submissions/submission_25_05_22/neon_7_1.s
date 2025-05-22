@@ -92,15 +92,16 @@ trans_neon_8_8:
     ldr q15, [x4]
 
     // Transpose right-top
-    trn1 v16.4s, v12.4s, v14.4s
-    trn1 v17.4s, v13.4s, v15.4s
-    trn2 v18.4s, v12.4s, v14.4s
-    trn2 v19.4s, v13.4s, v15.4s
+    trn1 v16.4s, v12.4s, v13.4s
+    trn2 v17.4s, v12.4s, v13.4s
+    trn1 v18.4s, v14.4s, v15.4s
+    trn2 v19.4s, v14.4s, v15.4s
 
-    zip1 v20.4s, v16.4s, v17.4s 
-    zip1 v21.4s, v18.4s, v19.4s 
-    zip2 v22.4s, v16.4s, v17.4s 
-    zip2 v23.4s, v18.4s, v19.4s
+    zip1  v20.2d, v16.2d, v18.2d
+    zip1  v21.2d, v17.2d, v19.2d
+    zip2 v22.2d, v16.2d, v18.2d
+    zip2 v23.2d, v17.2d, v19.2d
+
 
     // Load left-bottom
     mov x4, x0      // A
@@ -115,15 +116,15 @@ trans_neon_8_8:
     ldr q3, [x4]
 
     // Transpose left-bottom
-    trn1 v4.4s, v0.4s, v2.4s
-    trn1 v5.4s, v1.4s, v3.4s
-    trn2 v6.4s, v0.4s, v2.4s
-    trn2 v7.4s, v1.4s, v3.4s
+    trn1 v4.4s, v0.4s, v1.4s
+    trn2 v5.4s, v0.4s, v1.4s
+    trn1 v6.4s, v2.4s, v3.4s
+    trn2 v7.4s, v2.4s, v3.4s
 
-    zip1 v8.4s, v4.4s, v5.4s    
-    zip1 v9.4s, v6.4s, v7.4s    
-    zip2 v10.4s, v4.4s, v5.4s   
-    zip2 v11.4s, v6.4s, v7.4s
+    zip1 v8.2d, v4.2d, v6.2d    
+    zip1 v9.2d, v5.2d, v7.2d    
+    zip2 v10.2d, v4.2d, v6.2d   
+    zip2 v11.2d, v5.2d, v7.2d
 
     // Store after transpose to avoid conflicts when input matrix A = B
     // Store B to C (right-top of A to left-bottom of B)

@@ -28,10 +28,10 @@ void mini_jit::kernels::unary_identity_transpose(mini_jit::Kernel &kernel, const
     //     // stp x25, x26, [sp, #-16]!
     //     // stp x27, x28, [sp, #-16]!
 
-    //     // stp  d8,  d9, [sp, #-16]!
-    //     // stp d10, d11, [sp, #-16]!
-    //     // stp d12, d13, [sp, #-16]!
-    //     // stp d14, d15, [sp, #-16]!
+    stpPre(d8, d9, sp, -16),    //     // stp  d8,  d9, [sp, #-16]!
+    stpPre(d10, d11, sp, -16),  //     // stp d10, d11, [sp, #-16]!
+    stpPre(d12, d13, sp, -16),  //     // stp d12, d13, [sp, #-16]!
+    stpPre(d14, d15, sp, -16),  //     // stp d14, d15, [sp, #-16]!
 
     // Offset the used leading dimension by the size of floats
     lsl(x2, x2, 2),  // x2 * 4 = x2 * sizeof(float)
@@ -106,10 +106,10 @@ void mini_jit::kernels::unary_identity_transpose(mini_jit::Kernel &kernel, const
 
     //   //     // Procedural Call Standard
     //   //     // restore callee-saved registers
-    //   //     // ldp d14, d15, [sp], #16
-    //   //     // ldp d12, d13, [sp], #16
-    //   //     // ldp d10, d11, [sp], #16
-    //   //     ldp  d8,  d9, [sp], #16
+    ldpPost(d14, d15, sp, 16),  //   //     // ldp d14, d15, [sp], #16
+    ldpPost(d12, d13, sp, 16),  //   //     // ldp d12, d13, [sp], #16
+    ldpPost(d10, d11, sp, 16),  //   //     // ldp d10, d11, [sp], #16
+    ldpPost(d8, d9, sp, 16),    //   //     ldp  d8,  d9, [sp], #16
 
     //   //     // ldp x27, x28, [sp], #16
     //   //     // ldp x25, x26, [sp], #16
@@ -691,16 +691,166 @@ void mini_jit::kernels::internal::transpose_else(mini_jit::Kernel &kernel, const
   case 1:
     switch (n)
     {
-    case 1:  // m=1 n=1
+    case 1:  // m=1 n=
+      kernel.add({
+        //    // Load right-top
+        ldr(s12, x4),     //    ldr q12, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+
+        //    // Load left-bottom
+        ldr(s0, x6),  //    ldr q0, [x4]
+
+        //    // Store after transpose to avoid conflicts when input matrix A = B
+        //    // Store B to C (right-top of A to left-bottom of B)
+        str(s12, x7),  //    str q20, [x7]
+
+        //    // Store C to B (left-bottom of A to right-top of B)
+        str(s0, x5),      //    str q8, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+
+        // Offset the consecutive elements
+        add(x6, x6, m * 4),  // offset 4 * sizeof(float)
+        add(x7, x7, n * 4),  // offset 4 * sizeof(float)
+      });
+
       break;
 
     case 2:  // m=1 n=2
+      kernel.add({
+        //    // Load right-top
+        ldr(s12, x4),     //    ldr q12, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(s13, x4),     //    ldr q13, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+
+        //    // Transpose right-top
+        trn1(v16, t4s, v12, t4s, v13, t4s),  //    trn1 v16.4s, v12.4s, v13.4s
+                                             //
+        zip1(v20, t2d, v16, t2d, v18, t2d),  //    zip1  v20.2d, v16.2d, v18.2d
+
+        //    // Load left-bottom
+        ldr(s0, x6),                        //    ldr q0, [x4]
+        add(x6, x6, x2),                    //    add x4, x4, x2
+        ldr(s1, x6),                        //    ldr q1, [x4]
+        mov(x9, -1), madd(x6, x2, x9, x6),  // Revert store offset
+
+        //    // Transpose left-bottom
+        trn1(v4, t4s, v0, t4s, v1, t4s),  //    trn1 v4.4s, v0.4s, v1.4s
+                                          //
+        zip1(v8, t2d, v4, t2d, v6, t2d),  //    zip1 v8.2d, v4.2d, v6.2d
+
+        //    // Store after transpose to avoid conflicts when input matrix A = B
+        //    // Store B to C (right-top of A to left-bottom of B)
+        str(d20, x7),  //    str q20, [x7]
+
+        //    // Store C to B (left-bottom of A to right-top of B)
+        str(d8, x5),      //    str q8, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+
+        // Offset the consecutive elements
+        add(x6, x6, m * 4),  // offset 4 * sizeof(float)
+        add(x7, x7, n * 4),  // offset 4 * sizeof(float)
+      });
       break;
 
     case 3:  // m=1 n=3
+      kernel.add({
+        //    // Load right-top
+        ldrPost(d12, x3, 2 * 4),              //    ldr q12, [x4]
+        ld1(s12, 2, x4), sub(x4, x4, 2 * 4),  // revert offset from load of s12
+        add(x4, x4, x2),                      //    add x4, x4, x2
+        ldrPost(d13, x4, 2 * 4),              //    ldr q13, [x4]
+        ld1(s13, 2, x4), sub(x4, x4, 2 * 4),  // revert offset from load of s13
+        add(x4, x4, x2),                      //    add x4, x4, x2
+        ldrPost(d14, x4, 2 * 4),              //    ldr q14, [x4]
+        ld1(s14, 2, x4), sub(x4, x4, 2 * 4),  // revert offset from load of s14
+        add(x4, x4, x2),                      //    add x4, x4, x2
+
+        //    // Transpose right-top
+        trn1(v16, t4s, v12, t4s, v13, t4s),  //    trn1 v16.4s, v12.4s, v13.4s
+        trn1(v18, t4s, v14, t4s, v15, t4s),  //    trn1 v18.4s, v14.4s, v15.4s
+                                             //
+        zip1(v20, t2d, v16, t2d, v18, t2d),  //    zip1  v20.2d, v16.2d, v18.2d
+
+        //    // Load left-bottom
+        ldrPost(d0, x6, 2 * 4),              //    ldr q0, [x6]
+        ld1(s0, 2, x6), sub(x6, x6, 2 * 4),  // revert offset from load of s0
+        add(x6, x6, x2),                     //    add x4, x4, x2
+        ldrPost(d1, x6, 2 * 4),              //    ldr q1, [x6]
+        ld1(s1, 2, x6), sub(x6, x6, 2 * 4),  // revert offset from load of s1
+        add(x6, x6, x2),                     //    add x4, x4, x2
+        ldrPost(d2, x6, 2 * 4),              //    ldr q2, [x6]
+        ld1(s2, 2, x6), sub(x6, x6, 2 * 4),  // revert offset from load of s2
+        mov(x9, -2), madd(x6, x2, x9, x6),   // Revert store offset
+
+        //    // Transpose left-bottom
+        trn1(v4, t4s, v0, t4s, v1, t4s),  //    trn1 v4.4s, v0.4s, v1.4s
+        trn1(v6, t4s, v2, t4s, v3, t4s),  //    trn1 v6.4s, v2.4s, v3.4s
+                                          //
+        zip1(v8, t2d, v4, t2d, v6, t2d),  //    zip1 v8.2d, v4.2d, v6.2d
+
+        //    // Store after transpose to avoid conflicts when input matrix A = B
+        //    // Store B to C (right-top of A to left-bottom of B)
+        strPost(d20, x7, 2 * 4),              //    str q20, [x7]
+        st1(s20, 2, x7), sub(x7, x7, 2 * 4),  // revert offset from store of s20
+
+        //    // Store C to B (left-bottom of A to right-top of B)
+        strPost(d8, x5, 2 * 4),              //    str q8, [x5]
+        st1(s8, 2, x5), sub(x5, x5, 2 * 4),  // revert offset from store of s8
+        add(x5, x5, x3),                     //    add x5, x5, x3
+
+        // Offset the consecutive elements
+        add(x6, x6, m * 4),  // offset 4 * sizeof(float)
+        add(x7, x7, n * 4),  // offset 4 * sizeof(float)
+      });
       break;
 
     case 4:  // m=1 n=4
+      kernel.add({
+        //    // Load right-top
+        ldr(s12, x4),     //    ldr q12, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(s13, x4),     //    ldr q13, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(s14, x4),     //    ldr q14, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(s15, x4),     //    ldr q15, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+
+        //    // Transpose right-top
+        trn1(v16, t4s, v12, t4s, v13, t4s),  //    trn1 v16.4s, v12.4s, v13.4s
+        trn1(v18, t4s, v14, t4s, v15, t4s),  //    trn1 v18.4s, v14.4s, v15.4s
+                                             //
+        zip1(v20, t2d, v16, t2d, v18, t2d),  //    zip1  v20.2d, v16.2d, v18.2d
+
+        //    // Load left-bottom
+        ldr(s0, x6),                        //    ldr q0, [x4]
+        add(x6, x6, x2),                    //    add x4, x4, x2
+        ldr(s1, x6),                        //    ldr q1, [x4]
+        add(x6, x6, x2),                    //    add x4, x4, x2
+        ldr(s2, x6),                        //    ldr q2, [x4]
+        add(x6, x6, x2),                    //    add x4, x4, x2
+        ldr(s3, x6),                        //    ldr q3, [x4]
+        mov(x9, -3), madd(x6, x2, x9, x6),  // Revert store offset
+
+        //    // Transpose left-bottom
+        trn1(v4, t4s, v0, t4s, v1, t4s),  //    trn1 v4.4s, v0.4s, v1.4s
+        trn1(v6, t4s, v2, t4s, v3, t4s),  //    trn1 v6.4s, v2.4s, v3.4s
+                                          //
+        zip1(v8, t2d, v4, t2d, v6, t2d),  //    zip1 v8.2d, v4.2d, v6.2d
+
+        //    // Store after transpose to avoid conflicts when input matrix A = B
+        //    // Store B to C (right-top of A to left-bottom of B)
+        str(q20, x7),  //    str q20, [x7]
+
+        //    // Store C to B (left-bottom of A to right-top of B)
+        str(q8, x5),      //    str q8, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+
+        // Offset the consecutive elements
+        add(x6, x6, m * 4),  // offset 4 * sizeof(float)
+        add(x7, x7, n * 4),  // offset 4 * sizeof(float)
+      });
       break;
 
     default:
@@ -713,15 +863,212 @@ void mini_jit::kernels::internal::transpose_else(mini_jit::Kernel &kernel, const
     switch (n)
     {
     case 1:  // m=2 n=1
+      kernel.add({
+        //    // Load right-top
+        ldr(d12, x4),     //    ldr q12, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+
+        //    // Transpose right-top
+        trn1(v16, t4s, v12, t4s, v13, t4s),  //    trn1 v16.4s, v12.4s, v13.4s
+        trn2(v17, t4s, v12, t4s, v13, t4s),  //    trn2 v17.4s, v12.4s, v13.4s
+                                             //
+        zip1(v20, t2d, v16, t2d, v18, t2d),  //    zip1  v20.2d, v16.2d, v18.2d
+        zip1(v21, t2d, v17, t2d, v19, t2d),  //    zip1  v21.2d, v17.2d, v19.2d
+
+        //    // Load left-bottom
+        ldr(d0, x6),                        //    ldr q0, [x4]
+        mov(x9, -1), madd(x6, x2, x9, x6),  // Revert store offset
+
+        //    // Transpose left-bottom
+        trn1(v4, t4s, v0, t4s, v1, t4s),  //    trn1 v4.4s, v0.4s, v1.4s
+        trn2(v5, t4s, v0, t4s, v1, t4s),  //    trn2 v5.4s, v0.4s, v1.4s
+                                          //
+        zip1(v8, t2d, v4, t2d, v6, t2d),  //    zip1 v8.2d, v4.2d, v6.2d
+        zip1(v9, t2d, v5, t2d, v7, t2d),  //    zip1 v9.2d, v5.2d, v7.2d
+
+        //    // Store after transpose to avoid conflicts when input matrix A = B
+        //    // Store B to C (right-top of A to left-bottom of B)
+        str(s20, x7),                       //    str q20, [x7]
+        add(x7, x7, x3),                    //    add x7, x7, x3
+        str(s21, x7),                       //    str q21, [x7]
+        mov(x9, -1), madd(x7, x3, x9, x7),  //  Revert store offset
+
+        //    // Store C to B (left-bottom of A to right-top of B)
+        str(s8, x5),      //    str q8, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(s9, x5),      //    str q9, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+
+        // Offset the consecutive elements
+        add(x6, x6, m * 4),  // offset 4 * sizeof(float)
+        add(x7, x7, n * 4),  // offset 4 * sizeof(float)
+      });
       break;
 
     case 2:  // m=2 n=2
+      kernel.add({
+        //    // Load right-top
+        ldr(d12, x4),     //    ldr q12, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(d13, x4),     //    ldr q13, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+
+        //    // Transpose right-top
+        trn1(v16, t4s, v12, t4s, v13, t4s),  //    trn1 v16.4s, v12.4s, v13.4s
+        trn2(v17, t4s, v12, t4s, v13, t4s),  //    trn2 v17.4s, v12.4s, v13.4s
+                                             //
+        zip1(v20, t2d, v16, t2d, v18, t2d),  //    zip1  v20.2d, v16.2d, v18.2d
+        zip1(v21, t2d, v17, t2d, v19, t2d),  //    zip1  v21.2d, v17.2d, v19.2d
+
+        //    // Load left-bottom
+        ldr(d0, x6),                        //    ldr q0, [x4]
+        add(x6, x6, x2),                    //    add x4, x4, x2
+        ldr(d1, x6),                        //    ldr q1, [x4]
+        mov(x9, -1), madd(x6, x2, x9, x6),  // Revert store offset
+
+        //    // Transpose left-bottom
+        trn1(v4, t4s, v0, t4s, v1, t4s),  //    trn1 v4.4s, v0.4s, v1.4s
+        trn2(v5, t4s, v0, t4s, v1, t4s),  //    trn2 v5.4s, v0.4s, v1.4s
+                                          //
+        zip1(v8, t2d, v4, t2d, v6, t2d),  //    zip1 v8.2d, v4.2d, v6.2d
+        zip1(v9, t2d, v5, t2d, v7, t2d),  //    zip1 v9.2d, v5.2d, v7.2d
+
+        //    // Store after transpose to avoid conflicts when input matrix A = B
+        //    // Store B to C (right-top of A to left-bottom of B)
+        str(d20, x7),                       //    str q20, [x7]
+        add(x7, x7, x3),                    //    add x7, x7, x3
+        str(d21, x7),                       //    str q21, [x7]
+        mov(x9, -1), madd(x7, x3, x9, x7),  //  Revert store offset
+
+        //    // Store C to B (left-bottom of A to right-top of B)
+        str(d8, x5),      //    str q8, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(d9, x5),      //    str q9, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+
+        // Offset the consecutive elements
+        add(x6, x6, m * 4),  // offset 4 * sizeof(float)
+        add(x7, x7, n * 4),  // offset 4 * sizeof(float)
+      });
       break;
 
     case 3:  // m=2 n=3
+      kernel.add({
+        //    // Load right-top
+        ldr(d12, x4),     //    ldr q12, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(d13, x4),     //    ldr q13, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(d14, x4),     //    ldr q14, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+
+        //    // Transpose right-top
+        trn1(v16, t4s, v12, t4s, v13, t4s),  //    trn1 v16.4s, v12.4s, v13.4s
+        trn2(v17, t4s, v12, t4s, v13, t4s),  //    trn2 v17.4s, v12.4s, v13.4s
+        trn1(v18, t4s, v14, t4s, v15, t4s),  //    trn1 v18.4s, v14.4s, v15.4s
+        trn2(v19, t4s, v14, t4s, v15, t4s),  //    trn2 v19.4s, v14.4s, v15.4s
+                                             //
+        zip1(v20, t2d, v16, t2d, v18, t2d),  //    zip1  v20.2d, v16.2d, v18.2d
+        zip1(v21, t2d, v17, t2d, v19, t2d),  //    zip1  v21.2d, v17.2d, v19.2d
+
+        //    // Load left-bottom
+        ldr(d0, x6),                        //    ldr q0, [x4]
+        add(x6, x6, x2),                    //    add x4, x4, x2
+        ldr(d1, x6),                        //    ldr q1, [x4]
+        add(x6, x6, x2),                    //    add x4, x4, x2
+        ldr(d2, x6),                        //    ldr q2, [x4]
+        mov(x9, -2), madd(x6, x2, x9, x6),  // Revert store offset
+
+        //    // Transpose left-bottom
+        trn1(v4, t4s, v0, t4s, v1, t4s),  //    trn1 v4.4s, v0.4s, v1.4s
+        trn2(v5, t4s, v0, t4s, v1, t4s),  //    trn2 v5.4s, v0.4s, v1.4s
+        trn1(v6, t4s, v2, t4s, v3, t4s),  //    trn1 v6.4s, v2.4s, v3.4s
+        trn2(v7, t4s, v2, t4s, v3, t4s),  //    trn2 v7.4s, v2.4s, v3.4s
+                                          //
+        zip1(v8, t2d, v4, t2d, v6, t2d),  //    zip1 v8.2d, v4.2d, v6.2d
+        zip1(v9, t2d, v5, t2d, v7, t2d),  //    zip1 v9.2d, v5.2d, v7.2d
+
+        //    // Store after transpose to avoid conflicts when input matrix A = B
+        //    // Store B to C (right-top of A to left-bottom of B)
+        strPost(d20, x7, 2 * 4),              //    str q20, [x7]
+        st1(s20, 2, x7), sub(x7, x7, 2 * 4),  // revert offset from store of s20
+        add(x7, x7, x3),                      //    add x7, x7, x3
+        str(q21, x7),                         //    str q21, [x7]
+        strPost(d21, x7, 2 * 4),              //    str q21, [x7]
+        st1(s21, 2, x7), sub(x7, x7, 2 * 4),  // revert offset from store of s21
+        mov(x9, -1), madd(x7, x3, x9, x7),    //  Revert store offset
+
+        //    // Store C to B (left-bottom of A to right-top of B)
+        strPost(d8, x5, 2 * 4),              //    str q8, [x5]
+        st1(s8, 2, x5), sub(x5, x5, 2 * 4),  // revert offset from store of s8
+        add(x5, x5, x3),                     //    add x5, x5, x3
+        strPost(d9, x5, 2 * 4),              //    str q9, [x5]
+        st1(s9, 2, x5), sub(x5, x5, 2 * 4),  // revert offset from store of s9
+        add(x5, x5, x3),                     //    add x5, x5, x3
+
+        // Offset the consecutive elements
+        add(x6, x6, m * 4),  // offset 4 * sizeof(float)
+        add(x7, x7, n * 4),  // offset 4 * sizeof(float)
+      });
       break;
 
     case 4:  // m=2 n=4
+      kernel.add({
+        //    // Load right-top
+        ldr(d12, x4),     //    ldr q12, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(d13, x4),     //    ldr q13, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(d14, x4),     //    ldr q14, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(d15, x4),     //    ldr q15, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+
+        //    // Transpose right-top
+        trn1(v16, t4s, v12, t4s, v13, t4s),  //    trn1 v16.4s, v12.4s, v13.4s
+        trn2(v17, t4s, v12, t4s, v13, t4s),  //    trn2 v17.4s, v12.4s, v13.4s
+        trn1(v18, t4s, v14, t4s, v15, t4s),  //    trn1 v18.4s, v14.4s, v15.4s
+        trn2(v19, t4s, v14, t4s, v15, t4s),  //    trn2 v19.4s, v14.4s, v15.4s
+                                             //
+        zip1(v20, t2d, v16, t2d, v18, t2d),  //    zip1  v20.2d, v16.2d, v18.2d
+        zip1(v21, t2d, v17, t2d, v19, t2d),  //    zip1  v21.2d, v17.2d, v19.2d
+
+        //    // Load left-bottom
+        ldr(d0, x6),                        //    ldr q0, [x4]
+        add(x6, x6, x2),                    //    add x4, x4, x2
+        ldr(d1, x6),                        //    ldr q1, [x4]
+        add(x6, x6, x2),                    //    add x4, x4, x2
+        ldr(d2, x6),                        //    ldr q2, [x4]
+        add(x6, x6, x2),                    //    add x4, x4, x2
+        ldr(d3, x6),                        //    ldr q3, [x4]
+        mov(x9, -3), madd(x6, x2, x9, x6),  // Revert store offset
+
+        //    // Transpose left-bottom
+        trn1(v4, t4s, v0, t4s, v1, t4s),  //    trn1 v4.4s, v0.4s, v1.4s
+        trn2(v5, t4s, v0, t4s, v1, t4s),  //    trn2 v5.4s, v0.4s, v1.4s
+        trn1(v6, t4s, v2, t4s, v3, t4s),  //    trn1 v6.4s, v2.4s, v3.4s
+        trn2(v7, t4s, v2, t4s, v3, t4s),  //    trn2 v7.4s, v2.4s, v3.4s
+                                          //
+        zip1(v8, t2d, v4, t2d, v6, t2d),  //    zip1 v8.2d, v4.2d, v6.2d
+        zip1(v9, t2d, v5, t2d, v7, t2d),  //    zip1 v9.2d, v5.2d, v7.2d
+
+        //    // Store after transpose to avoid conflicts when input matrix A = B
+        //    // Store B to C (right-top of A to left-bottom of B)
+        str(d20, x7),                       //    str q20, [x7]
+        add(x7, x7, x3),                    //    add x7, x7, x3
+        str(d21, x7),                       //    str q21, [x7]
+        mov(x9, -1), madd(x7, x3, x9, x7),  //  Revert store offset
+
+        //    // Store C to B (left-bottom of A to right-top of B)
+        str(d8, x5),      //    str q8, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(d9, x5),      //    str q9, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+
+        // Offset the consecutive elements
+        add(x6, x6, m * 4),  // offset 4 * sizeof(float)
+        add(x7, x7, n * 4),  // offset 4 * sizeof(float)
+      });
       break;
 
     default:
@@ -734,15 +1081,255 @@ void mini_jit::kernels::internal::transpose_else(mini_jit::Kernel &kernel, const
     switch (n)
     {
     case 1:  // m=3 n=1
+      kernel.add({
+        //    // Load right-top
+        ldrPost(d12, x4, 2 * 4),              //    ldr q12, [x4]
+        ld1(s12, 2, x4), sub(x4, x4, 2 * 4),  // revert offset from load of s12
+        add(x4, x4, x2),                      //    add x4, x4, x2
+
+        //    // Transpose right-top
+        trn1(v16, t4s, v12, t4s, v13, t4s),  //    trn1 v16.4s, v12.4s, v13.4s
+        trn2(v17, t4s, v12, t4s, v13, t4s),  //    trn2 v17.4s, v12.4s, v13.4s
+                                             //
+        zip1(v20, t2d, v16, t2d, v18, t2d),  //    zip1  v20.2d, v16.2d, v18.2d
+        zip1(v21, t2d, v17, t2d, v19, t2d),  //    zip1  v21.2d, v17.2d, v19.2d
+        zip2(v22, t2d, v16, t2d, v18, t2d),  //    zip2 v22.2d, v16.2d, v18.2d
+
+        //    // Load left-bottom
+        ldrPost(d0, x6, 2 * 4),              //    ldr q0, [x6]
+        ld1(s0, 2, x6), sub(x6, x6, 2 * 4),  // revert offset from load of s0
+
+        //    // Transpose left-bottom
+        trn1(v4, t4s, v0, t4s, v1, t4s),   //    trn1 v4.4s, v0.4s, v1.4s
+        trn2(v5, t4s, v0, t4s, v1, t4s),   //    trn2 v5.4s, v0.4s, v1.4s
+                                           //
+        zip1(v8, t2d, v4, t2d, v6, t2d),   //    zip1 v8.2d, v4.2d, v6.2d
+        zip1(v9, t2d, v5, t2d, v7, t2d),   //    zip1 v9.2d, v5.2d, v7.2d
+        zip2(v10, t2d, v4, t2d, v6, t2d),  //    zip2 v10.2d, v4.2d, v6.2d
+
+        //    // Store after transpose to avoid conflicts when input matrix A = B
+        //    // Store B to C (right-top of A to left-bottom of B)
+        str(s20, x7),                       //    str q20, [x7]
+        add(x7, x7, x3),                    //    add x7, x7, x3
+        str(s21, x7),                       //    str q21, [x7]
+        add(x7, x7, x3),                    //    add x7, x7, x3
+        str(s22, x7),                       //    str q22, [x7]
+        mov(x9, -2), madd(x7, x3, x9, x7),  //  Revert store offset
+
+        //    // Store C to B (left-bottom of A to right-top of B)
+        str(s8, x5),      //    str q8, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(s9, x5),      //    str q9, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(s10, x5),     //    str q10, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+
+        // Offset the consecutive elements
+        add(x6, x6, m * 4),  // offset 4 * sizeof(float)
+        add(x7, x7, n * 4),  // offset 4 * sizeof(float)
+      });
       break;
 
     case 2:  // m=3 n=2
+      kernel.add({
+        //    // Load right-top
+        ldr(d12, x4),     //    ldr q12, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(d13, x4),     //    ldr q13, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+
+        //    // Transpose right-top
+        trn1(v16, t4s, v12, t4s, v13, t4s),  //    trn1 v16.4s, v12.4s, v13.4s
+        trn2(v17, t4s, v12, t4s, v13, t4s),  //    trn2 v17.4s, v12.4s, v13.4s
+                                             //
+        zip1(v20, t2d, v16, t2d, v18, t2d),  //    zip1  v20.2d, v16.2d, v18.2d
+        zip1(v21, t2d, v17, t2d, v19, t2d),  //    zip1  v21.2d, v17.2d, v19.2d
+        zip2(v22, t2d, v16, t2d, v18, t2d),  //    zip2 v22.2d, v16.2d, v18.2d
+
+        //    // Load left-bottom
+        ldr(d0, x6),                        //    ldr q0, [x4]
+        add(x6, x6, x2),                    //    add x4, x4, x2
+        ldr(d1, x6),                        //    ldr q1, [x4]
+        add(x6, x6, x2),                    //    add x4, x4, x2
+        ldr(d2, x6),                        //    ldr q2, [x4]
+        mov(x9, -2), madd(x6, x2, x9, x6),  // Revert store offset
+
+        //    // Transpose left-bottom
+        trn1(v4, t4s, v0, t4s, v1, t4s),   //    trn1 v4.4s, v0.4s, v1.4s
+        trn2(v5, t4s, v0, t4s, v1, t4s),   //    trn2 v5.4s, v0.4s, v1.4s
+                                           //
+        zip1(v8, t2d, v4, t2d, v6, t2d),   //    zip1 v8.2d, v4.2d, v6.2d
+        zip1(v9, t2d, v5, t2d, v7, t2d),   //    zip1 v9.2d, v5.2d, v7.2d
+        zip2(v10, t2d, v4, t2d, v6, t2d),  //    zip2 v10.2d, v4.2d, v6.2d
+
+        //    // Store after transpose to avoid conflicts when input matrix A = B
+        //    // Store B to C (right-top of A to left-bottom of B)
+        str(d20, x7),                       //    str q20, [x7]
+        add(x7, x7, x3),                    //    add x7, x7, x3
+        str(d21, x7),                       //    str q21, [x7]
+        add(x7, x7, x3),                    //    add x7, x7, x3
+        str(d22, x7),                       //    str q22, [x7]
+        mov(x9, -2), madd(x7, x3, x9, x7),  //  Revert store offset
+
+        //    // Store C to B (left-bottom of A to right-top of B)
+        str(d8, x5),      //    str q8, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(d9, x5),      //    str q9, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(d10, x5),     //    str q10, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+
+        // Offset the consecutive elements
+        add(x6, x6, m * 4),  // offset 4 * sizeof(float)
+        add(x7, x7, n * 4),  // offset 4 * sizeof(float)
+      });
       break;
 
     case 3:  // m=3 n=3
+      kernel.add({
+        //    // Load right-top
+        ldrPost(d12, x4, 2 * 4),              //    ldr q12, [x4]
+        ld1(s12, 2, x4), sub(x4, x4, 2 * 4),  // revert offset from load of s12
+        add(x4, x4, x2),                      //    add x4, x4, x2
+        ldrPost(d13, x4, 2 * 4),              //    ldr q13, [x4]
+        ld1(s13, 2, x4), sub(x4, x4, 2 * 4),  // revert offset from load of s13
+        add(x4, x4, x2),                      //    add x4, x4, x2
+        ldrPost(d14, x4, 2 * 4),              //    ldr q14, [x4]
+        ld1(s14, 2, x4), sub(x4, x4, 2 * 4),  // revert offset from load of s14
+        add(x4, x4, x2),                      //    add x4, x4, x2
+
+        //    // Transpose right-top
+        trn1(v16, t4s, v12, t4s, v13, t4s),  //    trn1 v16.4s, v12.4s, v13.4s
+        trn2(v17, t4s, v12, t4s, v13, t4s),  //    trn2 v17.4s, v12.4s, v13.4s
+        trn1(v18, t4s, v14, t4s, v15, t4s),  //    trn1 v18.4s, v14.4s, v15.4s
+        trn2(v19, t4s, v14, t4s, v15, t4s),  //    trn2 v19.4s, v14.4s, v15.4s
+                                             //
+        zip1(v20, t2d, v16, t2d, v18, t2d),  //    zip1  v20.2d, v16.2d, v18.2d
+        zip1(v21, t2d, v17, t2d, v19, t2d),  //    zip1  v21.2d, v17.2d, v19.2d
+        zip2(v22, t2d, v16, t2d, v18, t2d),  //    zip2 v22.2d, v16.2d, v18.2d
+
+        //    // Load left-bottom
+        ldrPost(d0, x6, 2 * 4),              //    ldr q0, [x6]
+        ld1(s0, 2, x6), sub(x6, x6, 2 * 4),  // revert offset from load of s0
+        add(x6, x6, x2),                     //    add x4, x4, x2
+        ldrPost(d1, x6, 2 * 4),              //    ldr q1, [x6]
+        ld1(s1, 2, x6), sub(x6, x6, 2 * 4),  // revert offset from load of s1
+        add(x6, x6, x2),                     //    add x4, x4, x2
+        ldrPost(d2, x6, 2 * 4),              //    ldr q2, [x6]
+        ld1(s2, 2, x6), sub(x6, x6, 2 * 4),  // revert offset from load of s2
+        mov(x9, -2), madd(x6, x2, x9, x6),   // Revert store offset
+
+        //    // Transpose left-bottom
+        trn1(v4, t4s, v0, t4s, v1, t4s),   //    trn1 v4.4s, v0.4s, v1.4s
+        trn2(v5, t4s, v0, t4s, v1, t4s),   //    trn2 v5.4s, v0.4s, v1.4s
+        trn1(v6, t4s, v2, t4s, v3, t4s),   //    trn1 v6.4s, v2.4s, v3.4s
+        trn2(v7, t4s, v2, t4s, v3, t4s),   //    trn2 v7.4s, v2.4s, v3.4s
+                                           //
+        zip1(v8, t2d, v4, t2d, v6, t2d),   //    zip1 v8.2d, v4.2d, v6.2d
+        zip1(v9, t2d, v5, t2d, v7, t2d),   //    zip1 v9.2d, v5.2d, v7.2d
+        zip2(v10, t2d, v4, t2d, v6, t2d),  //    zip2 v10.2d, v4.2d, v6.2d
+
+        //    // Store after transpose to avoid conflicts when input matrix A = B
+        //    // Store B to C (right-top of A to left-bottom of B)
+        strPost(d20, x7, 2 * 4),              //    str q20, [x7]
+        st1(s20, 2, x7), sub(x7, x7, 2 * 4),  // revert offset from store of s20
+        add(x7, x7, x3),                      //    add x7, x7, x3
+        strPost(d21, x7, 2 * 4),              //    str q21, [x7]
+        st1(s21, 2, x7), sub(x7, x7, 2 * 4),  // revert offset from store of s21
+        add(x7, x7, x3),                      //    add x7, x7, x3
+        strPost(d22, x7, 2 * 4),              //    str q22, [x7]
+        st1(s22, 2, x7), sub(x7, x7, 2 * 4),  // revert offset from store of s22
+        mov(x9, -2), madd(x7, x3, x9, x7),    //  Revert store offset
+
+        //    // Store C to B (left-bottom of A to right-top of B)
+        strPost(d8, x5, 2 * 4),               //    str q8, [x5]
+        st1(s8, 2, x5), sub(x5, x5, 2 * 4),   // revert offset from store of s8
+        add(x5, x5, x3),                      //    add x5, x5, x3
+        strPost(d9, x5, 2 * 4),               //    str q9, [x5]
+        st1(s9, 2, x5), sub(x5, x5, 2 * 4),   // revert offset from store of s9
+        add(x5, x5, x3),                      //    add x5, x5, x3
+        strPost(d10, x5, 2 * 4),              //    str q10, [x5]
+        st1(s10, 2, x5), sub(x5, x5, 2 * 4),  // revert offset from store of s10
+        add(x5, x5, x3),                      //    add x5, x5, x3
+
+        // Offset the consecutive elements
+        add(x6, x6, m * 4),  // offset 4 * sizeof(float)
+        add(x7, x7, n * 4),  // offset 4 * sizeof(float)
+      });
       break;
 
     case 4:  // m=3 n=4
+      kernel.add({
+        //    // Load right-top
+        ldrPost(d12, x4, 2 * 4),              //    ldr q12, [x4]
+        ld1(s12, 2, x4), sub(x4, x4, 2 * 4),  // revert offset from load of s12
+        add(x4, x4, x2),                      //    add x4, x4, x2
+        ldrPost(d13, x4, 2 * 4),              //    ldr q13, [x4]
+        ld1(s13, 2, x4), sub(x4, x4, 2 * 4),  // revert offset from load of s13
+        add(x4, x4, x2),                      //    add x4, x4, x2
+        ldrPost(d14, x4, 2 * 4),              //    ldr q14, [x4]
+        ld1(s14, 2, x4), sub(x4, x4, 2 * 4),  // revert offset from load of s14
+        add(x4, x4, x2),                      //    add x4, x4, x2
+        ldrPost(d15, x4, 2 * 4),              //    ldr q15, [x4]
+        ld1(s15, 2, x4), sub(x4, x4, 2 * 4),  // revert offset from load of s15
+        add(x4, x4, x2),                      //    add x4, x4, x2
+
+        //    // Transpose right-top
+        trn1(v16, t4s, v12, t4s, v13, t4s),  //    trn1 v16.4s, v12.4s, v13.4s
+        trn2(v17, t4s, v12, t4s, v13, t4s),  //    trn2 v17.4s, v12.4s, v13.4s
+        trn1(v18, t4s, v14, t4s, v15, t4s),  //    trn1 v18.4s, v14.4s, v15.4s
+        trn2(v19, t4s, v14, t4s, v15, t4s),  //    trn2 v19.4s, v14.4s, v15.4s
+                                             //
+        zip1(v20, t2d, v16, t2d, v18, t2d),  //    zip1  v20.2d, v16.2d, v18.2d
+        zip1(v21, t2d, v17, t2d, v19, t2d),  //    zip1  v21.2d, v17.2d, v19.2d
+        zip2(v22, t2d, v16, t2d, v18, t2d),  //    zip2 v22.2d, v16.2d, v18.2d
+
+        //    // Load left-bottom
+        ldrPost(d0, x6, 2 * 4),              //    ldr q0, [x6]
+        ld1(s0, 2, x6), sub(x6, x6, 2 * 4),  // revert offset from load of s0
+        add(x6, x6, x2),                     //    add x4, x4, x2
+        ldrPost(d1, x6, 2 * 4),              //    ldr q1, [x6]
+        ld1(s1, 2, x6), sub(x6, x6, 2 * 4),  // revert offset from load of s1
+        add(x6, x6, x2),                     //    add x4, x4, x2
+        ldrPost(d2, x6, 2 * 4),              //    ldr q2, [x6]
+        ld1(s2, 2, x6), sub(x6, x6, 2 * 4),  // revert offset from load of s2
+        add(x6, x6, x2),                     //    add x4, x4, x2
+        ldrPost(d3, x6, 2 * 4),              //    ldr q3, [x6]
+        ld1(s3, 2, x6), sub(x6, x6, 2 * 4),  // revert offset from load of s3
+        mov(x9, -3), madd(x6, x2, x9, x6),   // Revert store offset
+
+        //    // Transpose left-bottom
+        trn1(v4, t4s, v0, t4s, v1, t4s),   //    trn1 v4.4s, v0.4s, v1.4s
+        trn2(v5, t4s, v0, t4s, v1, t4s),   //    trn2 v5.4s, v0.4s, v1.4s
+        trn1(v6, t4s, v2, t4s, v3, t4s),   //    trn1 v6.4s, v2.4s, v3.4s
+        trn2(v7, t4s, v2, t4s, v3, t4s),   //    trn2 v7.4s, v2.4s, v3.4s
+                                           //
+        zip1(v8, t2d, v4, t2d, v6, t2d),   //    zip1 v8.2d, v4.2d, v6.2d
+        zip1(v9, t2d, v5, t2d, v7, t2d),   //    zip1 v9.2d, v5.2d, v7.2d
+        zip2(v10, t2d, v4, t2d, v6, t2d),  //    zip2 v10.2d, v4.2d, v6.2d
+
+        //    // Store after transpose to avoid conflicts when input matrix A = B
+        //    // Store B to C (right-top of A to left-bottom of B)
+        str(q20, x7),                       //    str q20, [x7]
+        add(x7, x7, x3),                    //    add x7, x7, x3
+        str(q21, x7),                       //    str q21, [x7]
+        add(x7, x7, x3),                    //    add x7, x7, x3
+        str(q22, x7),                       //    str q22, [x7]
+        add(x7, x7, x3),                    //    add x7, x7, x3
+        mov(x9, -3), madd(x7, x3, x9, x7),  //  Revert store offset
+
+        //    // Store C to B (left-bottom of A to right-top of B)
+        str(q8, x5),      //    str q8, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(q9, x5),      //    str q9, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(q10, x5),     //    str q10, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+
+        // Offset the consecutive elements
+        add(x6, x6, m * 4),  // offset 4 * sizeof(float)
+        add(x7, x7, n * 4),  // offset 4 * sizeof(float)
+      });
       break;
 
     default:
@@ -755,12 +1342,191 @@ void mini_jit::kernels::internal::transpose_else(mini_jit::Kernel &kernel, const
     switch (n)
     {
     case 1:  // m=4 n=1
+      kernel.add({
+        //    // Load right-top
+        ldr(q12, x4),     //    ldr q12, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+
+        //    // Transpose right-top
+        trn1(v16, t4s, v12, t4s, v13, t4s),  //    trn1 v16.4s, v12.4s, v13.4s
+        trn2(v17, t4s, v12, t4s, v13, t4s),  //    trn2 v17.4s, v12.4s, v13.4s
+                                             //
+        zip1(v20, t2d, v16, t2d, v18, t2d),  //    zip1  v20.2d, v16.2d, v18.2d
+        zip1(v21, t2d, v17, t2d, v19, t2d),  //    zip1  v21.2d, v17.2d, v19.2d
+        zip2(v22, t2d, v16, t2d, v18, t2d),  //    zip2 v22.2d, v16.2d, v18.2d
+        zip2(v23, t2d, v17, t2d, v19, t2d),  //    zip2 v23.2d, v17.2d, v19.2d
+
+        //    // Load left-bottom
+        ldr(q0, x6),  //    ldr q0, [x4]
+
+        //    // Transpose left-bottom
+        trn1(v4, t4s, v0, t4s, v1, t4s),   //    trn1 v4.4s, v0.4s, v1.4s
+        trn2(v5, t4s, v0, t4s, v1, t4s),   //    trn2 v5.4s, v0.4s, v1.4s
+                                           //
+        zip1(v8, t2d, v4, t2d, v6, t2d),   //    zip1 v8.2d, v4.2d, v6.2d
+        zip1(v9, t2d, v5, t2d, v7, t2d),   //    zip1 v9.2d, v5.2d, v7.2d
+        zip2(v10, t2d, v4, t2d, v6, t2d),  //    zip2 v10.2d, v4.2d, v6.2d
+        zip2(v11, t2d, v5, t2d, v7, t2d),  //    zip2 v11.2d, v5.2d, v7.2d
+
+        //    // Store after transpose to avoid conflicts when input matrix A = B
+        //    // Store B to C (right-top of A to left-bottom of B)
+        str(s20, x7),                       //    str q20, [x7]
+        add(x7, x7, x3),                    //    add x7, x7, x3
+        str(s21, x7),                       //    str q21, [x7]
+        add(x7, x7, x3),                    //    add x7, x7, x3
+        str(s22, x7),                       //    str q22, [x7]
+        add(x7, x7, x3),                    //    add x7, x7, x3
+        str(s23, x7),                       //    str q23, [x7]
+        mov(x9, -3), madd(x7, x3, x9, x7),  //  Revert store offset
+
+        //    // Store C to B (left-bottom of A to right-top of B)
+        str(s8, x5),      //    str q8, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(s9, x5),      //    str q9, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(s10, x5),     //    str q10, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(s11, x5),     //    str q11, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+
+        // Offset the consecutive elements
+        add(x6, x6, m * 4),  // offset 4 * sizeof(float)
+        add(x7, x7, n * 4),  // offset 4 * sizeof(float)
+      });
       break;
 
     case 2:  // m=4 n=2
+      kernel.add({
+        //    // Load right-top
+        ldr(q12, x4),     //    ldr q12, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(q13, x4),     //    ldr q13, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+
+        //    // Transpose right-top
+        trn1(v16, t4s, v12, t4s, v13, t4s),  //    trn1 v16.4s, v12.4s, v13.4s
+        trn2(v17, t4s, v12, t4s, v13, t4s),  //    trn2 v17.4s, v12.4s, v13.4s
+                                             //
+        zip1(v20, t2d, v16, t2d, v18, t2d),  //    zip1  v20.2d, v16.2d, v18.2d
+        zip1(v21, t2d, v17, t2d, v19, t2d),  //    zip1  v21.2d, v17.2d, v19.2d
+        zip2(v22, t2d, v16, t2d, v18, t2d),  //    zip2 v22.2d, v16.2d, v18.2d
+        zip2(v23, t2d, v17, t2d, v19, t2d),  //    zip2 v23.2d, v17.2d, v19.2d
+
+        //    // Load left-bottom
+        ldr(q0, x6),                        //    ldr q0, [x4]
+        add(x6, x6, x2),                    //    add x4, x4, x2
+        ldr(q1, x6),                        //    ldr q1, [x4]
+        mov(x9, -1), madd(x6, x2, x9, x6),  // Revert store offset
+
+        //    // Transpose left-bottom
+        trn1(v4, t4s, v0, t4s, v1, t4s),   //    trn1 v4.4s, v0.4s, v1.4s
+        trn2(v5, t4s, v0, t4s, v1, t4s),   //    trn2 v5.4s, v0.4s, v1.4s
+                                           //
+        zip1(v8, t2d, v4, t2d, v6, t2d),   //    zip1 v8.2d, v4.2d, v6.2d
+        zip1(v9, t2d, v5, t2d, v7, t2d),   //    zip1 v9.2d, v5.2d, v7.2d
+        zip2(v10, t2d, v4, t2d, v6, t2d),  //    zip2 v10.2d, v4.2d, v6.2d
+        zip2(v11, t2d, v5, t2d, v7, t2d),  //    zip2 v11.2d, v5.2d, v7.2d
+
+        //    // Store after transpose to avoid conflicts when input matrix A = B
+        //    // Store B to C (right-top of A to left-bottom of B)
+        str(d20, x7),                       //    str q20, [x7]
+        add(x7, x7, x3),                    //    add x7, x7, x3
+        str(d21, x7),                       //    str q21, [x7]
+        add(x7, x7, x3),                    //    add x7, x7, x3
+        str(d22, x7),                       //    str q22, [x7]
+        add(x7, x7, x3),                    //    add x7, x7, x3
+        str(d23, x7),                       //    str q23, [x7]
+        mov(x9, -3), madd(x7, x3, x9, x7),  //  Revert store offset
+
+        //    // Store C to B (left-bottom of A to right-top of B)
+        str(d8, x5),      //    str q8, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(d9, x5),      //    str q9, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(d10, x5),     //    str q10, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(d11, x5),     //    str q11, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+
+        // Offset the consecutive elements
+        add(x6, x6, m * 4),  // offset 4 * sizeof(float)
+        add(x7, x7, n * 4),  // offset 4 * sizeof(float)
+      });
       break;
 
     case 3:  // m=4 n=3
+      kernel.add({
+        //    // Load right-top
+        ldr(q12, x4),     //    ldr q12, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(q13, x4),     //    ldr q13, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(q14, x4),     //    ldr q14, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+
+        //    // Transpose right-top
+        trn1(v16, t4s, v12, t4s, v13, t4s),  //    trn1 v16.4s, v12.4s, v13.4s
+        trn2(v17, t4s, v12, t4s, v13, t4s),  //    trn2 v17.4s, v12.4s, v13.4s
+        trn1(v18, t4s, v14, t4s, v15, t4s),  //    trn1 v18.4s, v14.4s, v15.4s
+        trn2(v19, t4s, v14, t4s, v15, t4s),  //    trn2 v19.4s, v14.4s, v15.4s
+                                             //
+        zip1(v20, t2d, v16, t2d, v18, t2d),  //    zip1  v20.2d, v16.2d, v18.2d
+        zip1(v21, t2d, v17, t2d, v19, t2d),  //    zip1  v21.2d, v17.2d, v19.2d
+        zip2(v22, t2d, v16, t2d, v18, t2d),  //    zip2 v22.2d, v16.2d, v18.2d
+        zip2(v23, t2d, v17, t2d, v19, t2d),  //    zip2 v23.2d, v17.2d, v19.2d
+
+        //    // Load left-bottom
+        ldr(q0, x6),                        //    ldr q0, [x4]
+        add(x6, x6, x2),                    //    add x4, x4, x2
+        ldr(q1, x6),                        //    ldr q1, [x4]
+        add(x6, x6, x2),                    //    add x4, x4, x2
+        ldr(q2, x6),                        //    ldr q2, [x4]
+        mov(x9, -2), madd(x6, x2, x9, x6),  // Revert store offset
+
+        //    // Transpose left-bottom
+        trn1(v4, t4s, v0, t4s, v1, t4s),   //    trn1 v4.4s, v0.4s, v1.4s
+        trn2(v5, t4s, v0, t4s, v1, t4s),   //    trn2 v5.4s, v0.4s, v1.4s
+        trn1(v6, t4s, v2, t4s, v3, t4s),   //    trn1 v6.4s, v2.4s, v3.4s
+        trn2(v7, t4s, v2, t4s, v3, t4s),   //    trn2 v7.4s, v2.4s, v3.4s
+                                           //
+        zip1(v8, t2d, v4, t2d, v6, t2d),   //    zip1 v8.2d, v4.2d, v6.2d
+        zip1(v9, t2d, v5, t2d, v7, t2d),   //    zip1 v9.2d, v5.2d, v7.2d
+        zip2(v10, t2d, v4, t2d, v6, t2d),  //    zip2 v10.2d, v4.2d, v6.2d
+        zip2(v11, t2d, v5, t2d, v7, t2d),  //    zip2 v11.2d, v5.2d, v7.2d
+
+        //    // Store after transpose to avoid conflicts when input matrix A = B
+        //    // Store B to C (right-top of A to left-bottom of B)
+        strPost(d20, x7, 2 * 4),              //    str q20, [x7]
+        st1(s20, 2, x7), sub(x7, x7, 2 * 4),  // revert offset from store of s20
+        add(x7, x7, x3),                      //    add x7, x7, x3
+        strPost(d21, x7, 2 * 4),              //    str q21, [x7]
+        st1(s21, 2, x7), sub(x7, x7, 2 * 4),  // revert offset from store of s21
+        add(x7, x7, x3),                      //    add x7, x7, x3
+        strPost(d22, x7, 2 * 4),              //    str q22, [x7]
+        st1(s22, 2, x7), sub(x7, x7, 2 * 4),  // revert offset from store of s22
+        add(x7, x7, x3),                      //    add x7, x7, x3
+        strPost(d23, x7, 2 * 4),              //    str q23, [x7]
+        st1(s23, 2, x7), sub(x7, x7, 2 * 4),  // revert offset from store of s23
+        mov(x9, -3), madd(x7, x3, x9, x7),    //  Revert store offset
+
+        //    // Store C to B (left-bottom of A to right-top of B)
+        strPost(d8, x5, 2 * 4),               //    str q8, [x5]
+        st1(s8, 2, x5), sub(x5, x5, 2 * 4),   // revert offset from store of s8
+        add(x5, x5, x3),                      //    add x5, x5, x3
+        strPost(d9, x5, 2 * 4),               //    str q9, [x5]
+        st1(s9, 2, x5), sub(x5, x5, 2 * 4),   // revert offset from store of s9
+        add(x5, x5, x3),                      //    add x5, x5, x3
+        strPost(d10, x5, 2 * 4),              //    str q10, [x5]
+        st1(s10, 2, x5), sub(x5, x5, 2 * 4),  // revert offset from store of s10
+        add(x5, x5, x3),                      //    add x5, x5, x3
+        strPost(d11, x5, 2 * 4),              //    str q11, [x5]
+        st1(s11, 2, x5), sub(x5, x5, 2 * 4),  // revert offset from store of s11
+        add(x5, x5, x3),                      //    add x5, x5, x3
+
+        // Offset the consecutive elements
+        add(x6, x6, m * 4),  // offset 4 * sizeof(float)
+        add(x7, x7, n * 4),  // offset 4 * sizeof(float)
+      });
       break;
 
     case 4:  // m=4 n=4
@@ -776,15 +1542,15 @@ void mini_jit::kernels::internal::transpose_else(mini_jit::Kernel &kernel, const
         add(x4, x4, x2),  //    add x4, x4, x2
 
         //    // Transpose right-top
-        trn1(v16, t4s, v12, t4s, v14, t4s),  //    trn1 v16.4s, v12.4s, v14.4s
-        trn1(v17, t4s, v13, t4s, v15, t4s),  //    trn1 v17.4s, v13.4s, v15.4s
-        trn2(v18, t4s, v12, t4s, v14, t4s),  //    trn2 v18.4s, v12.4s, v14.4s
-        trn2(v19, t4s, v13, t4s, v15, t4s),  //    trn2 v19.4s, v13.4s, v15.4s
+        trn1(v16, t4s, v12, t4s, v13, t4s),  //    trn1 v16.4s, v12.4s, v13.4s
+        trn2(v17, t4s, v12, t4s, v13, t4s),  //    trn2 v17.4s, v12.4s, v13.4s
+        trn1(v18, t4s, v14, t4s, v15, t4s),  //    trn1 v18.4s, v14.4s, v15.4s
+        trn2(v19, t4s, v14, t4s, v15, t4s),  //    trn2 v19.4s, v14.4s, v15.4s
                                              //
-        zip1(v20, t4s, v16, t4s, v17, t4s),  //    zip1 v20.4s, v16.4s, v17.4s
-        zip1(v21, t4s, v18, t4s, v19, t4s),  //    zip1 v21.4s, v18.4s, v19.4s
-        zip2(v22, t4s, v16, t4s, v17, t4s),  //    zip2 v22.4s, v16.4s, v17.4s
-        zip2(v23, t4s, v18, t4s, v19, t4s),  //    zip2 v23.4s, v18.4s, v19.4s
+        zip1(v20, t2d, v16, t2d, v18, t2d),  //    zip1  v20.2d, v16.2d, v18.2d
+        zip1(v21, t2d, v17, t2d, v19, t2d),  //    zip1  v21.2d, v17.2d, v19.2d
+        zip2(v22, t2d, v16, t2d, v18, t2d),  //    zip2 v22.2d, v16.2d, v18.2d
+        zip2(v23, t2d, v17, t2d, v19, t2d),  //    zip2 v23.2d, v17.2d, v19.2d
 
         //    // Load left-bottom
         ldr(q0, x6),                        //    ldr q0, [x4]
@@ -797,15 +1563,15 @@ void mini_jit::kernels::internal::transpose_else(mini_jit::Kernel &kernel, const
         mov(x9, -3), madd(x6, x2, x9, x6),  // Revert store offset
 
         //    // Transpose left-bottom
-        trn1(v4, t4s, v0, t4s, v2, t4s),   //    trn1 v4.4s, v0.4s, v2.4s
-        trn1(v5, t4s, v1, t4s, v3, t4s),   //    trn1 v5.4s, v1.4s, v3.4s
-        trn2(v6, t4s, v0, t4s, v2, t4s),   //    trn2 v6.4s, v0.4s, v2.4s
-        trn2(v7, t4s, v1, t4s, v3, t4s),   //    trn2 v7.4s, v1.4s, v3.4s
+        trn1(v4, t4s, v0, t4s, v1, t4s),   //    trn1 v4.4s, v0.4s, v1.4s
+        trn2(v5, t4s, v0, t4s, v1, t4s),   //    trn2 v5.4s, v0.4s, v1.4s
+        trn1(v6, t4s, v2, t4s, v3, t4s),   //    trn1 v6.4s, v2.4s, v3.4s
+        trn2(v7, t4s, v2, t4s, v3, t4s),   //    trn2 v7.4s, v2.4s, v3.4s
                                            //
-        zip1(v8, t4s, v4, t4s, v5, t4s),   //    zip1 v8.4s, v4.4s, v5.4s
-        zip1(v9, t4s, v6, t4s, v7, t4s),   //    zip1 v9.4s, v6.4s, v7.4s
-        zip2(v10, t4s, v4, t4s, v5, t4s),  //    zip2 v10.4s, v4.4s, v5.4s
-        zip2(v11, t4s, v6, t4s, v7, t4s),  //    zip2 v11.4s, v6.4s, v7.4s
+        zip1(v8, t2d, v4, t2d, v6, t2d),   //    zip1 v8.2d, v4.2d, v6.2d
+        zip1(v9, t2d, v5, t2d, v7, t2d),   //    zip1 v9.2d, v5.2d, v7.2d
+        zip2(v10, t2d, v4, t2d, v6, t2d),  //    zip2 v10.2d, v4.2d, v6.2d
+        zip2(v11, t2d, v5, t2d, v7, t2d),  //    zip2 v11.2d, v5.2d, v7.2d
 
         //    // Store after transpose to avoid conflicts when input matrix A = B
         //    // Store B to C (right-top of A to left-bottom of B)
@@ -826,6 +1592,7 @@ void mini_jit::kernels::internal::transpose_else(mini_jit::Kernel &kernel, const
         str(q10, x5),     //    str q10, [x5]
         add(x5, x5, x3),  //    add x5, x5, x3
         str(q11, x5),     //    str q11, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
 
         // Offset the consecutive elements
         add(x6, x6, m * 4),  // offset 4 * sizeof(float)
