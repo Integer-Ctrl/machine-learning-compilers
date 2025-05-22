@@ -19,7 +19,7 @@ From the lecture, we already know the 4x4 transpose kernel. Therefore, we have t
 3. Save T(A) and T(D) sub-matrix to matrix B
 4. Swap B and C: Save T(B) to bottom-left sub-matrix of B and T(C) to top-right sub-matrix of B
 
-.. image:: ../_static/images/report_25_04_22/trans_8_8.png
+.. image:: ../_static/images/report_25_05_22/trans_8_8.png
     :align: left
 
 .. code-block:: asm
@@ -215,6 +215,11 @@ File: ``unary_identity.cpp`` & File: ``unary_identity_transpose.cpp``
     UnaryFixture/BM_unary_identity/M:2048/N:2048/min_warmup_time:1.000_stddev      11615 ns        11358 ns           10  3.8664G/s
     UnaryFixture/BM_unary_identity/M:2048/N:2048/min_warmup_time:1.000_cv           3.65 %          3.60 %            10      3.63%
 
+- **BM_unary_identity/M:50/N:50** kernel: :math:`155.4` GiB/s
+- **BM_unary_identity/M:64/N:64** kernel: :math:`163.0` GiB/s
+- **BM_unary_identity/M:512/N:512** kernel: :math:`125.1` GiB/s
+- **BM_unary_identity/M:2048/N:2048** kernel: :math:`106.4` GiB/s
+
 ReLu Primitive
 ^^^^^^^^^^^^^^
 
@@ -250,5 +255,10 @@ File: ``unary_relu.cpp`` & File: ``unary_relu_transpose.cpp``
     UnaryFixture/BM_unary_relu/M:2048/N:2048/min_warmup_time:1.000_median         316017 ns       313907 ns           10 106.899G/s
     UnaryFixture/BM_unary_relu/M:2048/N:2048/min_warmup_time:1.000_stddev           7378 ns         7145 ns           10 2.48532G/s
     UnaryFixture/BM_unary_relu/M:2048/N:2048/min_warmup_time:1.000_cv               2.35 %          2.29 %            10      2.31%
+
+- **BM_unary_relu/M:50/N:50** kernel: :math:`143.1` GiB/s
+- **BM_unary_relu/M:64/N:64** kernel: :math:`148.0` GiB/s
+- **BM_unary_relu/M:512/N:512** kernel: :math:`126.8` GiB/s
+- **BM_unary_relu/M:2048/N:2048** kernel: :math:`107.5` GiB/s
 
 **Without Transposition**
