@@ -42,7 +42,8 @@ void mini_jit::kernels::unary_identity_transpose(mini_jit::Kernel &kernel, const
     mov(x5, x1),  // mov x5, x1 // B for next 4 ldb element in transpose (row)
     mov(x6, x0),  // A for next 4 consecutive element in transpose (column)
     mov(x7, x1),  // B for next 4 consecutive element in transposes (column)
-    // LOCKED mov(x9, 0),   // The number of offset to restore for the consecutive elements, as we need to jump in leading dimension
+
+    // LOCKED mov(x9, 0), // Used as a temporary register, always set the specific size of this register before using it in any context
 
     mov(x7, x0),  // Store the inital value of x0, to be restored in the N loop
     mov(x8, x1),  // Store the inital value of x1, to be restored in the N loop
@@ -131,9 +132,9 @@ void mini_jit::kernels::internal::transpose_axis(mini_jit::Kernel &kernel, const
 {
   using namespace mini_jit::arm_instructions;
 
-  release_assert(m >= 0, "m should be larger equal than 0.");
+  release_assert(m > 0, "m should be larger than 0.");
   release_assert(m <= 4, "m should be less equal than 4.");
-  release_assert(n >= 0, "m should be larger equal than 0.");
+  release_assert(n > 0, "m should be larger than 0.");
   release_assert(n <= 4, "m should be less equal than 4.");
 
   switch (m)
@@ -190,6 +191,42 @@ void mini_jit::kernels::internal::transpose_axis(mini_jit::Kernel &kernel, const
       break;
 
     case 3:  // m=3 n=3
+      kernel.add({
+        //    // Load
+        ldr(q0, x4),      //    ldr q0, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(q1, x4),      //    ldr q1, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(q2, x4),      //    ldr q2, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(q3, x4),      //    ldr q3, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        //
+        //    // Transpose
+        trn1(v4, t4s, v0, t4s, v1, t4s),  //    trn1 v4.4s, v0.4s, v1.4s
+        trn2(v5, t4s, v0, t4s, v1, t4s),  //    trn2 v5.4s, v0.4s, v1.4s
+        trn1(v6, t4s, v2, t4s, v3, t4s),  //    trn1 v6.4s, v2.4s, v3.4s
+        trn2(v7, t4s, v2, t4s, v3, t4s),  //    trn2 v7.4s, v2.4s, v3.4s
+        //
+        zip1(v8, t2d, v4, t2d, v6, t2d),   //    zip1  v8.2d, v4.2d, v6.2d
+        zip1(v9, t2d, v5, t2d, v7, t2d),   //    zip1  v9.2d, v5.2d, v7.2d
+        zip2(v10, t2d, v4, t2d, v6, t2d),  //    zip2 v10.2d, v4.2d, v6.2d
+        zip2(v11, t2d, v5, t2d, v7, t2d),  //    zip2 v11.2d, v5.2d, v7.2d
+        //
+        //    // Store
+        str(q8, x5),      //    str q8, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(q9, x5),      //    str q9, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(q10, x5),     //    str q10, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(q11, x5),     //    str q11, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+
+        // Offset the consecutive elements
+        add(x6, x6, 4 * 4),  // offset 4 * sizeof(float)
+        add(x7, x7, 4 * 4),  // offset 4 * sizeof(float)
+      });
       break;
 
     case 4:  // m=3 n=4
@@ -268,9 +305,9 @@ void mini_jit::kernels::internal::transpose_else(mini_jit::Kernel &kernel, const
 {
   using namespace mini_jit::arm_instructions;
 
-  release_assert(m >= 0, "m should be larger equal than 0.");
+  release_assert(m > 0, "m should be larger than 0.");
   release_assert(m <= 4, "m should be less equal than 4.");
-  release_assert(n >= 0, "m should be larger equal than 0.");
+  release_assert(n > 0, "m should be larger than 0.");
   release_assert(n <= 4, "m should be less equal than 4.");
 
   switch (m)
