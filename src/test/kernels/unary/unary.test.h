@@ -22,14 +22,20 @@ enum class TestInfill
  */
 enum class UnaryType
 {
-  /// @brief Fills the matrix b with zeros
+  /// @brief Fills the matrix b with zeros.
   Zero,
 
-  /// @brief Copies the matrix a to matrix b
+  /// @brief Copies the matrix a to matrix b.
   Identity,
 
-  /// @brief Applies the relu function (i.e. max(x, 0)) from matrix a to matrix b
+  /// @brief Applies the relu function (i.e. max(x, 0)) from matrix a to matrix b.
   ReLu,
+
+  /// @brief Copies the matrix a with a transpose to matrix b.
+  Identity_Transpose,
+
+  /// @brief Applies the relu function (i.e. max(x, 0)) from matrix a with transpose to matrix b.
+  ReLu_Transpose,
 };
 
 class UnaryTestFixture
@@ -42,7 +48,7 @@ private:
   float *matrix_a;
   float *matrix_b;
   float *matrix_b_verify;
-  uint32_t counting_offset = 0;
+  int32_t counting_state = 1;
 
   /**
    * @brief Fills the given matrix with random values.
@@ -89,6 +95,17 @@ public:
   UnaryTestFixture(uint32_t M, uint32_t N);
   UnaryTestFixture(uint32_t M, uint32_t N, uint32_t lda, uint32_t ldb);
   ~UnaryTestFixture();
+
+  /**
+   * @brief Prints a matrix
+   *
+   * @param matrix  The matrix to print.
+   * @param M The size in the m dimension.
+   * @param N The size in the n dimension.
+   * @param ld The leading dimension on the m dimension.
+   * @param label The name of the matrix.
+   */
+  static void print_matrix(const float *matrix, int64_t M, int64_t N, int64_t ld, const char *label);
 
   /**
    * @brief Set up the test fixture object.
