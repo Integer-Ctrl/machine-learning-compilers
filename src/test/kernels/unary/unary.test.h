@@ -42,6 +42,7 @@ private:
   float *matrix_a;
   float *matrix_b;
   float *matrix_b_verify;
+  uint32_t counting_offset = 0;
 
   /**
    * @brief Fills the given matrix with random values.

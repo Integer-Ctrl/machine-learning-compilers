@@ -81,7 +81,7 @@ trans_neon_8_8:
     */
     // Load right-top
     mov x4, x0       // A
-    add x4, x4, #128 // Offset to top-left corner of right half of A (32th element)
+    add x4, x4, #128 // Offset to top-right corner of right half of A (32th element)
     
     ldr q12, [x4]
     add x4, x4, x2

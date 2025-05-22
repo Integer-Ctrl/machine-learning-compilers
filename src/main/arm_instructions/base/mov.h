@@ -4,6 +4,7 @@
 #include "../../release_assert.h"
 #include "../register.h"
 #include "add.h"
+#include "movn.h"
 #include "movz.h"
 #include "orr.h"
 #include <cstdint>
@@ -31,6 +32,30 @@ namespace mini_jit
     constexpr uint32_t mov(const R64Bit Xd, const uint32_t imm)
     {
       return movz(Xd, imm);
+    }
+
+    constexpr uint32_t mov(const R32Bit Wd, const int32_t imm)
+    {
+      if (imm < 0)
+      {
+        return movn(Wd, ~imm);
+      }
+      else
+      {
+        return movz(Wd, imm);
+      }
+    }
+
+    constexpr uint32_t mov(const R64Bit Xd, const int32_t imm)
+    {
+      if (imm < 0)
+      {
+        return movn(Xd, ~imm);
+      }
+      else
+      {
+        return movz(Xd, imm);
+      }
     }
 
     constexpr uint32_t movSp(const R32Bit Wd, const R32Bit Wn)

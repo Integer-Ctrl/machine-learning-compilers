@@ -140,6 +140,8 @@ set(ARM_INSTRUCTION_FILES
     base/mov.h
     base/orr.h
     base/madd.h
+    base/movn.h
+    base/movz.h
     
     simd_fp/ld1.h
     simd_fp/st1.h
@@ -202,6 +204,7 @@ set(TEST_ARM_INSTRUCTION_FILES
     base/mov.test.cpp
     base/movz.test.cpp
     base/madd.test.cpp
+    base/movn.test.cpp
 
     simd_fp/fmla.test.cpp
     simd_fp/ld1.test.cpp

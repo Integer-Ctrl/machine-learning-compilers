@@ -5,7 +5,7 @@
 #include <catch2/generators/catch_generators_range.hpp>
 #include <cstdint>
 
-TEST_CASE("Test unary identity transpose no rest jited correctness random data", "[jit][correctness][gemm]")
+TEST_CASE("Test unary identity transpose no rest jited correctness random data", "[jit][correctness][unary]")
 {
   //   auto M = GENERATE(64u, 512u, 2048u);
   //   auto N = GENERATE(50u, 64u, 512u, 2048u);
@@ -16,7 +16,7 @@ TEST_CASE("Test unary identity transpose no rest jited correctness random data",
   //   unaryTest.RunTest(M, M, UnaryType::Identity);
 }
 
-TEST_CASE("Test unary identity transpose rest jited correctness random data", "[jit][correctness][gemm]")
+TEST_CASE("Test unary identity transpose rest jited correctness random data", "[jit][correctness][unary]")
 {
   //   auto MRest = GENERATE(range(1u, 15u + 1u, 1u));
   //   auto M = GENERATE(64u, 512u, 2048u);

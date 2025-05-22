@@ -114,7 +114,6 @@ void UnaryTestFixture::verify_matrix(const float *__restrict__ expected, const f
 
 void UnaryTestFixture::fill_random_matrix(float *matrix, uint32_t size)
 {
-  std::srand(std::time(0));
   for (int64_t i = 0; i < size; i++)
   {
     float denominator = 1;
@@ -137,6 +136,7 @@ void UnaryTestFixture::fill_counting_matrix(float *matrix, uint32_t size)
 {
   for (size_t i = 0; i < size; i++)
   {
-    matrix[i] = i;
+    matrix[i] = i + counting_offset;
   }
+  counting_offset += 1;
 }

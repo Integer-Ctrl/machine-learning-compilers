@@ -5,7 +5,7 @@
 #include <catch2/generators/catch_generators_range.hpp>
 #include <cstdint>
 
-TEST_CASE("Test unary zero_16m_n jited correctness random data", "[jit][correctness][gemm]")
+TEST_CASE("Test unary zero_16m_n jited correctness random data", "[jit][correctness][unary]")
 {
   const uint32_t M = GENERATE(64u, 512u, 2048u);
   const uint32_t N = GENERATE(50u, 64u, 512u, 2048u);

@@ -38,8 +38,11 @@ void mini_jit::kernels::unary_identity_transpose(mini_jit::Kernel &kernel, const
     lsl(x3, x3, 2),  // x3 * 4 = x3 * sizeof(float)
 
     // hold addresses to A and B in work registers for the transpose
-    mov(x4, x0),  // mov x4, x0 // A
-    mov(x5, x1),  // mov x5, x1 // B
+    mov(x4, x0),  // mov x4, x0 // A for next 4 lda element in transpose (row)
+    mov(x5, x1),  // mov x5, x1 // B for next 4 ldb element in transpose (row)
+    mov(x6, x0),  // A for next 4 consecutive element in transpose (column)
+    mov(x7, x1),  // B for next 4 consecutive element in transposes (column)
+    // LOCKED mov(x9, 0),   // The number of offset to restore for the consecutive elements, as we need to jump in leading dimension
 
     mov(x7, x0),  // Store the inital value of x0, to be restored in the N loop
     mov(x8, x1),  // Store the inital value of x1, to be restored in the N loop
@@ -56,97 +59,37 @@ void mini_jit::kernels::unary_identity_transpose(mini_jit::Kernel &kernel, const
 
   int32_t n_jump_start = kernel.get_instruction_count() - 3;
 
-  if (m_loop < 16)
+  if (m_loop < 4)
   {
     kernel.add({
-
       // x17 iterator for the m_loop
-      mov(x17, m_loop / 16),
+      mov(x17, m_loop / 4),
       // loop over m
       sub(x17, x17, 1),
 
       // loop back to m
       cbnz(x17, -3 * 4),
-
     });
   }
 
-  uint32_t m_loop_rest = m_loop % 16;
+  uint32_t m_loop_rest = m_loop % 4;
   // Handel the rest of m
   if (m_loop_rest != 0)
   {
-
     uint32_t m_loop_rest_multiple_4 = m_loop_rest / 4;
     switch (m_loop_rest_multiple_4)
     {
-    case 0:
-      // nothing to do
-      break;
-
     case 1:
-      kernel.add({
-        mov(x9, 1 * 4 * 4),        // 1 * 4 * sizeof(float)
-        ld1Post(v0, t4s, x0, x9),  // increase x0 after load with value of x9 i.e. x0 += 1 * 4 * sizeof(float)
-        st1Post(v0, t4s, x1, x9),  // increase x1 after store with value of x9 i.e. x1 += 1 * 4 * sizeof(float)
-      });
       break;
 
     case 2:
-      kernel.add({
-        mov(x9, 2 * 4 * 4),                 // 2 * 4 * sizeof(float)
-        ld1Post(v0, t4s, v1, t4s, x0, x9),  // increase x0 after load with value of x9 i.e. x0 += 4 * 4 * sizeof(float)
-        st1Post(v0, t4s, v1, t4s, x1, x9),  // increase x1 after store with value of x9 i.e. x1 += 4 * 4 * sizeof(float)
-      });
       break;
 
     case 3:
-      kernel.add({
-        mov(x9, 3 * 4 * 4),                          // 3 * 4 * sizeof(float)
-        ld1Post(v0, t4s, v1, t4s, v2, t4s, x0, x9),  // increase x0 after load with value of x9 i.e. x0 += 4 * 4 * sizeof(float)
-        st1Post(v0, t4s, v1, t4s, v2, t4s, x1, x9),  // increase x1 after store with value of x9 i.e. x1 += 4 * 4 * sizeof(float)
-      });
       break;
 
     default:
       release_assert(false, "Out of range loop rest detected for multiple of 4 instructions.");
-      break;
-    }
-
-    uint32_t m_loop_rest_less_than_4 = m_loop_rest % 4;
-    switch (m_loop_rest_less_than_4)
-    {
-    case 0:
-      // noting to do
-      break;
-
-    case 1:
-      kernel.add({
-        // load single element
-        ldrPost(s0, x0, 4),
-        strPost(s0, x1, 4),
-      });
-      break;
-
-    case 2:
-      kernel.add({
-        // load two elements
-        ldpPost(s0, s1, x0, 4 * 2),
-        stpPost(s0, s1, x1, 4 * 2),
-      });
-      break;
-
-    case 3:
-      kernel.add({
-        // load three elements
-        ldpPost(s0, s1, x0, 4 * 2),
-        stpPost(s0, s1, x1, 4 * 2),
-        ldrPost(s0, x0, 4),
-        strPost(s0, x1, 4),
-      });
-      break;
-
-    default:
-      release_assert(false, "Out of range loop rest detected for less than 4 instructions.");
       break;
     }
   }
@@ -184,53 +127,307 @@ void mini_jit::kernels::unary_identity_transpose(mini_jit::Kernel &kernel, const
 #endif  // SAVE_JITS_TO_FILE
 }
 
-void mini_jit::kernels::internal::transpose_symmetric(mini_jit::Kernel &kernel, const uint32_t m_position, const uint32_t n_position,
-                                                      const uint32_t, const uint32_t)
+void mini_jit::kernels::internal::transpose_axis(mini_jit::Kernel &kernel, const uint32_t m, const uint32_t n)
 {
   using namespace mini_jit::arm_instructions;
 
-  kernel.add({});
+  release_assert(m >= 0, "m should be larger equal than 0.");
+  release_assert(m <= 4, "m should be less equal than 4.");
+  release_assert(n >= 0, "m should be larger equal than 0.");
+  release_assert(n <= 4, "m should be less equal than 4.");
 
-  if (m_position == n_position)
+  switch (m)
   {
-    // We work on the same space of 4x4 memory
-    // /*
-    // * Part 1:
-    // * Load 4x4 sub-matrix A.
-    // * Transpose 4x4 block.
-    // * Store 4x4 block of A into B.
-    // */
-    // // Load
-    // ldr q0, [x4]
-    // add x4, x4, x2
-    // ldr q1, [x4]
-    // add x4, x4, x2
-    // ldr q2, [x4]
-    // add x4, x4, x2
-    // ldr q3, [x4]
+  case 1:
+    switch (n)
+    {
+    case 1:  // m=1 n=1
+      break;
 
-    // // Transpose
-    // trn1 v4.4s, v0.4s, v1.4s
-    // trn2 v5.4s, v0.4s, v1.4s
-    // trn1 v6.4s, v2.4s, v3.4s
-    // trn2 v7.4s, v2.4s, v3.4s
+    case 2:  // m=1 n=2
+      break;
 
-    // zip1  v8.2d, v4.2d, v6.2d
-    // zip1  v9.2d, v5.2d, v7.2d
-    // zip2 v10.2d, v4.2d, v6.2d
-    // zip2 v11.2d, v5.2d, v7.2d
+    case 3:  // m=1 n=3
+      break;
 
-    // // Store
-    // str q8, [x5]
-    // add x5, x5, x3
-    // str q9, [x5]
-    // add x5, x5, x3
-    // str q10, [x5]
-    // add x5, x5, x3
-    // str q11, [x5]
+    case 4:  // m=1 n=4
+      break;
+
+    default:
+      release_assert(false, "Out of range n dimension on transpose axis");
+      break;
+    }
+    break;
+
+  case 2:
+    switch (n)
+    {
+    case 1:  // m=2 n=1
+      break;
+
+    case 2:  // m=2 n=2
+      break;
+
+    case 3:  // m=2 n=3
+      break;
+
+    case 4:  // m=2 n=4
+      break;
+
+    default:
+      release_assert(false, "Out of range n dimension on transpose axis");
+      break;
+    }
+    break;
+
+  case 3:
+    switch (n)
+    {
+    case 1:  // m=3 n=1
+      break;
+
+    case 2:  // m=3 n=2
+      break;
+
+    case 3:  // m=3 n=3
+      break;
+
+    case 4:  // m=3 n=4
+      break;
+
+    default:
+      release_assert(false, "Out of range n dimension on transpose axis");
+      break;
+    }
+    break;
+
+  case 4:
+    switch (n)
+    {
+    case 1:  // m=4 n=1
+      break;
+
+    case 2:  // m=4 n=2
+      break;
+
+    case 3:  // m=4 n=3
+      break;
+
+    case 4:  // m=4 n=4
+      kernel.add({
+        //    // Load
+        ldr(q0, x4),      //    ldr q0, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(q1, x4),      //    ldr q1, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(q2, x4),      //    ldr q2, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(q3, x4),      //    ldr q3, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        //
+        //    // Transpose
+        trn1(v4, t4s, v0, t4s, v1, t4s),  //    trn1 v4.4s, v0.4s, v1.4s
+        trn2(v5, t4s, v0, t4s, v1, t4s),  //    trn2 v5.4s, v0.4s, v1.4s
+        trn1(v6, t4s, v2, t4s, v3, t4s),  //    trn1 v6.4s, v2.4s, v3.4s
+        trn2(v7, t4s, v2, t4s, v3, t4s),  //    trn2 v7.4s, v2.4s, v3.4s
+        //
+        zip1(v8, t2d, v4, t2d, v6, t2d),   //    zip1  v8.2d, v4.2d, v6.2d
+        zip1(v9, t2d, v5, t2d, v7, t2d),   //    zip1  v9.2d, v5.2d, v7.2d
+        zip2(v10, t2d, v4, t2d, v6, t2d),  //    zip2 v10.2d, v4.2d, v6.2d
+        zip2(v11, t2d, v5, t2d, v7, t2d),  //    zip2 v11.2d, v5.2d, v7.2d
+        //
+        //    // Store
+        str(q8, x5),      //    str q8, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(q9, x5),      //    str q9, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(q10, x5),     //    str q10, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(q11, x5),     //    str q11, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+
+        // Offset the consecutive elements
+        add(x6, x6, 4 * 4),  // offset 4 * sizeof(float)
+        add(x7, x7, 4 * 4),  // offset 4 * sizeof(float)
+      });
+      break;
+
+    default:
+      release_assert(false, "Out of range n dimension on transpose axis");
+      break;
+    }
+    break;
+
+  default:
+    release_assert(false, "Out of range m dimension on transpose axis");
+    break;
   }
-  else
+}
+
+void mini_jit::kernels::internal::transpose_else(mini_jit::Kernel &kernel, const uint32_t m, const uint32_t n)
+{
+  using namespace mini_jit::arm_instructions;
+
+  release_assert(m >= 0, "m should be larger equal than 0.");
+  release_assert(m <= 4, "m should be less equal than 4.");
+  release_assert(n >= 0, "m should be larger equal than 0.");
+  release_assert(n <= 4, "m should be less equal than 4.");
+
+  switch (m)
   {
-    // We work on two different spaces of 4x4 memory
+  case 1:
+    switch (n)
+    {
+    case 1:  // m=1 n=1
+      break;
+
+    case 2:  // m=1 n=2
+      break;
+
+    case 3:  // m=1 n=3
+      break;
+
+    case 4:  // m=1 n=4
+      break;
+
+    default:
+      release_assert(false, "Out of range n dimension on transpose else");
+      break;
+    }
+    break;
+
+  case 2:
+    switch (n)
+    {
+    case 1:  // m=2 n=1
+      break;
+
+    case 2:  // m=2 n=2
+      break;
+
+    case 3:  // m=2 n=3
+      break;
+
+    case 4:  // m=2 n=4
+      break;
+
+    default:
+      release_assert(false, "Out of range n dimension on transpose else");
+      break;
+    }
+    break;
+
+  case 3:
+    switch (n)
+    {
+    case 1:  // m=3 n=1
+      break;
+
+    case 2:  // m=3 n=2
+      break;
+
+    case 3:  // m=3 n=3
+      break;
+
+    case 4:  // m=3 n=4
+      break;
+
+    default:
+      release_assert(false, "Out of range n dimension on transpose else");
+      break;
+    }
+    break;
+
+  case 4:
+    switch (n)
+    {
+    case 1:  // m=4 n=1
+      break;
+
+    case 2:  // m=4 n=2
+      break;
+
+    case 3:  // m=4 n=3
+      break;
+
+    case 4:  // m=4 n=4
+      kernel.add({
+        //    // Load right-top
+        ldr(q12, x4),                        //    ldr q12, [x4]
+        add(x4, x4, x2),                     //    add x4, x4, x2
+        ldr(q13, x4),                        //    ldr q13, [x4]
+        add(x4, x4, x2),                     //    add x4, x4, x2
+        ldr(q14, x4),                        //    ldr q14, [x4]
+        add(x4, x4, x2),                     //    add x4, x4, x2
+        ldr(q15, x4),                        //    ldr q15, [x4]
+        add(x4, x4, x2),                     //    add x4, x4, x2
+                                             //
+                                             //    // Transpose right-top
+        trn1(v16, t4s, v12, t4s, v14, t4s),  //    trn1 v16.4s, v12.4s, v14.4s
+        trn1(v17, t4s, v13, t4s, v15, t4s),  //    trn1 v17.4s, v13.4s, v15.4s
+        trn2(v18, t4s, v12, t4s, v14, t4s),  //    trn2 v18.4s, v12.4s, v14.4s
+        trn2(v19, t4s, v13, t4s, v15, t4s),  //    trn2 v19.4s, v13.4s, v15.4s
+                                             //
+        zip1(v20, t4s, v16, t4s, v17, t4s),  //    zip1 v20.4s, v16.4s, v17.4s
+        zip1(v21, t4s, v18, t4s, v19, t4s),  //    zip1 v21.4s, v18.4s, v19.4s
+        zip2(v22, t4s, v16, t4s, v17, t4s),  //    zip2 v22.4s, v16.4s, v17.4s
+        zip2(v23, t4s, v18, t4s, v19, t4s),  //    zip2 v23.4s, v18.4s, v19.4s
+                                             //
+                                             //    // Load left-bottom
+        ldr(q0, x6),                         //    ldr q0, [x4]
+        add(x6, x6, x2),                     //    add x4, x4, x2
+        ldr(q1, x6),                         //    ldr q1, [x4]
+        add(x6, x6, x2),                     //    add x4, x4, x2
+        ldr(q2, x6),                         //    ldr q2, [x4]
+        add(x6, x6, x2),                     //    add x4, x4, x2
+        ldr(q3, x6),                         //    ldr q3, [x4]
+        mov(x9, -3), madd(x6, x2, x9, x6),
+        //
+        //    // Transpose left-bottom
+        trn1(v4, t4s, v0, t4s, v2, t4s),    //    trn1 v4.4s, v0.4s, v2.4s
+        trn1(v5, t4s, v1, t4s, v3, t4s),    //    trn1 v5.4s, v1.4s, v3.4s
+        trn2(v6, t4s, v0, t4s, v2, t4s),    //    trn2 v6.4s, v0.4s, v2.4s
+        trn2(v7, t4s, v1, t4s, v3, t4s),    //    trn2 v7.4s, v1.4s, v3.4s
+                                            //
+        zip1(v8, t4s, v4, t4s, v5, t4s),    //    zip1 v8.4s, v4.4s, v5.4s
+        zip1(v9, t4s, v6, t4s, v7, t4s),    //    zip1 v9.4s, v6.4s, v7.4s
+        zip2(v10, t4s, v4, t4s, v5, t4s),   //    zip2 v10.4s, v4.4s, v5.4s
+        zip2(v11, t4s, v6, t4s, v7, t4s),   //    zip2 v11.4s, v6.4s, v7.4s
+                                            //
+                                            //    // Store after transpose to avoid conflicts when input matrix A = B
+                                            //    // Store B to C (right-top of A to left-bottom of B)
+        str(q20, x7),                       //    str q20, [x7]
+        add(x7, x7, x3),                    //    add x7, x7, x3
+        str(q21, x7),                       //    str q21, [x7]
+        add(x7, x7, x3),                    //    add x7, x7, x3
+        str(q22, x7),                       //    str q22, [x7]
+        add(x7, x7, x3),                    //    add x7, x7, x3
+        str(q23, x7),                       //    str q23, [x7]
+        mov(x9, -3), madd(x7, x3, x9, x7),  //
+                                            //
+                                            //    // Store C to B (left-bottom of A to right-top of B)
+        str(q8, x5),                        //    str q8, [x5]
+        add(x5, x5, x3),                    //    add x5, x5, x3
+        str(q9, x5),                        //    str q9, [x5]
+        add(x5, x5, x3),                    //    add x5, x5, x3
+        str(q10, x5),                       //    str q10, [x5]
+        add(x5, x5, x3),                    //    add x5, x5, x3
+        str(q11, x5),                       //    str q11, [x5]
+                                            //
+                                            // Offset the consecutive elements
+        add(x6, x6, 4 * 4),                 // offset 4 * sizeof(float)
+        add(x7, x7, 4 * 4),                 // offset 4 * sizeof(float)
+      });
+      break;
+
+    default:
+      release_assert(false, "Out of range n dimension on transpose else");
+      break;
+    }
+    break;
+
+  default:
+    release_assert(false, "Out of range m dimension on transpose axis");
+    break;
   }
 }

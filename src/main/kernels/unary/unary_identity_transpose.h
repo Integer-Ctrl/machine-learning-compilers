@@ -11,22 +11,22 @@ namespace mini_jit
     namespace internal
     {
       /**
-       * @brief Transpose a matrix, this function is only called as subfunction from unary_identity_transpose
+       * @brief Adds a transpose instructions to the kernel that is located on the matrix axis.
        *
-       * M=1 N=0 and M=0 and N=1 are pairs and only called ones, thus we only need to implement a triangular matrix.
-       *
-       *  M=N=0  | M=0 N=1 |
-       *---------------------
-       * M=1 N=0 |
-       *
-       * @param kernel The kernel to add instruction too.
-       * @param m_position The current position on the m dimension.
-       * @param n_position The current position on the n dimension.
-       * @param M The size of the M dimension
-       * @param N The size of the N dimension
+       * @param kernel The kernel to add instructions too.
+       * @param m The m dimension size in range of 0 < m <= 4.
+       * @param n The n dimension size in range of 0 < n <= 4.
        */
-      void transpose_symmetric(mini_jit::Kernel &kernel, const uint32_t m_position, const uint32_t n_position, const uint32_t M,
-                               const uint32_t N);
+      void transpose_axis(mini_jit::Kernel &kernel, const uint32_t m, const uint32_t n);
+
+      /**
+       * @brief Adds a transpose instructions to the kernel that is located outside of the matrix axis.
+       *
+       * @param kernel The kernel to add instructions too.
+       * @param m The m dimension size in range of 0 < m <= 4.
+       * @param n The n dimension size in range of 0 < n <= 4.
+       */
+      void transpose_else(mini_jit::Kernel &kernel, const uint32_t m, const uint32_t n);
     }  // namespace internal
 
     /**

@@ -9,6 +9,7 @@
 #include "lsl.h"
 #include "madd.h"
 #include "mov.h"
+#include "movn.h"
 #include "movz.h"
 #include "orr.h"
 #include "ret.h"

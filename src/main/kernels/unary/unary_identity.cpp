@@ -10,7 +10,7 @@ void mini_jit::kernels::unary_identity(mini_jit::Kernel &kernel, const uint32_t 
 
   kernel.add({
     // /**
-    //     * @param x0 = a pointer to column-major matrix A (Input). Unused for zero unary kerne.
+    //     * @param x0 = a pointer to column-major matrix A (Input). Unused for zero unary kernel.
     //     * @param x1 = b pointer to column-major matrix B (Output).
     //     * @param x2 = lda leading dimension of A. Unused for for zero unary kernel.
     //     * @param x3 = ldb leading dimension of B.
@@ -37,9 +37,9 @@ void mini_jit::kernels::unary_identity(mini_jit::Kernel &kernel, const uint32_t 
     lsl(x2, x2, 2),  // x2 * 4 = x2 * sizeof(float)
     lsl(x3, x3, 2),  // x3 * 4 = x3 * sizeof(float)
 
-    mov(x7, x0),         // Store the inital value of x0, to be restored in the N loop
-    mov(x8, x1),         // Store the inital value of x1, to be restored in the N loop
-    mov(x9, 4 * 4 * 4),  // 4 * 4 * sizeof(float) Hold the number of bytes that are stored in the loop
+    mov(x7, x0),  // Store the inital value of x0, to be restored in the N loop
+    mov(x8, x1),  // Store the inital value of x1, to be restored in the N loop
+    // LOCKED mov(x9, 4 * 4 * 4),  // 4 * 4 * sizeof(float) Hold the number of bytes that are stored in the loop
 
     // x16 iterator for the n_loop
     mov(x16, n_loop),
@@ -53,9 +53,10 @@ void mini_jit::kernels::unary_identity(mini_jit::Kernel &kernel, const uint32_t 
 
   int32_t n_jump_start = kernel.get_instruction_count() - 3;
 
-  if (m_loop < 16)
+  if (m_loop >= 16)
   {
     kernel.add({
+      mov(x9, 4 * 4 * 4),  // 4 * 4 * sizeof(float) Hold the number of bytes that are stored in the loop
 
       // x17 iterator for the m_loop
       mov(x17, m_loop / 16),
