@@ -227,6 +227,8 @@ set(BENCH_FILES
     matmul.bench.cpp
 
     unary/unary_zero.bench.cpp
+    unary/unary_identity.bench.cpp
+    unary/unary_relu.bench.cpp
 )
 
 foreach(file ${SRC_MAIN_FILES})
