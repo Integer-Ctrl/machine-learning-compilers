@@ -24,6 +24,20 @@ UnaryTestFixture::~UnaryTestFixture()
   delete[] matrix_b_verify;
 }
 
+void UnaryTestFixture::print_matrix(const float *matrix, int64_t M, int64_t N, int64_t ld, const char *label)
+{
+  printf("%s:\n", label);
+  for (int64_t i = 0; i < M; ++i)
+  {
+    for (int64_t j = 0; j < N; ++j)
+    {
+      printf("%8.4f ", matrix[i * ld + j]);
+    }
+    printf("\n");
+  }
+  printf("\n");
+}
+
 void UnaryTestFixture::SetUp(TestInfill fillType)
 {
   switch (fillType)
@@ -61,8 +75,10 @@ void UnaryTestFixture::RunTest(const uint32_t lda, const uint32_t ldb, UnaryType
   REQUIRE(UnaryTestFixture::lda == lda);
   REQUIRE(UnaryTestFixture::ldb == ldb);
 
-  kernel(matrix_a, matrix_b, lda, ldb);
   naive_unary_M_N(matrix_a, matrix_b_verify, lda, ldb, type);
+  UnaryTestFixture::print_matrix(matrix_b_verify, M, N, ldb, "Expected");
+
+  kernel(matrix_a, matrix_b, lda, ldb);
 
   verify_matrix(matrix_b_verify, matrix_b, ldb * N);
 }
@@ -87,6 +103,14 @@ void UnaryTestFixture::naive_unary_M_N(const float *__restrict__ a, float *__res
         b[ldb * iN + iM] = std::max(a[lda * iN + iM], 0.f);
         break;
 
+      case UnaryType::Identity_Transpose:
+        b[ldb * iM + iN] = a[lda * iN + iM];
+        break;
+
+      case UnaryType::ReLu_Transpose:
+        b[ldb * iM + iN] = std::max(a[lda * iN + iM], 0.f);
+        break;
+
       default:
         FAIL("Found unary invalid type for testing");
         break;
@@ -97,6 +121,8 @@ void UnaryTestFixture::naive_unary_M_N(const float *__restrict__ a, float *__res
 
 void UnaryTestFixture::verify_matrix(const float *__restrict__ expected, const float *__restrict__ result, uint32_t size)
 {
+  UnaryTestFixture::print_matrix(result, M, N, ldb, "Result");
+
   for (size_t i = 0; i < size; i++)
   {
     CAPTURE(i, result[i], expected[i]);
@@ -134,9 +160,9 @@ void UnaryTestFixture::fill_random_matrix(float *matrix, uint32_t size)
 
 void UnaryTestFixture::fill_counting_matrix(float *matrix, uint32_t size)
 {
-  for (size_t i = 0; i < size; i++)
+  for (int64_t i = 0; i < size; i++)
   {
-    matrix[i] = i + counting_offset;
+    matrix[i] = i * counting_state;
   }
-  counting_offset += 1;
+  counting_state *= -1;
 }

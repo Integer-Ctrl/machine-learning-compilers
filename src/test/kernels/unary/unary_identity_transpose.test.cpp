@@ -5,15 +5,15 @@
 #include <catch2/generators/catch_generators_range.hpp>
 #include <cstdint>
 
-TEST_CASE("Test unary identity transpose no rest jited correctness random data", "[jit][correctness][unary]")
+TEST_CASE("Test unary identity transpose symmetric jited correctness counting data", "[jit][correctness][unary]")
 {
-  //   auto M = GENERATE(64u, 512u, 2048u);
-  //   auto N = GENERATE(50u, 64u, 512u, 2048u);
-  //   CAPTURE(M, N);
-  //   UnaryTestFixture unaryTest(M, N);
-  //   unaryTest.SetUp(TestInfill::Random);
-  //   mini_jit::kernels::unary_identity_transpose(unaryTest.native_kernel, M, N);
-  //   unaryTest.RunTest(M, M, UnaryType::Identity);
+  auto M = GENERATE(range(1u, 73u + 1u, 1u));
+  auto N = M;
+  CAPTURE(M, N);
+  UnaryTestFixture unaryTest(M, N);
+  unaryTest.SetUp(TestInfill::Counting);
+  mini_jit::kernels::unary_identity_transpose(unaryTest.native_kernel, M, N);
+  unaryTest.RunTest(M, M, UnaryType::Identity_Transpose);
 }
 
 TEST_CASE("Test unary identity transpose rest jited correctness random data", "[jit][correctness][unary]")

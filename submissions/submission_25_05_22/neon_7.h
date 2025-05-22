@@ -78,7 +78,6 @@ void naive_trans_8_8(const float *__restrict__ a, float *__restrict__ b, int64_t
   }
 }
 
-// TODO: remove when debugging is not needed
 void print_matrix(const float *mat, int64_t ld, const char *label)
 {
   printf("%s:\n", label);
