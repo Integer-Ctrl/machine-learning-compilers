@@ -191,7 +191,6 @@ set(TEST_KERNELS
     unary/unary_identity_transpose.test.cpp
     unary/unary_zero.test.cpp
     unary/unary_relu.test.cpp
-    unary/unary_relu_transpose.test.cpp
 )
 
 set(TEST_ARM_INSTRUCTION_FILES
@@ -233,7 +232,6 @@ set(BENCH_FILES
     unary/unary_identity.bench.cpp
     unary/unary_identity_transpose.bench.cpp
     unary/unary_relu.bench.cpp
-    unary/unary_relu_transpose.bench.cpp
 )
 
 foreach(file ${SRC_MAIN_FILES})

@@ -94,6 +94,8 @@ public:
 
   UnaryTestFixture(uint32_t M, uint32_t N);
   UnaryTestFixture(uint32_t M, uint32_t N, uint32_t lda, uint32_t ldb);
+  UnaryTestFixture(uint32_t M, uint32_t N, bool transpose);
+  UnaryTestFixture(uint32_t M, uint32_t N, uint32_t lda, uint32_t ldb, bool transpose);
   ~UnaryTestFixture();
 
   /**

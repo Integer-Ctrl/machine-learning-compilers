@@ -8,6 +8,8 @@ void mini_jit::kernels::unary_relu_transpose(mini_jit::Kernel &kernel, const uin
   release_assert(m_loop != 0, "Cannot use a matrix with a m loop of size zero.");
   release_assert(n_loop != 0, "Cannot use a matrix with a n loop of size zero.");
 
+  kernel.get_kernel();
+
 #ifdef SAVE_JITS_TO_FILE
   kernel.write("unary_relu_transpose.bin");
 #endif  // SAVE_JITS_TO_FILE

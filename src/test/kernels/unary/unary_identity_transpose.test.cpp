@@ -13,18 +13,16 @@ TEST_CASE("Test unary identity transpose symmetric jited correctness counting da
   UnaryTestFixture unaryTest(M, N);
   unaryTest.SetUp(TestInfill::Counting);
   mini_jit::kernels::unary_identity_transpose(unaryTest.native_kernel, M, N);
-  unaryTest.RunTest(M, M, UnaryType::Identity_Transpose);
+  unaryTest.RunTest(M, N, UnaryType::Identity_Transpose);
 }
 
-TEST_CASE("Test unary identity transpose rest jited correctness random data", "[jit][correctness][unary]")
+TEST_CASE("Test unary identity transpose none symmetric jited correctness random data", "[jit][correctness][unary]")
 {
-  //   auto MRest = GENERATE(range(1u, 15u + 1u, 1u));
-  //   auto M = GENERATE(16u, 48u);
-  //   auto N = M;
-  //   CAPTURE(M, N, MRest);
-  //   auto _M = M + MRest;
-  //   UnaryTestFixture unaryTest(_M, N);
-  //   unaryTest.SetUp(TestInfill::Random);
-  //   mini_jit::kernels::unary_identity_transpose(unaryTest.native_kernel, _M, N);
-  //   unaryTest.RunTest(_M, _M, UnaryType::Identity);
+  auto M = GENERATE(1);
+  auto N = GENERATE(5);
+  CAPTURE(M, N);
+  UnaryTestFixture unaryTest(M, N);
+  unaryTest.SetUp(TestInfill::Random);
+  mini_jit::kernels::unary_identity_transpose(unaryTest.native_kernel, M, N);
+  unaryTest.RunTest(M, M, UnaryType::Identity_Transpose);
 }
