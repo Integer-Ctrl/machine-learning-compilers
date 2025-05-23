@@ -115,13 +115,13 @@ void UnaryTestFixture::RunTest(const uint32_t lda, const uint32_t ldb, UnaryType
   REQUIRE(UnaryTestFixture::lda == lda);
   REQUIRE(UnaryTestFixture::ldb == ldb);
 
-  // UnaryTestFixture::print_matrix(matrix_a, M, N, lda, "Initial");
+  UnaryTestFixture::print_matrix(matrix_a, M, N, lda, "Initial");
 
   naive_unary_M_N(matrix_a, matrix_b_verify, lda, ldb, trans_b, type);
-  // UnaryTestFixture::print_matrix(matrix_b_verify, N, M, ldb, "Expected");
+  UnaryTestFixture::print_matrix(matrix_b_verify, N, M, ldb, "Expected");
 
   kernel(matrix_a, matrix_b, lda, ldb);
-  // UnaryTestFixture::print_matrix(matrix_b, N, M, ldb, "Result");
+  UnaryTestFixture::print_matrix(matrix_b, N, M, ldb, "Result");
 
   if (trans_b)
   {

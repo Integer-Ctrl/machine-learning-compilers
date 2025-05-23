@@ -29,17 +29,7 @@ namespace mini_jit
        * @param n The n dimension size in range of 0 < n <= 4.
        * @param ops The operation to do on a 4x fp32 element
        */
-      void transpose_axis(mini_jit::Kernel &kernel, const uint32_t m, const uint32_t n, ops_t ops);
-
-      /**
-       * @brief Adds a transpose instructions to the kernel that is located outside of the matrix axis.
-       *
-       * @param kernel The kernel to add instructions too.
-       * @param m The m dimension size in range of 0 < m <= 4.
-       * @param n The n dimension size in range of 0 < n <= 4.
-       * @param ops The operation to do on a 4x fp32 element
-       */
-      void transpose_else(mini_jit::Kernel &kernel, const uint32_t m, const uint32_t n, ops_t ops);
+      void transpose(mini_jit::Kernel &kernel, const uint32_t m, const uint32_t n, ops_t ops);
 
       /**
        * @brief Generate a transpose kernel.
