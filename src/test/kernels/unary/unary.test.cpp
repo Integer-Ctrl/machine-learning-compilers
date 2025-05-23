@@ -14,6 +14,21 @@ UnaryTestFixture::UnaryTestFixture(uint32_t M, uint32_t N, uint32_t lda, uint32_
 
   matrix_a = new float[lda * N];
   matrix_b = new float[ldb * N];
+  matrix_b_verify = new float[ldb * M];
+}
+
+UnaryTestFixture::UnaryTestFixture(uint32_t M, uint32_t N, bool)  // Transpose
+    : UnaryTestFixture(M, N, M, N, true)
+{
+}
+
+UnaryTestFixture::UnaryTestFixture(uint32_t M, uint32_t N, uint32_t lda, uint32_t ldb, bool) : M(M), N(N), lda(lda), ldb(ldb)  // Transpose
+{
+  REQUIRE(lda >= M);
+  REQUIRE(ldb >= N);
+
+  matrix_a = new float[lda * N];
+  matrix_b = new float[ldb * M];
   matrix_b_verify = new float[ldb * N];
 }
 
@@ -76,9 +91,10 @@ void UnaryTestFixture::RunTest(const uint32_t lda, const uint32_t ldb, UnaryType
   REQUIRE(UnaryTestFixture::ldb == ldb);
 
   naive_unary_M_N(matrix_a, matrix_b_verify, lda, ldb, type);
-  UnaryTestFixture::print_matrix(matrix_b_verify, M, N, ldb, "Expected");
+  // UnaryTestFixture::print_matrix(matrix_b_verify, M, N, ldb, "Expected");
 
   kernel(matrix_a, matrix_b, lda, ldb);
+  // UnaryTestFixture::print_matrix(matrix_a, M, N, ldb, "Result");
 
   verify_matrix(matrix_b_verify, matrix_b, ldb * N);
 }
@@ -121,8 +137,6 @@ void UnaryTestFixture::naive_unary_M_N(const float *__restrict__ a, float *__res
 
 void UnaryTestFixture::verify_matrix(const float *__restrict__ expected, const float *__restrict__ result, uint32_t size)
 {
-  UnaryTestFixture::print_matrix(result, M, N, ldb, "Result");
-
   for (size_t i = 0; i < size; i++)
   {
     CAPTURE(i, result[i], expected[i]);

@@ -22,6 +22,8 @@ From the lecture, we already know the 4x4 transpose kernel. Therefore, we have t
 .. image:: ../_static/images/report_25_05_22/trans_8_8.png
     :align: left
 
+Code:
+
 .. code-block:: asm
     :linenos:
 
