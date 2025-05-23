@@ -13,7 +13,7 @@ TEST_CASE("Test unary identity no rest jited correctness random data", "[jit][co
   UnaryTestFixture unaryTest(M, N);
   unaryTest.SetUp(TestInfill::Random);
   mini_jit::kernels::unary_identity(unaryTest.native_kernel, M, N);
-  unaryTest.RunTest(M, M, UnaryType::Identity);
+  unaryTest.RunTest(M, M, false, UnaryType::Identity);  // false = no transpose
 }
 
 TEST_CASE("Test unary identity rest jited correctness random data", "[jit][correctness][unary]")
@@ -26,7 +26,7 @@ TEST_CASE("Test unary identity rest jited correctness random data", "[jit][corre
   UnaryTestFixture unaryTest(_M, N);
   unaryTest.SetUp(TestInfill::Random);
   mini_jit::kernels::unary_identity(unaryTest.native_kernel, _M, N);
-  unaryTest.RunTest(_M, _M, UnaryType::Identity);
+  unaryTest.RunTest(_M, _M, false, UnaryType::Identity);  // false = no transpose
 }
 
 TEST_CASE("Test unary identity no rest jited correctness counting data", "[jit][correctness][unary]")
@@ -37,7 +37,7 @@ TEST_CASE("Test unary identity no rest jited correctness counting data", "[jit][
   UnaryTestFixture unaryTest(M, N);
   unaryTest.SetUp(TestInfill::Counting);
   mini_jit::kernels::unary_identity(unaryTest.native_kernel, M, N);
-  unaryTest.RunTest(M, M, UnaryType::Identity);
+  unaryTest.RunTest(M, M, false, UnaryType::Identity);  // false = no transpose
 }
 
 TEST_CASE("Test unary identity rest jited correctness counting data", "[jit][correctness][unary]")
@@ -50,5 +50,5 @@ TEST_CASE("Test unary identity rest jited correctness counting data", "[jit][cor
   UnaryTestFixture unaryTest(_M, N);
   unaryTest.SetUp(TestInfill::Counting);
   mini_jit::kernels::unary_identity(unaryTest.native_kernel, _M, N);
-  unaryTest.RunTest(_M, _M, UnaryType::Identity);
+  unaryTest.RunTest(_M, _M, false, UnaryType::Identity);  // false = no transpose
 }

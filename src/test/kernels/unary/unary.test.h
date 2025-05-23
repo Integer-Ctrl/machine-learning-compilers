@@ -30,12 +30,6 @@ enum class UnaryType
 
   /// @brief Applies the relu function (i.e. max(x, 0)) from matrix a to matrix b.
   ReLu,
-
-  /// @brief Copies the matrix a with a transpose to matrix b.
-  Identity_Transpose,
-
-  /// @brief Applies the relu function (i.e. max(x, 0)) from matrix a with transpose to matrix b.
-  ReLu_Transpose,
 };
 
 class UnaryTestFixture
@@ -45,6 +39,7 @@ private:
   uint32_t N;
   uint32_t lda;
   uint32_t ldb;
+  bool trans_b;
   float *matrix_a;
   float *matrix_b;
   float *matrix_b_verify;
@@ -77,8 +72,9 @@ private:
    * @param ldc The leading dimension of matrix c.
    * @param batch_stride_a The batch stride of matrix a.
    * @param batch_stride_b The batch stride of matrix b.
+   * @param trans_b True if b is transposed.
    */
-  void naive_unary_M_N(const float *__restrict__ a, float *__restrict__ b, int64_t lda, int64_t ldb, UnaryType type);
+  void naive_unary_M_N(const float *__restrict__ a, float *__restrict__ b, int64_t lda, int64_t ldb, bool trans_b, UnaryType type);
 
   /**
    * @brief Compares the two matrices by comparing each values.
@@ -121,8 +117,9 @@ public:
    *
    * @param lda: leading dimension of A.
    * @param ldb: leading dimension of B.
+   * @param trans_b: true if B is transposed.
    */
-  void RunTest(const uint32_t lda, const uint32_t ldb, UnaryType type);
+  void RunTest(const uint32_t lda, const uint32_t ldb, bool trans_b, UnaryType type);
 };
 
 #endif  // MINI_JIT_KERNELS_UNARY_TEST_H

@@ -3,33 +3,40 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <cmath>
 
-UnaryTestFixture::UnaryTestFixture(uint32_t M, uint32_t N) : UnaryTestFixture(M, N, M, M)
+UnaryTestFixture::UnaryTestFixture(uint32_t M, uint32_t N) : UnaryTestFixture(M, N, M, M, false)
 {
 }
 
-UnaryTestFixture::UnaryTestFixture(uint32_t M, uint32_t N, uint32_t lda, uint32_t ldb) : M(M), N(N), lda(lda), ldb(ldb)
-{
-  REQUIRE(lda >= M);
-  REQUIRE(ldb >= M);
-
-  matrix_a = new float[lda * N];
-  matrix_b = new float[ldb * N];
-  matrix_b_verify = new float[ldb * M];
-}
-
-UnaryTestFixture::UnaryTestFixture(uint32_t M, uint32_t N, bool)  // Transpose
-    : UnaryTestFixture(M, N, M, N, true)
+UnaryTestFixture::UnaryTestFixture(uint32_t M, uint32_t N, uint32_t lda, uint32_t ldb) : UnaryTestFixture(M, N, lda, ldb, false)
 {
 }
 
-UnaryTestFixture::UnaryTestFixture(uint32_t M, uint32_t N, uint32_t lda, uint32_t ldb, bool) : M(M), N(N), lda(lda), ldb(ldb)  // Transpose
+UnaryTestFixture::UnaryTestFixture(uint32_t M, uint32_t N, bool trans_b)  // Transpose
+    : UnaryTestFixture(M, N, M, N, trans_b)
 {
-  REQUIRE(lda >= M);
-  REQUIRE(ldb >= N);
+}
 
-  matrix_a = new float[lda * N];
-  matrix_b = new float[ldb * M];
-  matrix_b_verify = new float[ldb * N];
+UnaryTestFixture::UnaryTestFixture(uint32_t M, uint32_t N, uint32_t lda, uint32_t ldb, bool trans_b)
+    : M(M), N(N), lda(lda), ldb(ldb), trans_b(trans_b)
+{
+  if (trans_b == true)  // Transpose
+  {
+    REQUIRE(lda >= M);
+    REQUIRE(ldb >= N);
+
+    matrix_a = new float[lda * N];
+    matrix_b = new float[ldb * M];
+    matrix_b_verify = new float[ldb * M];
+  }
+  else
+  {
+    REQUIRE(lda >= M);
+    REQUIRE(ldb >= M);
+
+    matrix_a = new float[lda * N];
+    matrix_b = new float[ldb * N];
+    matrix_b_verify = new float[ldb * N];
+  }
 }
 
 UnaryTestFixture::~UnaryTestFixture()
@@ -58,12 +65,28 @@ void UnaryTestFixture::SetUp(TestInfill fillType)
   switch (fillType)
   {
   case TestInfill::Random:
-    fill_random_matrix(matrix_a, lda * N);
-    fill_random_matrix(matrix_b, ldb * N);
+    if (trans_b == true)
+    {
+      fill_random_matrix(matrix_a, lda * N);
+      fill_random_matrix(matrix_b, ldb * M);
+    }
+    else
+    {
+      fill_random_matrix(matrix_a, lda * N);
+      fill_random_matrix(matrix_b, ldb * N);
+    }
     break;
   case TestInfill::Counting:
-    fill_counting_matrix(matrix_a, lda * N);
-    fill_counting_matrix(matrix_b, ldb * N);
+    if (trans_b == true)
+    {
+      fill_counting_matrix(matrix_a, lda * N);
+      fill_counting_matrix(matrix_b, ldb * M);
+    }
+    else
+    {
+      fill_counting_matrix(matrix_a, lda * N);
+      fill_counting_matrix(matrix_b, ldb * N);
+    }
     break;
   default:
     FAIL("Undefined infill type found.");
@@ -73,7 +96,7 @@ void UnaryTestFixture::SetUp(TestInfill fillType)
   std::copy(matrix_b, matrix_b + ldb * N, matrix_b_verify);
 }
 
-void UnaryTestFixture::RunTest(const uint32_t lda, const uint32_t ldb, UnaryType type)
+void UnaryTestFixture::RunTest(const uint32_t lda, const uint32_t ldb, bool trans_b, UnaryType type)
 {
   if (native_kernel.get_size() <= 0)
   {
@@ -90,7 +113,7 @@ void UnaryTestFixture::RunTest(const uint32_t lda, const uint32_t ldb, UnaryType
   REQUIRE(UnaryTestFixture::lda == lda);
   REQUIRE(UnaryTestFixture::ldb == ldb);
 
-  naive_unary_M_N(matrix_a, matrix_b_verify, lda, ldb, type);
+  naive_unary_M_N(matrix_a, matrix_b_verify, lda, ldb, trans_b, type);
   // UnaryTestFixture::print_matrix(matrix_b_verify, M, N, ldb, "Expected");
 
   kernel(matrix_a, matrix_b, lda, ldb);
@@ -99,7 +122,8 @@ void UnaryTestFixture::RunTest(const uint32_t lda, const uint32_t ldb, UnaryType
   verify_matrix(matrix_b_verify, matrix_b, ldb * N);
 }
 
-void UnaryTestFixture::naive_unary_M_N(const float *__restrict__ a, float *__restrict__ b, int64_t lda, int64_t ldb, UnaryType type)
+void UnaryTestFixture::naive_unary_M_N(const float *__restrict__ a, float *__restrict__ b, int64_t lda, int64_t ldb, bool trans_b,
+                                       UnaryType type)
 {
   for (size_t iN = 0; iN < N; iN++)
   {
@@ -112,19 +136,25 @@ void UnaryTestFixture::naive_unary_M_N(const float *__restrict__ a, float *__res
         break;
 
       case UnaryType::Identity:
-        b[ldb * iN + iM] = a[lda * iN + iM];
+        if (trans_b == true)
+        {
+          b[ldb * iM + iN] = a[lda * iN + iM];
+        }
+        else
+        {
+          b[ldb * iN + iM] = a[lda * iN + iM];
+        }
         break;
 
       case UnaryType::ReLu:
-        b[ldb * iN + iM] = std::max(a[lda * iN + iM], 0.f);
-        break;
-
-      case UnaryType::Identity_Transpose:
-        b[ldb * iM + iN] = a[lda * iN + iM];
-        break;
-
-      case UnaryType::ReLu_Transpose:
-        b[ldb * iM + iN] = std::max(a[lda * iN + iM], 0.f);
+        if (trans_b == true)
+        {
+          b[ldb * iM + iN] = std::max(a[lda * iN + iM], 0.f);
+        }
+        else
+        {
+          b[ldb * iN + iM] = std::max(a[lda * iN + iM], 0.f);
+        }
         break;
 
       default:
