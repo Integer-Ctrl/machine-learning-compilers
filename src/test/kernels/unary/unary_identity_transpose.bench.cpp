@@ -1,4 +1,4 @@
-#include "../../../main/kernels/unary/unary_relu_transpose.h"
+#include "../../../main/kernels/unary/unary_identity_transpose.h"
 #include "../../../main/Brgemm.h"
 #include "../../../main/Unary.h"
 #include "unary.bench.h"
@@ -30,13 +30,13 @@ public:
   }
 };
 
-BENCHMARK_DEFINE_F(UnaryFixture, BM_unary_relu_transpose)(benchmark::State &state)
+BENCHMARK_DEFINE_F(UnaryFixture, BM_unary_identity_transpose)(benchmark::State &state)
 {
   int M = state.range(0);
   int N = state.range(1);
 
   mini_jit::Kernel native_kernel;
-  mini_jit::kernels::unary_relu_transpose(native_kernel, M, N);
+  mini_jit::kernels::unary_identity_transpose(native_kernel, M, N);
   native_kernel.set_kernel();
   mini_jit::Unary::kernel_t kernel = reinterpret_cast<mini_jit::Unary::kernel_t>(
     const_cast<void *>(native_kernel.get_kernel()));  // Properly cast from const void* to kernel_t
@@ -55,7 +55,7 @@ static void CustomArguments(benchmark::internal::Benchmark *b)
     b->Args({S, S});
 }
 
-BENCHMARK_REGISTER_F(UnaryFixture, BM_unary_relu_transpose)
+BENCHMARK_REGISTER_F(UnaryFixture, BM_unary_identity_transpose)
   ->ArgNames({"M", "N"})
   ->DisplayAggregatesOnly(true)
   ->Apply(CustomArguments)
