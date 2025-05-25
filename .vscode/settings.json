@@ -78,6 +78,7 @@
     "cSpell.words": [
         "Brgemm",
         "cbnz",
+        "einsum",
         "errneous",
         "fmax",
         "fmla",

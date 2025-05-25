@@ -1,0 +1,30 @@
+Submission 2025-05-29
+=====================
+
+This section implements a backend for binary tensor contractions and unary tensor permutations. The backend performs the provided tensor
+operation exactly as defined by the interface and does not optimize it. Contractions are executed as recursive loops over small GEMM or
+Batch-Reduce GEMM (BRGEMM) kernels. Permutations are executed as recursive loops over small transposition kernels.
+
+User Interface
+--------------
+
+1. Begin implementing the setup function of the class einsum::backend::TensorOperation for binary tensor contractions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Recursive Loops Over Primitives
+-------------------------------
+
+1. Implement the execute function of the einsum::backend::TensorOperation class using recursive loops over primitives
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+2. Verify your implementation against a reference implementation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Performance Benchmarking
+------------------------
+
+1. Benchmark the performance of your implementation and report the measured performance in GFLOPS
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+2. Design your own setups. Which setups achieve a high performance and which setups are slow
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

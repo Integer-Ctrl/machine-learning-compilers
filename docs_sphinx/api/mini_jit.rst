@@ -35,3 +35,12 @@ kernels
    :members:
    :private-members:
    :undoc-members:
+
+tensor_operation
+------
+.. doxygennamespace:: mini_jit::tensor_operation
+   :project: Machine Learning Compilers
+   :content-only:
+   :members:
+   :private-members:
+   :undoc-members:
