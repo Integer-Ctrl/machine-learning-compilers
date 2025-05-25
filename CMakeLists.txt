@@ -191,6 +191,7 @@ set(TEST_KERNELS
     unary/unary_identity_transpose.test.cpp
     unary/unary_zero.test.cpp
     unary/unary_relu.test.cpp
+    unary/unary_relu_transpose.test.cpp
 )
 
 set(TEST_ARM_INSTRUCTION_FILES

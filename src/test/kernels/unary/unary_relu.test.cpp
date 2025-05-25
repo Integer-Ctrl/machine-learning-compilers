@@ -14,7 +14,7 @@ TEST_CASE("Test unary relu no rest jited correctness random data", "[jit][correc
   UnaryTestFixture unaryTest(M, N);
   unaryTest.SetUp(TestInfill::Random);
   mini_jit::kernels::unary_relu(unaryTest.native_kernel, M, N);
-  unaryTest.RunTest(M, M, false, UnaryType::ReLu);  // false = no transpose
+  unaryTest.RunTest(M, M, UnaryType::ReLu);  // false = no transpose
 }
 
 TEST_CASE("Test unary relu rest jited correctness random data", "[jit][correctness][gemm]")
@@ -27,5 +27,5 @@ TEST_CASE("Test unary relu rest jited correctness random data", "[jit][correctne
   UnaryTestFixture unaryTest(_M, N);
   unaryTest.SetUp(TestInfill::Random);
   mini_jit::kernels::unary_relu(unaryTest.native_kernel, _M, N);
-  unaryTest.RunTest(_M, _M, false, UnaryType::ReLu);  // false = no transpose
+  unaryTest.RunTest(_M, _M, UnaryType::ReLu);  // false = no transpose
 }

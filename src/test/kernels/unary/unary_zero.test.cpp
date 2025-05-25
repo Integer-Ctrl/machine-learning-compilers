@@ -14,5 +14,5 @@ TEST_CASE("Test unary zero jited correctness random data", "[jit][correctness][u
   UnaryTestFixture unaryTest(M, N);
   unaryTest.SetUp(TestInfill::Random);
   mini_jit::kernels::unary_zero(unaryTest.native_kernel, M / 16, N, M % 16);
-  unaryTest.RunTest(M, M, false, UnaryType::Zero);  // false = no transpose
+  unaryTest.RunTest(M, M, UnaryType::Zero);  // false = no transpose
 }

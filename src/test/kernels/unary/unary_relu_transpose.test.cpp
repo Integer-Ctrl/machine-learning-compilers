@@ -10,21 +10,41 @@ TEST_CASE("Test unary relu transpose symmetric jited correctness counting data",
   auto M = GENERATE(range(1u, 73u + 1u, 1u));
   auto N = M;
   CAPTURE(M, N);
-  UnaryTestFixture unaryTest(M, N);
+  UnaryTestFixture unaryTest(M, N, M, N, true);
   unaryTest.SetUp(TestInfill::Counting);
   mini_jit::kernels::unary_relu_transpose(unaryTest.native_kernel, M, N);
-  unaryTest.RunTest(M, M, UnaryType::Identity_Transpose);
+  unaryTest.RunTest(M, N, UnaryType::ReLu);  // true = transpose
 }
 
-TEST_CASE("Test unary relu transpose rest jited correctness random data", "[jit][correctness][unary]")
+TEST_CASE("Test unary relu transpose none symmetric jited correctness counting data", "[jit][correctness][unary]")
 {
-  //   auto MRest = GENERATE(range(1u, 15u + 1u, 1u));
-  //   auto M = GENERATE(16u, 48u);
-  //   auto N = M;
-  //   CAPTURE(M, N, MRest);
-  //   auto _M = M + MRest;
-  //   UnaryTestFixture unaryTest(_M, N);
-  //   unaryTest.SetUp(TestInfill::Random);
-  //   mini_jit::kernels::unary_relu_transpose(unaryTest.native_kernel, _M, N);
-  //   unaryTest.RunTest(_M, _M, UnaryType::Identity);
+  auto M = GENERATE(range(1u, 73u + 1u, 1u));
+  auto N = GENERATE(range(1u, 73u + 1u, 1u));
+  CAPTURE(M, N);
+  UnaryTestFixture unaryTest(M, N, M, N, true);
+  unaryTest.SetUp(TestInfill::Counting);
+  mini_jit::kernels::unary_relu_transpose(unaryTest.native_kernel, M, N);
+  unaryTest.RunTest(M, N, UnaryType::ReLu);  // true = transpose
+}
+
+TEST_CASE("Test unary relu transpose symmetric jited correctness random data", "[jit][correctness][unary]")
+{
+  auto M = GENERATE(range(1u, 73u + 1u, 1u));
+  auto N = M;
+  CAPTURE(M, N);
+  UnaryTestFixture unaryTest(M, N, M, N, true);
+  unaryTest.SetUp(TestInfill::Random);
+  mini_jit::kernels::unary_relu_transpose(unaryTest.native_kernel, M, N);
+  unaryTest.RunTest(M, N, UnaryType::ReLu);  // true = transpose
+}
+
+TEST_CASE("Test unary relu transpose none symmetric jited correctness random data", "[jit][correctness][unary]")
+{
+  auto M = GENERATE(range(1u, 73u + 1u, 1u));
+  auto N = GENERATE(range(1u, 73u + 1u, 1u));
+  CAPTURE(M, N);
+  UnaryTestFixture unaryTest(M, N, M, N, true);
+  unaryTest.SetUp(TestInfill::Random);
+  mini_jit::kernels::unary_relu_transpose(unaryTest.native_kernel, M, N);
+  unaryTest.RunTest(M, N, UnaryType::ReLu);
 }

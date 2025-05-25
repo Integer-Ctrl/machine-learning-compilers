@@ -11,11 +11,6 @@ UnaryTestFixture::UnaryTestFixture(uint32_t M, uint32_t N, uint32_t lda, uint32_
 {
 }
 
-UnaryTestFixture::UnaryTestFixture(uint32_t M, uint32_t N, bool trans_b)  // Transpose
-    : UnaryTestFixture(M, N, M, N, trans_b)
-{
-}
-
 UnaryTestFixture::UnaryTestFixture(uint32_t M, uint32_t N, uint32_t lda, uint32_t ldb, bool trans_b)
     : M(M), N(N), lda(lda), ldb(ldb), trans_b(trans_b)
 {
@@ -49,9 +44,9 @@ UnaryTestFixture::~UnaryTestFixture()
 void UnaryTestFixture::print_matrix(const float *matrix, int64_t M, int64_t N, int64_t ld, const char *label)
 {
   printf("%s:\n", label);
-  for (int64_t i = 0; i < M; ++i)
+  for (int64_t i = 0; i < N; ++i)
   {
-    for (int64_t j = 0; j < N; ++j)
+    for (int64_t j = 0; j < M; ++j)
     {
       printf("%8.4f ", matrix[i * ld + j]);
     }
@@ -93,10 +88,17 @@ void UnaryTestFixture::SetUp(TestInfill fillType)
     break;
   }
 
-  std::copy(matrix_b, matrix_b + ldb * N, matrix_b_verify);
+  if (trans_b)
+  {
+    std::copy(matrix_b, matrix_b + ldb * M, matrix_b_verify);
+  }
+  else
+  {
+    std::copy(matrix_b, matrix_b + ldb * N, matrix_b_verify);
+  }
 }
 
-void UnaryTestFixture::RunTest(const uint32_t lda, const uint32_t ldb, bool trans_b, UnaryType type)
+void UnaryTestFixture::RunTest(const uint32_t lda, const uint32_t ldb, UnaryType type)
 {
   if (native_kernel.get_size() <= 0)
   {
@@ -113,13 +115,23 @@ void UnaryTestFixture::RunTest(const uint32_t lda, const uint32_t ldb, bool tran
   REQUIRE(UnaryTestFixture::lda == lda);
   REQUIRE(UnaryTestFixture::ldb == ldb);
 
+  // Warning prints should not be done with to large values as it will result in a segfault because of printf
+  // UnaryTestFixture::print_matrix(matrix_a, M, N, lda, "Initial");
+
   naive_unary_M_N(matrix_a, matrix_b_verify, lda, ldb, trans_b, type);
-  // UnaryTestFixture::print_matrix(matrix_b_verify, M, N, ldb, "Expected");
+  // UnaryTestFixture::print_matrix(matrix_b_verify, N, M, ldb, "Expected");
 
   kernel(matrix_a, matrix_b, lda, ldb);
-  // UnaryTestFixture::print_matrix(matrix_a, M, N, ldb, "Result");
+  // UnaryTestFixture::print_matrix(matrix_b, N, M, ldb, "Result");
 
-  verify_matrix(matrix_b_verify, matrix_b, ldb * N);
+  if (trans_b)
+  {
+    verify_matrix(matrix_b_verify, matrix_b, ldb * M);
+  }
+  else
+  {
+    verify_matrix(matrix_b_verify, matrix_b, ldb * N);
+  }
 }
 
 void UnaryTestFixture::naive_unary_M_N(const float *__restrict__ a, float *__restrict__ b, int64_t lda, int64_t ldb, bool trans_b,
@@ -132,7 +144,15 @@ void UnaryTestFixture::naive_unary_M_N(const float *__restrict__ a, float *__res
       switch (type)
       {
       case UnaryType::Zero:
-        b[ldb * iN + iM] = 0;
+        if (trans_b == true)
+        {
+          b[ldb * iM + iN] = 0;
+        }
+        else
+        {
+          b[ldb * iN + iM] = 0;
+        }
+
         break;
 
       case UnaryType::Identity:

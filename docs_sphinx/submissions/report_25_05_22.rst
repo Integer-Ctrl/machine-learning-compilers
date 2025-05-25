@@ -179,7 +179,7 @@ File: ``unary_zero.cpp``
 
 **With Transposition**
 
-Not implemented. Covert by identity primitive.
+Transposition is the equivalent operation with swapped M und N dimension.
 
 Identity Primitive
 ^^^^^^^^^^^^^^^^^^
@@ -227,6 +227,34 @@ ReLu Primitive
 
 **Without Transposition**
 
+.. code-block::
+    :emphasize-lines: 4, 8, 12, 16
+
+    -----------------------------------------------------------------------------------------------------------------------------------------
+    Benchmark                                                                                    Time             CPU   Iterations      Bytes
+    -----------------------------------------------------------------------------------------------------------------------------------------
+    UnaryFixture/BM_unary_identity_transpose/M:50/N:50/min_warmup_time:1.000_mean              157 ns          156 ns           10 128.118G/s
+    UnaryFixture/BM_unary_identity_transpose/M:50/N:50/min_warmup_time:1.000_median            157 ns          156 ns           10 128.093G/s
+    UnaryFixture/BM_unary_identity_transpose/M:50/N:50/min_warmup_time:1.000_stddev          0.734 ns        0.732 ns           10 600.086M/s
+    UnaryFixture/BM_unary_identity_transpose/M:50/N:50/min_warmup_time:1.000_cv               0.47 %          0.47 %            10      0.47%
+    UnaryFixture/BM_unary_identity_transpose/M:64/N:64/min_warmup_time:1.000_mean              252 ns          251 ns           10 130.502G/s
+    UnaryFixture/BM_unary_identity_transpose/M:64/N:64/min_warmup_time:1.000_median            252 ns          251 ns           10  130.41G/s
+    UnaryFixture/BM_unary_identity_transpose/M:64/N:64/min_warmup_time:1.000_stddev           1.12 ns         1.10 ns           10  573.58M/s
+    UnaryFixture/BM_unary_identity_transpose/M:64/N:64/min_warmup_time:1.000_cv               0.44 %          0.44 %            10      0.44%
+    UnaryFixture/BM_unary_identity_transpose/M:512/N:512/min_warmup_time:1.000_mean         477698 ns       476113 ns           10 4.40967G/s
+    UnaryFixture/BM_unary_identity_transpose/M:512/N:512/min_warmup_time:1.000_median       478232 ns       476633 ns           10 4.39994G/s
+    UnaryFixture/BM_unary_identity_transpose/M:512/N:512/min_warmup_time:1.000_stddev        16842 ns        16774 ns           10 155.727M/s
+    UnaryFixture/BM_unary_identity_transpose/M:512/N:512/min_warmup_time:1.000_cv             3.53 %          3.52 %            10      3.53%
+    UnaryFixture/BM_unary_identity_transpose/M:2048/N:2048/min_warmup_time:1.000_mean      8826949 ns      8790588 ns           10 3.81791G/s
+    UnaryFixture/BM_unary_identity_transpose/M:2048/N:2048/min_warmup_time:1.000_median    8813603 ns      8778155 ns           10  3.8225G/s
+    UnaryFixture/BM_unary_identity_transpose/M:2048/N:2048/min_warmup_time:1.000_stddev     137200 ns       136627 ns           10 59.0859M/s
+    UnaryFixture/BM_unary_identity_transpose/M:2048/N:2048/min_warmup_time:1.000_cv           1.55 %          1.55 %            10      1.55%
+
+- **BM_unary_identity_transpose/M:50/N:50** kernel: :math:`128.1` GiB/s
+- **BM_unary_identity_transpose/M:64/N:64** kernel: :math:`130.5` GiB/s
+- **BM_unary_identity_transpose/M:512/N:512** kernel: :math:`4.409` GiB/s
+- **BM_unary_identity_transpose/M:2048/N:2048** kernel: :math:`3.817` GiB/s
+
 1. mini_jit::Unary::generate function to support the ReLu primitive
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -264,3 +292,31 @@ File: ``unary_relu.cpp`` & File: ``unary_relu_transpose.cpp``
 - **BM_unary_relu/M:2048/N:2048** kernel: :math:`107.5` GiB/s
 
 **Without Transposition**
+
+.. code-block::
+    :emphasize-lines: 4, 8, 12, 16
+
+    -------------------------------------------------------------------------------------------------------------------------------------
+    Benchmark                                                                                Time             CPU   Iterations      Bytes
+    -------------------------------------------------------------------------------------------------------------------------------------
+    UnaryFixture/BM_unary_relu_transpose/M:50/N:50/min_warmup_time:1.000_mean              159 ns          158 ns           10 126.468G/s
+    UnaryFixture/BM_unary_relu_transpose/M:50/N:50/min_warmup_time:1.000_median            159 ns          158 ns           10 126.509G/s
+    UnaryFixture/BM_unary_relu_transpose/M:50/N:50/min_warmup_time:1.000_stddev          0.839 ns        0.826 ns           10 660.394M/s
+    UnaryFixture/BM_unary_relu_transpose/M:50/N:50/min_warmup_time:1.000_cv               0.53 %          0.52 %            10      0.52%
+    UnaryFixture/BM_unary_relu_transpose/M:64/N:64/min_warmup_time:1.000_mean              244 ns          243 ns           10  134.75G/s
+    UnaryFixture/BM_unary_relu_transpose/M:64/N:64/min_warmup_time:1.000_median            244 ns          243 ns           10 134.706G/s
+    UnaryFixture/BM_unary_relu_transpose/M:64/N:64/min_warmup_time:1.000_stddev          0.405 ns        0.417 ns           10 231.018M/s
+    UnaryFixture/BM_unary_relu_transpose/M:64/N:64/min_warmup_time:1.000_cv               0.17 %          0.17 %            10      0.17%
+    UnaryFixture/BM_unary_relu_transpose/M:512/N:512/min_warmup_time:1.000_mean         481150 ns       479519 ns           10 4.37974G/s
+    UnaryFixture/BM_unary_relu_transpose/M:512/N:512/min_warmup_time:1.000_median       483163 ns       481481 ns           10 4.35591G/s
+    UnaryFixture/BM_unary_relu_transpose/M:512/N:512/min_warmup_time:1.000_stddev        19118 ns        19053 ns           10 176.288M/s
+    UnaryFixture/BM_unary_relu_transpose/M:512/N:512/min_warmup_time:1.000_cv             3.97 %          3.97 %            10      4.03%
+    UnaryFixture/BM_unary_relu_transpose/M:2048/N:2048/min_warmup_time:1.000_mean      8770935 ns      8729697 ns           10 3.84785G/s
+    UnaryFixture/BM_unary_relu_transpose/M:2048/N:2048/min_warmup_time:1.000_median    8782429 ns      8746690 ns           10 3.83637G/s
+    UnaryFixture/BM_unary_relu_transpose/M:2048/N:2048/min_warmup_time:1.000_stddev     305062 ns       299606 ns           10 133.989M/s
+    UnaryFixture/BM_unary_relu_transpose/M:2048/N:2048/min_warmup_time:1.000_cv           3.48 %          3.43 %            10      3.48%
+
+- **BM_unary_relu_transpose/M:50/N:50** kernel: :math:`126.4` GiB/s
+- **BM_unary_relu_transpose/M:64/N:64** kernel: :math:`134.7` GiB/s
+- **BM_unary_relu_transpose/M:512/N:512** kernel: :math:`4.379` GiB/s
+- **BM_unary_relu_transpose/M:2048/N:2048** kernel: :math:`3.847` GiB/s

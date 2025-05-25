@@ -90,7 +90,6 @@ public:
 
   UnaryTestFixture(uint32_t M, uint32_t N);
   UnaryTestFixture(uint32_t M, uint32_t N, uint32_t lda, uint32_t ldb);
-  UnaryTestFixture(uint32_t M, uint32_t N, bool transpose);
   UnaryTestFixture(uint32_t M, uint32_t N, uint32_t lda, uint32_t ldb, bool transpose);
   ~UnaryTestFixture();
 
@@ -115,11 +114,11 @@ public:
   /**
    * @brief Executes the Test von an BRGemm with the given input.
    *
-   * @param lda: leading dimension of A.
-   * @param ldb: leading dimension of B.
-   * @param trans_b: true if B is transposed.
+   * @param lda leading dimension of A.
+   * @param ldb leading dimension of B.
+   * @param type the type to calculate.
    */
-  void RunTest(const uint32_t lda, const uint32_t ldb, bool trans_b, UnaryType type);
+  void RunTest(const uint32_t lda, const uint32_t ldb, UnaryType type);
 };
 
 #endif  // MINI_JIT_KERNELS_UNARY_TEST_H
