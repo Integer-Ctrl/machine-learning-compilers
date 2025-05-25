@@ -1,8 +1,11 @@
 #ifndef EINSUM_BACKEND_TENSOR_OPERATION_H
 #define EINSUM_BACKEND_TENSOR_OPERATION_H
 
+#include "Brgemm.h"
+#include "Unary.h"
 #include <cstdint>
 #include <span>
+#include <vector>
 
 namespace mini_jit
 {
@@ -12,6 +15,19 @@ namespace mini_jit
 
 class mini_jit::TensorOperation
 {
+private:
+  // Keep track over configuration parameters
+  mini_jit::TensorOperation::dtype_t l_dtype;
+  mini_jit::TensorOperation::prim_t l_prim_first;
+  mini_jit::TensorOperation::prim_t l_prim_main;
+  mini_jit::TensorOperation::prim_t l_prim_last;
+  std::vector<mini_jit::TensorOperation::dim_t> l_dim_types;
+  std::vector<mini_jit::TensorOperation::exec_t> l_exec_types;
+  std::vector<int64_t> l_dim_sizes;
+  std::vector<int64_t> l_strides_in0;
+  std::vector<int64_t> l_strides_in1;
+  std::vector<int64_t> l_strides_out;
+
 public:
   /// execution type
   enum class exec_t : uint32_t
@@ -52,7 +68,10 @@ public:
   /// error codes
   enum class error_t : int32_t
   {
-    success = 0
+    success = 0,
+    err_wrong_dtype = 1,
+    err_wrong_dimension = 2,
+    err_wrong_primitive = 3,
   };
 
   /**
