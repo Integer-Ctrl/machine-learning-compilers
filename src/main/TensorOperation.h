@@ -15,18 +15,6 @@ namespace mini_jit
 
 class mini_jit::TensorOperation
 {
-private:
-  // Keep track over configuration parameters
-  mini_jit::TensorOperation::dtype_t l_dtype;
-  mini_jit::TensorOperation::prim_t l_prim_first;
-  mini_jit::TensorOperation::prim_t l_prim_main;
-  mini_jit::TensorOperation::prim_t l_prim_last;
-  std::vector<mini_jit::TensorOperation::dim_t> l_dim_types;
-  std::vector<mini_jit::TensorOperation::exec_t> l_exec_types;
-  std::vector<int64_t> l_dim_sizes;
-  std::vector<int64_t> l_strides_in0;
-  std::vector<int64_t> l_strides_in1;
-  std::vector<int64_t> l_strides_out;
 
 public:
   /// execution type
@@ -72,8 +60,86 @@ public:
     err_wrong_dtype = 1,
     err_wrong_dimension = 2,
     err_wrong_primitive = 3,
+    err_wrong_first_touch_primitive = 4,
+    err_wrong_main_primitive = 5,
+    err_wrong_last_touch_primitive = 6,
+    err_execution_type_not_supported = 7,
+    err_invalid_primitive_configuration = 8,
+    err_invalid_first_touch_configuration = 9,
   };
 
+private:
+  // Keep track over configuration parameters
+  mini_jit::TensorOperation::dtype_t dtype;
+  mini_jit::TensorOperation::prim_t prim_first = prim_t::none;
+  mini_jit::TensorOperation::prim_t prim_main = prim_t::none;
+  mini_jit::TensorOperation::prim_t prim_last = prim_t::none;
+  std::span<const mini_jit::TensorOperation::dim_t> dim_types;
+  std::span<const mini_jit::TensorOperation::exec_t> exec_types;
+  std::span<const int64_t> dim_sizes;
+  std::span<const int64_t> strides_in0;
+  std::span<const int64_t> strides_in1;
+  std::span<const int64_t> strides_out;
+
+  union Primitive
+  {
+    mini_jit::Unary *unary;
+    mini_jit::Brgemm *brgemm;
+  };
+
+  Primitive first_touch;
+  Primitive main;
+  Primitive last_touch;
+
+  ~TensorOperation();
+
+  /**
+   * @brief Cleans up the current set primitives.
+   */
+  void cleanup();
+
+  /**
+   * @brief Indicates if a primitive fits the Unary generator.
+   *
+   * @param prim The primitive to check.
+   * @return true The primitive is a unary.
+   * @return false The primitive is NOT a unary.
+   */
+  static bool isUnary(prim_t prim);
+
+  /**
+   * @brief Indicates if a primitive fits the Brgemm generator.
+   *
+   * @param prim The primitive to check.
+   * @return true The primitive is a brgemm.
+   * @return false The primitive is NOT a brgemm.
+   */
+  static bool isBrgemm(prim_t prim);
+
+  /**
+   * @brief Finds the matching index of the given pair of dim and exec types.
+   *
+   * @param dim The dimension types to search through.
+   * @param exec The execution types to search through.
+   * @param searchDim The acceptable dimension type.
+   * @param searchExec The acceptable execution type.
+   * @param startIndex The optional start index for the search.
+   * @return uint32_t The index of the found match. -1 if not match was found.
+   */
+  static int32_t findMatch(const std::span<const dim_t> &dim, const std::span<const exec_t> &exec, dim_t searchDim, exec_t searchExec,
+                           uint32_t startIndex = 0);
+
+  /**
+   * @brief Validates that exactly one m primitive dimension and one n primitive dimension exists.
+   *
+   * @param dim The dimension types to search through.
+   * @param exec The execution types to search through.
+   * @return true The configuration is a valid primitive setup.
+   * @return false The configuration is a valid primitive setup.
+   */
+  static bool isValidPrimConfig(const std::span<const dim_t> &dim, const std::span<const exec_t> &exec);
+
+public:
   /**
    * Setup for a binary tensor contraction or a unary tensor operation.
    *
