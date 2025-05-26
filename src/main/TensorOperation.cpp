@@ -75,14 +75,86 @@ bool mini_jit::TensorOperation::isValidPrimConfig(const std::span<const dim_t> &
   }
 
   // Search for new that fits the configuration, both should return -1
-  int32_t indexM = findMatch(dim, exec, dim_t::m, exec_t::prim);
-  int32_t indexN = findMatch(dim, exec, dim_t::n, exec_t::prim);
+  indexM = findMatch(dim, exec, dim_t::m, exec_t::prim);
+  indexN = findMatch(dim, exec, dim_t::n, exec_t::prim);
   if (indexM != -1 || indexN != -1)
   {
     return false;
   }
 
   return true;
+}
+
+bool mini_jit::TensorOperation::isValidBrgemmKDim(const std::span<const dim_t> &dim, const std::span<const exec_t> &exec, prim_t prim)
+{
+  if (!isBrgemm(prim))
+  {
+    return true;
+  }
+
+  int32_t indexK = findMatch(dim, exec, dim_t::k, exec_t::prim);
+
+  if (indexK == -1)
+  {
+    return false;
+  }
+
+  if (prim == prim_t::brgemm)
+  {
+    // Another k dim should exists
+    indexK = findMatch(dim, exec, dim_t::k, exec_t::prim, indexK);
+
+    if (indexK == -1)
+    {
+      return false;
+    }
+  }
+
+  // No other k dim should exists
+  indexK = findMatch(dim, exec, dim_t::k, exec_t::prim, indexK);
+  return indexK == -1;
+}
+
+bool mini_jit::TensorOperation::isExpectedStride(int64_t expected, int index, const std::span<const int64_t> strides)
+{
+  if (index == -1)
+  {
+    return false;
+  }
+
+  return strides[index] == expected;
+}
+
+mini_jit::Unary::error_t mini_jit::TensorOperation::generateUnary(Unary *unary, prim_t prim, const std::span<const dim_t> &dim_types,
+                                                                  const std::span<const exec_t> &exec_types,
+                                                                  const std::span<const int64_t> &dim_sizes)
+{
+  int32_t indexM = findMatch(dim_types, exec_types, dim_t::m, exec_t::prim);
+  int32_t indexN = findMatch(dim_types, exec_types, dim_t::n, exec_t::prim);
+
+  release_assert(indexM != -1, "Expected a match for the m primitive dimension");
+  release_assert(indexN != -1, "Expected a match for the n primitive dimension");
+
+  Unary::ptype_t type;
+  switch (prim)
+  {
+  case prim_t::zero:
+    type = Unary::ptype_t::zero;
+    break;
+
+  case prim_t::copy:
+    type = Unary::ptype_t::identity;
+    break;
+
+  case prim_t::relu:
+    type = Unary::ptype_t::relu;
+    break;
+
+  default:
+    release_assert(false, "Found a invalid type for the unary first touch.");
+    break;
+  }
+  return unary->generate(dim_sizes[indexM], dim_sizes[indexN], 0, Unary::dtype_t::fp32, type);
 }
 
 mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtype, prim_t prim_first_touch, prim_t prim_main,
@@ -133,41 +205,29 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
     return error_t::err_invalid_primitive_configuration;
   }
 
+  if (!isValidBrgemmKDim(dim_types, exec_types, prim_main))
+  {
+    return error_t::err_invalid_primitive_configuration;
+  }
+
+  {
+    // verify the first input and the ouput stride
+    int64_t indexM = findMatch(dim_types, exec_types, dim_t::m, exec_t::prim);
+
+    if (!(isExpectedStride(1, indexM, strides_in0) && isExpectedStride(1, indexM, strides_out)))
+    {
+      return error_t::err_invalid_stride_configuration;
+    }
+  }
+
   if (prim_first_touch != prim_t::none)
   {
     if (prim_first_touch == prim_t::zero || prim_first_touch == prim_t::copy || prim_first_touch == prim_t::relu)
     {
-      int32_t indexM = findMatch(dim_types, exec_types, dim_t::m, exec_t::prim);
-      int32_t indexN = findMatch(dim_types, exec_types, dim_t::n, exec_t::prim);
-
-      release_assert(indexM != -1, "Expected a match for the m primitive dimension");
-      release_assert(indexN != -1, "Expected a match for the n primitive dimension");
-
-      Unary::ptype_t type;
-      switch (prim_first_touch)
-      {
-      case prim_t::zero:
-        type = Unary::ptype_t::zero;
-        break;
-
-      case prim_t::copy:
-        type = Unary::ptype_t::identity;
-        break;
-
-      case prim_t::relu:
-        type = Unary::ptype_t::relu;
-        break;
-
-      default:
-        release_assert(false, "Found a invalid type for the unary first touch.");
-        break;
-      }
-
       first_touch.unary = new Unary();
       TensorOperation::prim_first = prim_first_touch;
 
-      // TODO find out what to input into the trans_b parameter
-      Unary::error_t error = first_touch.unary->generate(dim_sizes[indexM], dim_sizes[indexN], 0, Unary::dtype_t::fp32, type);
+      Unary::error_t error = generateUnary(first_touch.unary, prim_first_touch, dim_types, exec_types, dim_sizes);
 
       if (error != Unary::error_t::success)
       {
@@ -184,15 +244,46 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
   {
     if (isBrgemm(prim_main))
     {
-      // TODO: call generate for the brgemm primitive
+      int32_t indexM = findMatch(dim_types, exec_types, dim_t::m, exec_t::prim);
+      int32_t indexN = findMatch(dim_types, exec_types, dim_t::n, exec_t::prim);
 
+      if (isExpectedStride(1, indexN, strides_in1))
+      {
+        return error_t::err_invalid_stride_configuration;
+      }
+
+      main.brgemm = new Brgemm();
       TensorOperation::prim_main = prim_main;
+
+      if (prim_main == prim_t::brgemm)
+      {
+        int32_t indexBatch = findMatch(dim_types, exec_types, dim_t::k, exec_t::prim);
+        int32_t indexK = findMatch(dim_types, exec_types, dim_t::k, exec_t::prim, indexBatch);
+
+        main.brgemm->generate(dim_sizes[indexM], dim_sizes[indexN], dim_sizes[indexK], dim_sizes[indexBatch], 0, 0, 0,
+                              Brgemm::dtype_t::fp32);
+      }
+      else if (prim_main == prim_t::gemm)
+      {
+        int32_t indexK = findMatch(dim_types, exec_types, dim_t::k, exec_t::prim);
+        main.brgemm->generate(dim_sizes[indexM], dim_sizes[indexN], dim_sizes[indexK], 1, 0, 0, 0, Brgemm::dtype_t::fp32);
+      }
+      else
+      {
+        release_assert(false, "Found missing brgemm configuration.");
+      }
     }
     else if (isUnary(prim_main))
     {
-      // TODO: call generate for the unary primitive
-
+      main.unary = new Unary();
       TensorOperation::prim_main = prim_main;
+
+      Unary::error_t error = generateUnary(main.unary, prim_main, dim_types, exec_types, dim_sizes);
+
+      if (error != Unary::error_t::success)
+      {
+        return error_t::err_invalid_main_configuration;
+      }
     }
     else
     {
@@ -204,9 +295,15 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
   {
     if (isUnary(prim_last_touch))
     {
-      // TODO: call generate for the unary primitive
-
+      last_touch.unary = new Unary();
       TensorOperation::prim_last = prim_last_touch;
+
+      Unary::error_t error = generateUnary(last_touch.unary, prim_last_touch, dim_types, exec_types, dim_sizes);
+
+      if (error != Unary::error_t::success)
+      {
+        return error_t::err_invalid_main_configuration;
+      }
     }
     else
     {

@@ -66,6 +66,9 @@ public:
     err_execution_type_not_supported = 7,
     err_invalid_primitive_configuration = 8,
     err_invalid_first_touch_configuration = 9,
+    err_invalid_main_configuration = 10,
+    err_invalid_last_touch_configuration = 11,
+    err_invalid_stride_configuration = 12,
   };
 
 private:
@@ -135,9 +138,25 @@ private:
    * @param dim The dimension types to search through.
    * @param exec The execution types to search through.
    * @return true The configuration is a valid primitive setup.
-   * @return false The configuration is a valid primitive setup.
+   * @return false The configuration is NOT a valid primitive setup.
    */
   static bool isValidPrimConfig(const std::span<const dim_t> &dim, const std::span<const exec_t> &exec);
+
+  /**
+   * @brief Checks if the K dimension is valid for a Gemm or Brgemm primary.
+   *
+   * @param dim The dimension types to search through.
+   * @param exec The execution types to search through.
+   * @param prim The primitive i.e. Gemm or Brgemm to be executed.
+   * @return true The configuration is a valid setup. Also true if the prim is not a Brgemm type.
+   * @return false The configuration is NOT a valid setup.
+   */
+  static bool isValidBrgemmKDim(const std::span<const dim_t> &dim, const std::span<const exec_t> &exec, prim_t prim);
+
+  static bool isExpectedStride(int64_t expected, int index, const std::span<const int64_t> strides);
+
+  static Unary::error_t generateUnary(Unary *unary, prim_t prim, const std::span<const dim_t> &dim_types,
+                                      const std::span<const exec_t> &exec_types, const std::span<const int64_t> &dim_sizes);
 
 public:
   /**
