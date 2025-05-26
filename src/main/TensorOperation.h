@@ -69,6 +69,7 @@ public:
     err_invalid_first_touch_configuration = 9,
     err_invalid_main_configuration = 10,
     err_invalid_last_touch_configuration = 11,
+    err_invalid_execution_order = 12,
   };
 
 private:
@@ -88,9 +89,10 @@ private:
   int32_t indexPrimN = -1;
   int32_t indexPrimK = -1;
   int32_t indexPrimBatch = -1;
+  int32_t indexPrimitiveLoop = -1;
 
   std::variant<mini_jit::Brgemm, mini_jit::Unary> first_touch;
-  std::variant<mini_jit::Brgemm, mini_jit::Unary> main;
+  std::variant<mini_jit::Brgemm, mini_jit::Unary> main_kernel;
   std::variant<mini_jit::Brgemm, mini_jit::Unary> last_touch;
 
   /**
@@ -132,8 +134,8 @@ private:
    * @return true The configuration is a valid primitive setup.
    * @return false The configuration is NOT a valid primitive setup.
    */
-  static bool isValidPrimConfig(const std::span<const dim_t> &dim, const std::span<const exec_t> &exec,
-                                const std::span<const int64_t> &strides_in0, const std::span<const int64_t> &strides_out);
+  bool isValidPrimConfig(const std::span<const dim_t> &dim, const std::span<const exec_t> &exec,
+                         const std::span<const int64_t> &strides_in0, const std::span<const int64_t> &strides_out);
 
   /**
    * @brief Checks if the K dimension is valid for the given primitive.
@@ -145,10 +147,28 @@ private:
    * @return true The configuration is a valid setup.
    * @return false The configuration is NOT a valid setup.
    */
-  static bool isValidKDim(const std::span<const dim_t> &dim, const std::span<const exec_t> &exec,
-                          const std::span<const int64_t> &strides_in1, prim_t prim);
+  bool isValidKDim(const std::span<const dim_t> &dim, const std::span<const exec_t> &exec, const std::span<const int64_t> &strides_in1,
+                   prim_t prim);
 
-  static bool isExpectedStride(int64_t expected, int index, const std::span<const int64_t> strides);
+  /**
+   * @brief Checks if the configuration is sorted such that the primitives are last.
+   *
+   * @param exec The execution types of the configuration.
+   * @return true The configuration align with the requirement.
+   * @return false The configuration NOT algin with the requirement.
+   */
+  bool isSortedConfiguration(const std::span<const exec_t> &exec);
+
+  /**
+   * @brief Checks if the stride matches the given stride.
+   *
+   * @param expected The stride that is expected.
+   * @param index The index of the stride.
+   * @param strides The strides of the configuration.
+   * @return true The stride matches the expected.
+   * @return false The stride NOT matches the expected.
+   */
+  static bool isExpectedStride(int64_t expected, int index, const std::span<const int64_t> &strides);
 
   Unary::error_t generateUnary(Unary &unary, prim_t prim, const std::span<const dim_t> &dim_types,
                                const std::span<const exec_t> &exec_types, const std::span<const int64_t> &dim_sizes);
@@ -186,14 +206,15 @@ public:
    * General-purpose loop implementation featuring first and last touch operations.
    * No threading is applied.
    *
-   * @param id_loop      Dimension id of the loop which is executed.
+   * @param index_dimension      Dimension index of the loop which is executed.
    * @param ptr_in0      Pointer to the first input tensor's data.
    * @param ptr_in1      Pointer to the second input tensor's data (use nullptr if unary).
    * @param ptr_out      Pointer to the output tensor's data.
    * @param first_access True if first time accessing data of output tensor.
    * @param last_access  True if last time accessing data of output tensor.
    **/
-  void execute_iter(int64_t id_loop, char const *ptr_in0, char const *ptr_in1, char *ptr_out, bool first_access, bool last_access);
+  void execute_dimension(int64_t index_dimension, char const *ptr_in0, char const *ptr_in1, char *ptr_out, bool first_access,
+                         bool last_access);
 };
 
 #endif

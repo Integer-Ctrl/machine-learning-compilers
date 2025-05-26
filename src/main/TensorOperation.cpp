@@ -5,7 +5,7 @@
 
 bool mini_jit::TensorOperation::isUnary(prim_t prim)
 {
-  return prim == prim_t::copy || prim == prim_t::relu || prim == prim_t::relu;
+  return prim == prim_t::copy || prim == prim_t::relu || prim == prim_t::zero;
 }
 
 bool mini_jit::TensorOperation::isBrgemm(prim_t prim)
@@ -46,8 +46,8 @@ bool mini_jit::TensorOperation::isValidPrimConfig(const std::span<const dim_t> &
   }
 
   // Search for new that fits the configuration, both should return -1
-  indexM = findMatch(dim, exec, dim_t::m, exec_t::prim);
-  indexN = findMatch(dim, exec, dim_t::n, exec_t::prim);
+  indexM = findMatch(dim, exec, dim_t::m, exec_t::prim, indexM);
+  indexN = findMatch(dim, exec, dim_t::n, exec_t::prim, indexN);
   if (indexM != -1 || indexN != -1)
   {
     return false;
@@ -100,8 +100,27 @@ bool mini_jit::TensorOperation::isValidKDim(const std::span<const dim_t> &dim, c
     return false;
   }
 }
+bool mini_jit::TensorOperation::isSortedConfiguration(const std::span<const exec_t> &exec)
+{
+  bool foundPrimitive = false;
+  for (auto type = exec.begin(); type != exec.end(); ++type)
+  {
+    if (!foundPrimitive && *type == exec_t::prim)
+    {
+      foundPrimitive = true;
+      indexPrimitiveLoop = std::distance(type, exec.begin());
+    }
 
-bool mini_jit::TensorOperation::isExpectedStride(int64_t expected, int index, const std::span<const int64_t> strides)
+    if (foundPrimitive && *type != exec_t::prim)
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool mini_jit::TensorOperation::isExpectedStride(int64_t expected, int index, const std::span<const int64_t> &strides)
 {
   if (index == -1)
   {
@@ -147,9 +166,11 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
                                                                     std::span<const int64_t> strides_in1,
                                                                     std::span<const int64_t> strides_out)
 {
-  TensorOperation::prim_first = prim_t::none;  // Not yet generated, correctness of cleanup
-  TensorOperation::prim_main = prim_t::none;   // Not yet generated, correctness of cleanup
-  TensorOperation::prim_last = prim_t::none;   // Not yet generated, correctness of cleanup
+  indexPrimBatch = -1;
+  indexPrimK = -1;
+  indexPrimM = -1;
+  indexPrimN = -1;
+  indexPrimitiveLoop = -1;
 
   // Validate dimensions
   if (dim_sizes.size() != dim_types.size() || dim_sizes.empty() || dim_types.empty())
@@ -180,6 +201,11 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
     return error_t::err_wrong_dtype;
   }
 
+  if (!isSortedConfiguration(exec_types))
+  {
+    return error_t::err_invalid_execution_order;
+  }
+
   if (!isValidPrimConfig(dim_types, exec_types, strides_in0, strides_out))
   {
     return error_t::err_invalid_primitive_configuration;
@@ -194,9 +220,13 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
   indexPrimM = findMatch(dim_types, exec_types, dim_t::m, exec_t::prim);
   indexPrimN = findMatch(dim_types, exec_types, dim_t::n, exec_t::prim);
 
+  release_assert(indexPrimM != -1, "Expected a valid index for the M dimension but found none.");
+  release_assert(indexPrimN != -1, "Expected a valid index for the N dimension but found none.");
+  release_assert(indexPrimitiveLoop != -1, "Expected a valid start of the primitive loop but found none.");
+
   if (prim_first_touch != prim_t::none)
   {
-    if (prim_first_touch == prim_t::zero || prim_first_touch == prim_t::copy || prim_first_touch == prim_t::relu)
+    if (isUnary(prim_first_touch))
     {
       first_touch.emplace<Unary>();
       TensorOperation::prim_first = prim_first_touch;
@@ -218,7 +248,7 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
   {
     if (isBrgemm(prim_main))
     {
-      main.emplace<Brgemm>();
+      main_kernel.emplace<Brgemm>();
       TensorOperation::prim_main = prim_main;
 
       if (prim_main == prim_t::brgemm)
@@ -226,14 +256,21 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
         indexPrimBatch = findMatch(dim_types, exec_types, dim_t::k, exec_t::prim);
         indexPrimK = findMatch(dim_types, exec_types, dim_t::k, exec_t::prim, indexPrimBatch);
 
-        std::get<Brgemm>(main).generate(dim_sizes[indexPrimM], dim_sizes[indexPrimN], dim_sizes[indexPrimK], dim_sizes[indexPrimBatch], 0,
-                                        0, 0, Brgemm::dtype_t::fp32);
+        release_assert(indexPrimBatch != -1, "Expected a valid index for the Batch dimension but found none.");
+        release_assert(indexPrimK != -1, "Expected a valid index for the Batch dimension but found none.");
+
+        std::get<Brgemm>(main_kernel)
+          .generate(dim_sizes[indexPrimM], dim_sizes[indexPrimN], dim_sizes[indexPrimK], dim_sizes[indexPrimBatch], 0, 0, 0,
+                    Brgemm::dtype_t::fp32);
       }
       else if (prim_main == prim_t::gemm)
       {
         indexPrimK = findMatch(dim_types, exec_types, dim_t::k, exec_t::prim);
-        std::get<Brgemm>(main).generate(dim_sizes[indexPrimM], dim_sizes[indexPrimN], dim_sizes[indexPrimK], 1, 0, 0, 0,
-                                        Brgemm::dtype_t::fp32);
+
+        release_assert(indexPrimK != -1, "Expected a valid index for the K dimension but found none.");
+
+        std::get<Brgemm>(main_kernel)
+          .generate(dim_sizes[indexPrimM], dim_sizes[indexPrimN], dim_sizes[indexPrimK], 1, 0, 0, 0, Brgemm::dtype_t::fp32);
       }
       else
       {
@@ -242,9 +279,9 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
     }
     else if (isUnary(prim_main))
     {
-      main.emplace<Unary>();
+      main_kernel.emplace<Unary>();
 
-      Unary::error_t error = generateUnary(std::get<Unary>(main), prim_main, dim_types, exec_types, dim_sizes);
+      Unary::error_t error = generateUnary(std::get<Unary>(main_kernel), prim_main, dim_types, exec_types, dim_sizes);
 
       if (error != Unary::error_t::success)
       {
@@ -290,10 +327,90 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
 
 void mini_jit::TensorOperation::execute(void const *tensor_in0, void const *tensor_in1, void *tensor_out)
 {
-  // TODO implement, we also need to use the provided stride to set the leading dimensions.
+  release_assert(tensor_in0 != nullptr, "The tensor_in0 parameter is a nullptr, but should be a valid pointer to memory.");
+  release_assert(tensor_out != nullptr, "The tensor_out parameter is a nullptr, but should be a valid pointer to memory.");
+
+  char const *ptr_in0 = static_cast<char const *>(tensor_in0);
+  char const *ptr_in1 = static_cast<char const *>(tensor_in1);
+  char *ptr_out = static_cast<char *>(tensor_out);
+
+  execute_dimension(0, ptr_in0, ptr_in1, ptr_out, false, false);
 }
 
-void mini_jit::TensorOperation::execute_iter(int64_t id_loop, char const *ptr_in0, char const *ptr_in1, char *ptr_out, bool first_access,
-                                             bool last_access)
+void mini_jit::TensorOperation::execute_dimension(int64_t index_dim, char const *ptr_in0, char const *ptr_in1, char *ptr_out,
+                                                  bool first_access, bool last_access)
 {
+  release_assert(exec_types[index_dim] != exec_t::seq, "Expected a sequential loop");
+
+  uint32_t dtype_bytes = 4;
+  int64_t dim_size = dim_sizes[index_dim];
+  int64_t stride_in0 = strides_in0[index_dim];
+  int64_t stride_in1 = strides_in1[index_dim];
+  int64_t stride_out = strides_out[index_dim];
+
+  for (int64_t iDim = 0; iDim < dim_size; iDim++)
+  {
+    // TODO derive if this is first or last access to the output block
+    // first_access = first_access || (index_dim == 0);
+    // last_access = last_access || (index_dim == dim_size - 1);
+
+    char const *rec_ptr_in0 = ptr_in0 + iDim * stride_in0 * dtype_bytes;
+    char const *rec_ptr_in1 = ptr_in1 + iDim * stride_in1 * dtype_bytes;
+    char *rec_ptr_out = ptr_out + iDim * stride_out * dtype_bytes;
+
+    if (index_dim + 1 < indexPrimitiveLoop)
+    {
+      execute_dimension(index_dim + 1, rec_ptr_in0, rec_ptr_in1, rec_ptr_out, first_access, last_access);
+    }
+    else
+    {
+      // call first touch kernel if necessary
+      if (prim_first != prim_t::none)
+      {
+        if (std::holds_alternative<Unary>(first_touch))
+        {
+          Unary::kernel_t kernel = std::get<Unary>(first_touch).get_kernel();
+          kernel(rec_ptr_in0, rec_ptr_out, strides_in0[indexPrimN], strides_out[indexPrimN]);
+        }
+        else
+        {
+          release_assert(false, "Unexpected first touch primitive");
+        }
+      }
+
+      // call main_kernel kernel
+      if (prim_main != prim_t::none)
+      {
+        if (std::holds_alternative<Unary>(main_kernel))
+        {
+          Unary::kernel_t kernel = std::get<Unary>(main_kernel).get_kernel();
+          kernel(rec_ptr_in0, rec_ptr_out, strides_in0[indexPrimN], strides_out[indexPrimN]);
+        }
+        else if (std::holds_alternative<Brgemm>(main_kernel))
+        {
+          Brgemm::kernel_t kernel = std::get<Brgemm>(main_kernel).get_kernel();
+          kernel(rec_ptr_in0, rec_ptr_in1, rec_ptr_out, strides_in0[indexPrimK], strides_in1[indexPrimN], strides_out[indexPrimN],
+                 strides_in0[indexPrimBatch], strides_in1[indexPrimBatch]);
+        }
+        else
+        {
+          release_assert(false, "Unexpected main primitive");
+        }
+      }
+
+      // call last touch kernel if necessary
+      if (prim_last != prim_t::none)
+      {
+        if (std::holds_alternative<Unary>(last_touch))
+        {
+          Unary::kernel_t kernel = std::get<Unary>(last_touch).get_kernel();
+          kernel(rec_ptr_in0, rec_ptr_out, strides_in0[indexPrimN], strides_out[indexPrimN]);
+        }
+        else
+        {
+          release_assert(false, "Unexpected last touch primitive");
+        }
+      }
+    }
+  }
 }
