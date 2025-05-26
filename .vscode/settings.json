@@ -100,7 +100,8 @@
         "NVCOMPILER",
         "pnacl",
         "relu",
-        "xtensor"
+        "xtensor",
+        "linalg"
     ],
 
     // Include Paths

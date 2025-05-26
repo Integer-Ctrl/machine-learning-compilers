@@ -1,4 +1,5 @@
 #include "../main/TensorOperation.h"
+#include "BaseGeneration.test.h"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 #include <catch2/generators/catch_generators_range.hpp>
@@ -7,6 +8,7 @@
 #include <cmath>
 #include <cstdint>
 #include <span>
+#include <xtensor-blas/xlinalg.hpp>
 #include <xtensor/containers/xtensor.hpp>
 #include <xtensor/generators/xrandom.hpp>
 
@@ -102,8 +104,6 @@ TEST_CASE("Test tensor operation with main kernel: gemm", "[tensor_operation][ge
   xt::xtensor<float, 2> tensorOutVerify({64, 64});
   std::copy(tensorOut.begin(), tensorOut.end(), tensorOutVerify.begin());
 
-  std::cout << tensorIn0[0] << " " << tensorIn1[0] << " " << tensorOutVerify[0] << " " << tensorOut[0] << std::endl;
-
   mini_jit::TensorOperation tensor_op;
   TensorOperation::error_t err =
     tensor_op.setup(TensorOperation::dtype_t::fp32, TensorOperation::prim_t::none, TensorOperation::prim_t::gemm,
@@ -112,14 +112,14 @@ TEST_CASE("Test tensor operation with main kernel: gemm", "[tensor_operation][ge
 
   REQUIRE(err == TensorOperation::error_t::success);
 
+  // tensorOut += xt::linalg::dot(tensorIn0, tensorIn1);
+
+  GenerationTest generatorTest(64, 64, 64);
+  generatorTest.naive_matmul_M_N_K_Batch(tensorIn0.data(), tensorIn1.data(), tensorOutVerify.data(), 64, 64, 64, 1, 1);
+
   tensor_op.execute(tensorIn0.data(), tensorIn1.data(), tensorOut.data());
 
-  std::cout << tensorOutVerify[0] << " " << tensorOut[0] << std::endl;
-
-  // TODO: Implement the verification logic for naive gemm operation
-
   verify_tensor(tensorOutVerify.data(), tensorOut.data(), tensorOut.size());
-  FAIL();
 }
 
 TEST_CASE("Test tensor operation with main kernel: brgemm", "[tensor_operation][brgemm][correctness]")
@@ -131,8 +131,8 @@ TEST_CASE("Test tensor operation with main kernel: brgemm", "[tensor_operation][
   constexpr TensorOperation::exec_t exec_types[]{TensorOperation::exec_t::prim, TensorOperation::exec_t::prim,
                                                  TensorOperation::exec_t::prim, TensorOperation::exec_t::prim};
   constexpr int64_t dim_sizes[]{64, 64, 64, 64};
-  constexpr int64_t strides_in0[]{64, 1, 0, 64};
-  constexpr int64_t strides_in1[]{64, 0, 64, 1};
+  constexpr int64_t strides_in0[]{64 * 64, 1, 0, 64};
+  constexpr int64_t strides_in1[]{64 * 64, 0, 64, 1};
   constexpr int64_t strides_out[]{0, 1, 64, 0};
 
   xt::random::seed(Catch::rngSeed());
@@ -156,7 +156,8 @@ TEST_CASE("Test tensor operation with main kernel: brgemm", "[tensor_operation][
 
   tensor_op.execute(tensorIn0.data(), tensorIn1.data(), tensorOut.data());
 
-  // TODO: Implement the verification logic for naive brgemm operation
+  GenerationTest generatorTest(64, 64, 64, 64);
+  generatorTest.naive_matmul_M_N_K_Batch(tensorIn0.data(), tensorIn1.data(), tensorOutVerify.data(), 64, 64, 64, 64 * 64, 64 * 64);
 
   verify_tensor(tensorOutVerify.data(), tensorOut.data(), tensorOut.size());
 }

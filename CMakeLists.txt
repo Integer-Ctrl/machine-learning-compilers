@@ -298,7 +298,7 @@ add_executable(tests "${SOURCE_FILEPATHS}" "${TEST_FILEPATHS}")
 if(SAVE_JITS_TO_FILE)
 target_compile_definitions(tests PUBLIC SAVE_JITS_TO_FILE)
 endif(SAVE_JITS_TO_FILE)
-target_link_libraries(tests PRIVATE Catch2::Catch2WithMain xtensor)
+target_link_libraries(tests PRIVATE Catch2::Catch2WithMain xtensor xtensor-blas)
 
 add_executable(benchmarks "${SOURCE_FILEPATHS}" "${BENCH_FILEPATHS}")
 target_link_libraries(benchmarks benchmark::benchmark_main)

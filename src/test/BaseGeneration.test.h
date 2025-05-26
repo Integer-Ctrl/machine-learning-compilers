@@ -23,13 +23,14 @@ private:
   float *matrix_c_verify;
   mini_jit::Brgemm::kernel_t kernel = nullptr;
 
+public:
   /**
    * @brief Fills the given matrix with random values.
    *
    * @param matrix The matrix to fill.
    * @param size The total size of the matrix.
    */
-  void fill_random_matrix(float *matrix, uint32_t size);
+  static void fill_random_matrix(float *matrix, uint32_t size);
 
   /**
    * @brief Fills the given matrix with counting values starting from 0.
@@ -37,7 +38,7 @@ private:
    * @param matrix The matrix to fill.
    * @param size The total size of the matrix.
    */
-  void fill_counting_matrix(float *matrix, uint32_t size);
+  static void fill_counting_matrix(float *matrix, uint32_t size);
 
   /**
    * @brief Does a naive matmul for verification usage.
@@ -61,9 +62,8 @@ private:
    * @param result The actual matrix values.
    * @param size The total size of the matrix.
    */
-  void verify_matmul(const float *__restrict__ expected, const float *__restrict__ result, uint32_t size);
+  static void verify_matmul(const float *__restrict__ expected, const float *__restrict__ result, uint32_t size);
 
-public:
   GenerationTest() = delete;
   GenerationTest(uint32_t M, uint32_t N, uint32_t K);
   GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t lda, uint32_t ldb, uint32_t ldc);
