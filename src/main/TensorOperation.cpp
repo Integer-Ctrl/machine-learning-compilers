@@ -1,7 +1,93 @@
 #include "TensorOperation.h"
 #include "release_assert.h"
+#include <iostream>
 #include <ranges>
 #include <tuple>
+
+/**
+                                             .:=+######*=:.
+                                         .=*##%%%%%%%%%%%%%%*-....
+                                     ..=###%%%%%%%%%%%%%%%%%%%%%+:...           ..........    ..
+                                   ..*######%%%%%%%%%%%%%%%%%%%%@@@@%%%%%%%%%%%%%%%%%%%%%%%%%#*=:..
+                                 ..:-=*######%%%%%%%%%%%%%%%%%%%%%@@@%%%%%@@@@@%%####%%##****##**##*
+                                 .:::--#######%%%%%%###%%%%%%@@@@%%##***++++++===+**+=--:....
+                                .-::---*########%%%%%%%%%%%#*+++++++++======--:............
+                               .+::::--*########%%%%%%%%%%#++++===--==-.........
+                               --:::---*#########%%%%%%%%%%%%%%%*......
+                              .*:::::--+##########%%%%%%%%%%%@%=..
+                              .#=:::::-=###########%%%%%%%%%%%-.
+                              :##::::::-*###########%%%%%%%%%#..
+                              -###=:::::-*###########%%%%%%%%#..
+                              =###%#+::::-+*##########%%%%%%%%=..
+                             .+######%%+-::-=**########%%%%%%%%*..
+                             .+#########%%%%+-:--*######%%%#*====....
+                             .############%%@@@@@@@@@@*===========:..
+                             -############%%%@@@@@@#+=====---=--==-..
+                            .#%###########%@@@@@@#====-=------------.
+                           .############%%%@@@@%+=------------------.
+                          :############%%%%%%%%=--------------------:.
+                         -############%%%%%%%%+=::::::::::::::::----:..
+                        .#############%%%%%%@#=-:::::::::::::::::::::..
+                       .#############%%%%%%%@--::::::::::::::::::::::..
+                       -###########%%%%%%%%@#-:::::::::::::::::::::::..
+                       =########%%%##%%%%%@@=:..:::::::::::::::::::::..
+                      .*######%@####*%%%%%@%:.....................:::..
+                      :######%@#####*%%%%%@*........................:..
+                     .*#####%@#####*#%%%%@@-.....................:::::.
+                     :#####%@%#####*%@%%@@#:.......::::::::::::::::::*...
+                     =#####@%%%####*%@%@@%-..........................*+..
+                    .*####@%%%%####*%@@@@#...........................:#*.
+                   .=####%@%%%%####*%@@@@:............................=#=..
+                   :####%@%%%%%####*%@@@=.............................:-#=.
+                  .=###%@@%%%%%####+%@@*..............................::-#-...
+                  .*###%@%%%%%%####+*@%:..............................::.:#:..
+                  =###%@@#%%%%%%###**%-.............................:::...=#..
+                 .*##%%@@#%%%%%%###*+=.............................::::....++...
+                .-###%%@@#%%%%%%%###+=...........................:::::::....*-..
+                .=###%%@@#%%%%%%%###*=..........................::::::::....=%..
+                .+###%@@@%%%%%%%%###*+:.......................:::::::::::..::#+.
+                .*##%%@@@@*%%%%%%####+:......................::::::::::::::::-#.
+                .*%%%%%%@@%#%%%%%####*+......................:::::::::::::::::*=..
+                .#%%%%%%@@@#%%%%%%####+....................:::::::::::::::::::#%..
+                :#%%%%%%%@@%%%%%%%####*-.................:::::::::::::::::::::#%-.
+                :#%%%%%%%%@@%%%%%%#####=.................:::::::::::::::::::::=%+.
+                :#%%%%%%%%@@@%%%%%#####+:.............:::::::::::::::::-:::::::##.
+                -#%%%%%%%%%@@%%%%%%####*:............::::::::::::::::::-:::::::-%:
+                -#%%%%%%%%%@@@%%%%%#####-............:::::::::::::::::::::::::::%=
+                -#%%%%%%%%%%@@%%%%%#####+..........::::::::::::::::::::.::::::::#*
+                :#%%%%%%%%%%#@@%%%%#####*.........:::::::::::::::::::::..:::::::##.
+                -%%%%%%%%%%%-@@%%%%%####*.......::::::::::::::::::::::...:::::::##.
+                -%%%%%%%%%%*-%@%%%%%#####......:::::::::::::::::::::::...:::::::##.
+                -%%%%%%%%%%+-*@@%%%%#####.....::::::::::::::::::::::::. ..-:::::%+.
+                =%%%%%%%%%%--*@@%%%%####+....:::::::::::::::::::::::::. ..-::::*%-.
+               .#%%%%%%%%%+--+@@%%%%%###-..:::::::::::::::::::::::::::. ..+:::*%%:.
+               .%%%%%%%%%%---=@@%%%%%###:.:::::::::::::::::::::::::::.. ..*::%%%*..
+               :%%%%%%%%%*--.=@%%%%%%##+.:::::::::::::::::::::::::--:.. ..%=+%%%:.
+              .+%%%%%%%%%=-..+@%%%%%%##..::::::::::::::::::::::::---... ..%%%%%=..
+              .*%%%%%%%%#-...#@%%%%%%#:::::::::::::::::::::::::----:.   ..#%%%+...
+              :%%%%%%%%%:...:@%%%%%%%-::::::::::::::::::::::::-----..   ..=%%-..
+             .*%%%%%%%%+....:@@%%%%%:::::::::::::::::::::::-------...     ....
+             :%%%%%%%%%:....-%@@@@%:::::::::::::::::::::---------:...
+            .+%%%%%%%%+.....:#@@@+::::::::::::::::::::----------:.
+            :%%%%%%%%#.......+%*:::::::::::::::::::------------:..
+           .%%%%%%%%@-.........:::::::::::::::----------------:.
+          .*%%%%%%%@=........:::::::::::::------------------=...
+         .+%%%%%%@%#:.......:::::::::::::....---------------....
+        .+%%%%%@@@@-:......::::::::::::..    .=------------...
+       .+%%@%@@@@@=::....:::::::::::::...    .-=--------==:..
+      .#@@@@@@@@@*.::..:::::::::::::-:.       .=-=---=-=:=.
+    .*@@@@@@@@=%=...:..::::::::::::-:..       .=+**=++**-..
+ .:*@@%%%**+:.-.....:::::::::::-----..         .*%#######-:....
+-%++-.......  ..  ...::--:::------::..         .=##*************+=:...
+                     ...##**=+#*-...           .*#************#####*##*-.
+                        -#######**+=-:...      .+##********#####*###%%#*+.
+                        :##*********###****+=:....-+++**####*#####**+-.:+*.
+                       .+#******####*****#%###*+:..        .+##**-..=#.
+                        .*##**********#%####%%%#*=...        .. ...
+                          ...:::-+*####*#%###=...-.
+                                    .-==+=...-.
+
+ */
 
 bool mini_jit::TensorOperation::isUnary(prim_t prim)
 {
@@ -17,13 +103,15 @@ int32_t mini_jit::TensorOperation::findMatch(const std::span<const dim_t> &dim, 
                                              exec_t searchExec, uint32_t startIndex)
 {
   release_assert(dim.size() == exec.size(), "Expected the dimension types size to match the execution types size.");
-  release_assert(startIndex < dim.size(), "Expected the start index to be less than the dimension types size.");
+  release_assert(startIndex <= dim.size(), "Expected the start index to be less than the dimension types size.");
 
   for (auto [iDim, iExec] = std::tuple{dim.begin() + startIndex, exec.begin() + startIndex}; iDim != dim.end(); ++iDim, ++iExec)
   {
+    // std::cerr << "iDim:" << (uint32_t)*iDim << " " << std::distance(dim.begin(), iDim) << ", iExec:" << (uint32_t)*iExec << " "
+    //           << std::distance(exec.begin(), iExec) << std::endl;
     if (*iDim == searchDim && *iExec == searchExec)
     {
-      return std::distance(iDim, dim.begin());
+      return std::distance(dim.begin(), iDim);
     }
   }
 
@@ -37,6 +125,7 @@ bool mini_jit::TensorOperation::isValidPrimConfig(const std::span<const dim_t> &
   int32_t indexN = findMatch(dim, exec, dim_t::n, exec_t::prim);
   if (indexM == -1 || indexN == -1)
   {
+    std::cerr << "1: Could not find a matching index: indexM:" << indexM << ", indexN:" << indexN << std::endl;
     return false;
   }
 
@@ -46,10 +135,11 @@ bool mini_jit::TensorOperation::isValidPrimConfig(const std::span<const dim_t> &
   }
 
   // Search for new that fits the configuration, both should return -1
-  indexM = findMatch(dim, exec, dim_t::m, exec_t::prim, indexM);
-  indexN = findMatch(dim, exec, dim_t::n, exec_t::prim, indexN);
+  indexM = findMatch(dim, exec, dim_t::m, exec_t::prim, indexM + 1);
+  indexN = findMatch(dim, exec, dim_t::n, exec_t::prim, indexN + 1);
   if (indexM != -1 || indexN != -1)
   {
+    std::cerr << "2: Could not find a matching index: indexM:" << indexM << ", indexN" << indexN << std::endl;
     return false;
   }
 
@@ -68,15 +158,10 @@ bool mini_jit::TensorOperation::isValidKDim(const std::span<const dim_t> &dim, c
       return false;
     }
 
-    if (!isExpectedStride(1, indexK, strides_in1))
-    {
-      return false;
-    }
-
     if (prim == prim_t::brgemm)
     {
       // Another k dim should exists
-      indexK = findMatch(dim, exec, dim_t::k, exec_t::prim, indexK);
+      indexK = findMatch(dim, exec, dim_t::k, exec_t::prim, indexK + 1);
 
       if (indexK == -1)
       {
@@ -84,8 +169,13 @@ bool mini_jit::TensorOperation::isValidKDim(const std::span<const dim_t> &dim, c
       }
     }
 
+    if (!isExpectedStride(1, indexK, strides_in1))
+    {
+      return false;
+    }
+
     // No other k dim should exists
-    indexK = findMatch(dim, exec, dim_t::k, exec_t::prim, indexK);
+    indexK = findMatch(dim, exec, dim_t::k, exec_t::prim, indexK + 1);
     return indexK == -1;
   }
   else if (isUnary(prim))
@@ -130,9 +220,7 @@ bool mini_jit::TensorOperation::isExpectedStride(int64_t expected, int index, co
   return strides[index] == expected;
 }
 
-mini_jit::Unary::error_t mini_jit::TensorOperation::generateUnary(Unary &unary, prim_t prim, const std::span<const dim_t> &dim_types,
-                                                                  const std::span<const exec_t> &exec_types,
-                                                                  const std::span<const int64_t> &dim_sizes)
+mini_jit::Unary::error_t mini_jit::TensorOperation::generateUnary(Unary &unary, prim_t prim, const std::span<const int64_t> &dim_sizes)
 {
   release_assert(indexPrimM != -1, "Expected a match for the m primitive dimension");
   release_assert(indexPrimN != -1, "Expected a match for the n primitive dimension");
@@ -166,6 +254,7 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
                                                                     std::span<const int64_t> strides_in1,
                                                                     std::span<const int64_t> strides_out)
 {
+  hasSetupError = false;
   indexPrimBatch = -1;
   indexPrimK = -1;
   indexPrimM = -1;
@@ -175,6 +264,7 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
   // Validate dimensions
   if (dim_sizes.size() != dim_types.size() || dim_sizes.empty() || dim_types.empty())
   {
+    hasSetupError = true;
     return error_t::err_wrong_dimension;
   }
 
@@ -184,6 +274,7 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
          || ((isUnary(prim_first_touch) || prim_first_touch == prim_t::none) && (isUnary(prim_main) || prim_main == prim_t::none) &&
              (isUnary(prim_last_touch) || prim_last_touch == prim_t::none) && strides_in1.empty()))))
   {
+    hasSetupError = true;
     return error_t::err_wrong_dimension;  // Strides must match the number of dimensions
   }
 
@@ -191,6 +282,7 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
   {
     if (exec == exec_t::shared)
     {
+      hasSetupError = true;
       return error_t::err_execution_type_not_supported;
     }
   }
@@ -198,21 +290,27 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
   // Validate dtype types - currently only fp32 is supported
   if (dtype != dtype_t::fp32)
   {
+    hasSetupError = true;
     return error_t::err_wrong_dtype;
   }
 
   if (!isSortedConfiguration(exec_types))
   {
+    hasSetupError = true;
     return error_t::err_invalid_execution_order;
   }
 
   if (!isValidPrimConfig(dim_types, exec_types, strides_in0, strides_out))
   {
+    hasSetupError = true;
+    std::cerr << "1: Invalid primitive configuration detected" << std::endl;
     return error_t::err_invalid_primitive_configuration;
   }
 
   if (!isValidKDim(dim_types, exec_types, strides_in1, prim_main))
   {
+    hasSetupError = true;
+    std::cerr << "2: Invalid primitive configuration detected" << std::endl;
     return error_t::err_invalid_primitive_configuration;
   }
 
@@ -231,15 +329,17 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
       first_touch.emplace<Unary>();
       TensorOperation::prim_first = prim_first_touch;
 
-      Unary::error_t error = generateUnary(std::get<Unary>(first_touch), prim_first_touch, dim_types, exec_types, dim_sizes);
+      Unary::error_t error = generateUnary(std::get<Unary>(first_touch), prim_first_touch, dim_sizes);
 
       if (error != Unary::error_t::success)
       {
+        hasSetupError = true;
         return error_t::err_invalid_first_touch_configuration;
       }
     }
     else
     {
+      hasSetupError = true;
       return error_t::err_wrong_first_touch_primitive;
     }
   }
@@ -254,7 +354,7 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
       if (prim_main == prim_t::brgemm)
       {
         indexPrimBatch = findMatch(dim_types, exec_types, dim_t::k, exec_t::prim);
-        indexPrimK = findMatch(dim_types, exec_types, dim_t::k, exec_t::prim, indexPrimBatch);
+        indexPrimK = findMatch(dim_types, exec_types, dim_t::k, exec_t::prim, indexPrimBatch + 1);
 
         release_assert(indexPrimBatch != -1, "Expected a valid index for the Batch dimension but found none.");
         release_assert(indexPrimK != -1, "Expected a valid index for the Batch dimension but found none.");
@@ -280,16 +380,19 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
     else if (isUnary(prim_main))
     {
       main_kernel.emplace<Unary>();
+      TensorOperation::prim_main = prim_main;
 
-      Unary::error_t error = generateUnary(std::get<Unary>(main_kernel), prim_main, dim_types, exec_types, dim_sizes);
+      Unary::error_t error = generateUnary(std::get<Unary>(main_kernel), prim_main, dim_sizes);
 
       if (error != Unary::error_t::success)
       {
+        hasSetupError = true;
         return error_t::err_invalid_main_configuration;
       }
     }
     else
     {
+      hasSetupError = true;
       return error_t::err_wrong_main_primitive;
     }
   }
@@ -301,15 +404,17 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
       last_touch.emplace<Unary>();
       TensorOperation::prim_last = prim_last_touch;
 
-      Unary::error_t error = generateUnary(std::get<Unary>(last_touch), prim_last_touch, dim_types, exec_types, dim_sizes);
+      Unary::error_t error = generateUnary(std::get<Unary>(last_touch), prim_last_touch, dim_sizes);
 
       if (error != Unary::error_t::success)
       {
+        hasSetupError = true;
         return error_t::err_invalid_main_configuration;
       }
     }
     else
     {
+      hasSetupError = true;
       return error_t::err_wrong_last_touch_primitive;
     }
   }
@@ -327,14 +432,20 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
 
 void mini_jit::TensorOperation::execute(void const *tensor_in0, void const *tensor_in1, void *tensor_out)
 {
+  release_assert(hasSetupError != true, "The setup resulted in a error, do not execute the setup");
   release_assert(tensor_in0 != nullptr, "The tensor_in0 parameter is a nullptr, but should be a valid pointer to memory.");
   release_assert(tensor_out != nullptr, "The tensor_out parameter is a nullptr, but should be a valid pointer to memory.");
+
+  if (isBrgemm(prim_main))
+  {
+    release_assert(tensor_in1 != nullptr, "The tensor_in1 parameter is a nullptr, but should be a valid pointer to memory");
+  }
 
   char const *ptr_in0 = static_cast<char const *>(tensor_in0);
   char const *ptr_in1 = static_cast<char const *>(tensor_in1);
   char *ptr_out = static_cast<char *>(tensor_out);
 
-  execute_dimension(0, ptr_in0, ptr_in1, ptr_out, false, false);
+  execute_dimension(0, ptr_in0, ptr_in1, ptr_out, false, false);  // TODO: maybe later need to derive first and last access
 }
 
 void mini_jit::TensorOperation::execute_dimension(int64_t index_dim, char const *ptr_in0, char const *ptr_in1, char *ptr_out,
@@ -348,68 +459,69 @@ void mini_jit::TensorOperation::execute_dimension(int64_t index_dim, char const 
   int64_t stride_in1 = strides_in1[index_dim];
   int64_t stride_out = strides_out[index_dim];
 
-  for (int64_t iDim = 0; iDim < dim_size; iDim++)
+  std::cout << "Execute check " << index_dim + 1 << " " << indexPrimitiveLoop << std::endl;
+  if (index_dim + 1 < indexPrimitiveLoop)
   {
-    // TODO derive if this is first or last access to the output block
-    // first_access = first_access || (index_dim == 0);
-    // last_access = last_access || (index_dim == dim_size - 1);
-
-    char const *rec_ptr_in0 = ptr_in0 + iDim * stride_in0 * dtype_bytes;
-    char const *rec_ptr_in1 = ptr_in1 + iDim * stride_in1 * dtype_bytes;
-    char *rec_ptr_out = ptr_out + iDim * stride_out * dtype_bytes;
-
-    if (index_dim + 1 < indexPrimitiveLoop)
+    for (int64_t iDim = 0; iDim < dim_size; iDim++)
     {
+      // TODO derive if this is first or last access to the output block
+      // first_access = first_access || (index_dim == 0);
+      // last_access = last_access || (index_dim == dim_size - 1);
+
+      char const *rec_ptr_in0 = ptr_in0 + iDim * stride_in0 * dtype_bytes;
+      char const *rec_ptr_in1 = ptr_in1 + iDim * stride_in1 * dtype_bytes;
+      char *rec_ptr_out = ptr_out + iDim * stride_out * dtype_bytes;
       execute_dimension(index_dim + 1, rec_ptr_in0, rec_ptr_in1, rec_ptr_out, first_access, last_access);
     }
-    else
+  }
+  else
+  {
+    // call first touch kernel if necessary
+    if (prim_first != prim_t::none)
     {
-      // call first touch kernel if necessary
-      if (prim_first != prim_t::none)
+      if (std::holds_alternative<Unary>(first_touch))
       {
-        if (std::holds_alternative<Unary>(first_touch))
-        {
-          Unary::kernel_t kernel = std::get<Unary>(first_touch).get_kernel();
-          kernel(rec_ptr_in0, rec_ptr_out, strides_in0[indexPrimN], strides_out[indexPrimN]);
-        }
-        else
-        {
-          release_assert(false, "Unexpected first touch primitive");
-        }
+        Unary::kernel_t kernel = std::get<Unary>(first_touch).get_kernel();
+        kernel(ptr_in0, ptr_out, strides_in0[indexPrimN], strides_out[indexPrimN]);
       }
-
-      // call main_kernel kernel
-      if (prim_main != prim_t::none)
+      else
       {
-        if (std::holds_alternative<Unary>(main_kernel))
-        {
-          Unary::kernel_t kernel = std::get<Unary>(main_kernel).get_kernel();
-          kernel(rec_ptr_in0, rec_ptr_out, strides_in0[indexPrimN], strides_out[indexPrimN]);
-        }
-        else if (std::holds_alternative<Brgemm>(main_kernel))
-        {
-          Brgemm::kernel_t kernel = std::get<Brgemm>(main_kernel).get_kernel();
-          kernel(rec_ptr_in0, rec_ptr_in1, rec_ptr_out, strides_in0[indexPrimK], strides_in1[indexPrimN], strides_out[indexPrimN],
-                 strides_in0[indexPrimBatch], strides_in1[indexPrimBatch]);
-        }
-        else
-        {
-          release_assert(false, "Unexpected main primitive");
-        }
+        release_assert(false, "Unexpected first touch primitive");
       }
+    }
 
-      // call last touch kernel if necessary
-      if (prim_last != prim_t::none)
+    // call main_kernel kernel
+    if (prim_main != prim_t::none)
+    {
+      if (std::holds_alternative<Unary>(main_kernel))
       {
-        if (std::holds_alternative<Unary>(last_touch))
-        {
-          Unary::kernel_t kernel = std::get<Unary>(last_touch).get_kernel();
-          kernel(rec_ptr_in0, rec_ptr_out, strides_in0[indexPrimN], strides_out[indexPrimN]);
-        }
-        else
-        {
-          release_assert(false, "Unexpected last touch primitive");
-        }
+        std::cout << "indexPrimN" << indexPrimN << " " << strides_in0[indexPrimN] << " " << strides_out[indexPrimN] << std::endl;
+        Unary::kernel_t kernel = std::get<Unary>(main_kernel).get_kernel();
+        kernel(ptr_in0, ptr_out, strides_in0[indexPrimN], strides_out[indexPrimN]);
+      }
+      else if (std::holds_alternative<Brgemm>(main_kernel))
+      {
+        Brgemm::kernel_t kernel = std::get<Brgemm>(main_kernel).get_kernel();
+        kernel(ptr_in0, ptr_in1, ptr_out, strides_in0[indexPrimK], strides_in1[indexPrimN], strides_out[indexPrimN],
+               strides_in0[indexPrimBatch], strides_in1[indexPrimBatch]);
+      }
+      else
+      {
+        release_assert(false, "Unexpected main primitive");
+      }
+    }
+
+    // call last touch kernel if necessary
+    if (prim_last != prim_t::none)
+    {
+      if (std::holds_alternative<Unary>(last_touch))
+      {
+        Unary::kernel_t kernel = std::get<Unary>(last_touch).get_kernel();
+        kernel(ptr_in0, ptr_out, strides_in0[indexPrimN], strides_out[indexPrimN]);
+      }
+      else
+      {
+        release_assert(false, "Unexpected last touch primitive");
       }
     }
   }

@@ -34,8 +34,8 @@ endif()
 # ==============================================================
 # Setup compile Flags
 # ==============================================================
-add_compile_options(-Werror -Wall -Wextra -Wpedantic)
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
+add_compile_options(-Wall -Wextra -Wpedantic)
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Werror -O2")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
 
 set(CMAKE_CXX_STANDARD 20)
@@ -48,9 +48,9 @@ set(CMAKE_VERBOSE_MAKEFILE off)
 Include(FetchContent)
 
 FetchContent_Declare(
-  Catch2
-  GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-  GIT_TAG        v3.8.1
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2
+    GIT_TAG        v3.8.1
 )
 FetchContent_MakeAvailable(Catch2)
 
@@ -65,6 +65,31 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(google_benchmark)
 
+FetchContent_Declare(
+    xtl
+    GIT_REPOSITORY https://github.com/xtensor-stack/xtl
+    GIT_TAG        0.8.0
+)
+FetchContent_MakeAvailable(xtl)
+
+FetchContent_Declare(
+    XTensor
+    GIT_REPOSITORY https://github.com/xtensor-stack/xtensor
+    GIT_TAG        0.26.0
+)
+FetchContent_MakeAvailable(XTensor)
+
+FetchContent_Declare(
+    XTensor-Blas
+    GIT_REPOSITORY https://github.com/xtensor-stack/xtensor-blas
+    GIT_TAG        0.22.0
+)
+FetchContent_MakeAvailable(XTensor-Blas)
+
+# Disables any compiler warnings (also warning as errors) from the specified lib
+# get_target_property(xtensor_include_dirs XTensor INTERFACE_INCLUDE_DIRECTORIES)
+# set_target_properties(XTensor PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${xtensor_include_dirs}")
+
 # ==============================================================
 # Source files
 # ==============================================================
@@ -76,6 +101,8 @@ set(SRC_MAIN_FILES
     release_assert.h
     Unary.h
     Unary.cpp
+    TensorOperation.h
+    TensorOperation.cpp
 )
 
 set(KERNEL_FILES
@@ -163,6 +190,7 @@ set(TEST_FILES
     BaseGeneration.test.h
     BaseGeneration.test.cpp
     Brgemm.test.cpp
+    TensorOperation.test.cpp
 )
 
 set(TEST_KERNELS
@@ -270,7 +298,7 @@ add_executable(tests "${SOURCE_FILEPATHS}" "${TEST_FILEPATHS}")
 if(SAVE_JITS_TO_FILE)
 target_compile_definitions(tests PUBLIC SAVE_JITS_TO_FILE)
 endif(SAVE_JITS_TO_FILE)
-target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(tests PRIVATE Catch2::Catch2WithMain xtensor)
 
 add_executable(benchmarks "${SOURCE_FILEPATHS}" "${BENCH_FILEPATHS}")
 target_link_libraries(benchmarks benchmark::benchmark_main)

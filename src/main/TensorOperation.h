@@ -29,22 +29,22 @@ public:
   /// primitive type
   enum class prim_t : uint32_t
   {
-    zero = 0,
-    copy = 1,
-    relu = 2,
-    gemm = 3,
-    brgemm = 4,
-    none = 99
+    none = 0,
+    zero = 1,
+    copy = 2,
+    relu = 3,
+    gemm = 4,
+    brgemm = 5,
   };
 
   /// dimension type
   enum class dim_t : uint32_t
   {
-    c = 0,
-    m = 1,
-    n = 2,
-    k = 3,
-    undefined = 99
+    undefined = 0,
+    c = 1,
+    m = 2,
+    n = 3,
+    k = 4,
   };
 
   /// data type
@@ -95,14 +95,18 @@ private:
   std::variant<mini_jit::Brgemm, mini_jit::Unary> main_kernel;
   std::variant<mini_jit::Brgemm, mini_jit::Unary> last_touch;
 
+  bool hasSetupError = false;
+  
+
   /**
-   * @brief Indicates if a primitive fits the Unary generator.
-   *
-   * @param prim The primitive to check.
-   * @return true The primitive is a unary.
-   * @return false The primitive is NOT a unary.
-   */
-  static bool isUnary(prim_t prim);
+    * @brief Indicates if a primitive fits the Unary generator.
+    *
+    * @param prim The primitive to check.
+    * @return true The primitive is a unary.
+    * @return false The primitive is NOT a unary.
+    */
+  static bool
+  isUnary(prim_t prim);
 
   /**
    * @brief Indicates if a primitive fits the Brgemm generator.
@@ -170,8 +174,7 @@ private:
    */
   static bool isExpectedStride(int64_t expected, int index, const std::span<const int64_t> &strides);
 
-  Unary::error_t generateUnary(Unary &unary, prim_t prim, const std::span<const dim_t> &dim_types,
-                               const std::span<const exec_t> &exec_types, const std::span<const int64_t> &dim_sizes);
+  Unary::error_t generateUnary(Unary &unary, prim_t prim, const std::span<const int64_t> &dim_sizes);
 
 public:
   /**

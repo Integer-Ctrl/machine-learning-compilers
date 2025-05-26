@@ -72,7 +72,10 @@
         "thread": "cpp",
         "typeinfo": "cpp",
         "variant": "cpp",
-        "ranges": "cpp"
+        "ranges": "cpp",
+        "any": "cpp",
+        "cfenv": "cpp",
+        "typeindex": "cpp"
     },
 
     // Spellchecker
@@ -81,6 +84,7 @@
         "cbnz",
         "einsum",
         "errneous",
+        "Fastor",
         "fmax",
         "fmla",
         "heapbytes",
@@ -95,7 +99,8 @@
         "NVCC",
         "NVCOMPILER",
         "pnacl",
-        "relu"
+        "relu",
+        "xtensor"
     ],
 
     // Include Paths
