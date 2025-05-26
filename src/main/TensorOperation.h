@@ -5,6 +5,7 @@
 #include "Unary.h"
 #include <cstdint>
 #include <span>
+#include <variant>
 #include <vector>
 
 namespace mini_jit
@@ -88,22 +89,9 @@ private:
   int32_t indexPrimK = -1;
   int32_t indexPrimBatch = -1;
 
-  union Primitive
-  {
-    mini_jit::Unary *unary;
-    mini_jit::Brgemm *brgemm;
-  };
-
-  Primitive first_touch;
-  Primitive main;
-  Primitive last_touch;
-
-  ~TensorOperation();
-
-  /**
-   * @brief Cleans up the current set primitives.
-   */
-  void cleanup();
+  std::variant<mini_jit::Brgemm, mini_jit::Unary> first_touch;
+  std::variant<mini_jit::Brgemm, mini_jit::Unary> main;
+  std::variant<mini_jit::Brgemm, mini_jit::Unary> last_touch;
 
   /**
    * @brief Indicates if a primitive fits the Unary generator.
@@ -162,7 +150,7 @@ private:
 
   static bool isExpectedStride(int64_t expected, int index, const std::span<const int64_t> strides);
 
-  Unary::error_t generateUnary(Unary *unary, prim_t prim, const std::span<const dim_t> &dim_types,
+  Unary::error_t generateUnary(Unary &unary, prim_t prim, const std::span<const dim_t> &dim_types,
                                const std::span<const exec_t> &exec_types, const std::span<const int64_t> &dim_sizes);
 
 public:

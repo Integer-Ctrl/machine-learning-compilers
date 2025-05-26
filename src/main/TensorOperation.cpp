@@ -3,41 +3,6 @@
 #include <ranges>
 #include <tuple>
 
-mini_jit::TensorOperation::~TensorOperation()
-{
-  cleanup();
-}
-
-void mini_jit::TensorOperation::cleanup()
-{
-  if (isUnary(prim_first))
-  {
-    delete first_touch.unary;
-    prim_first = prim_t::none;
-  }
-
-  if (isUnary(prim_main))
-  {
-    delete main.unary;
-    prim_main = prim_t::none;
-  }
-  else if (isBrgemm(prim_main))
-  {
-    delete main.brgemm;
-    prim_main = prim_t::none;
-  }
-
-  if (isUnary(prim_last))
-  {
-    delete last_touch.unary;
-    prim_last = prim_t::none;
-  }
-
-  release_assert(prim_first == prim_t::none, "Expected prim_first to be none after cleanup.");
-  release_assert(prim_main == prim_t::none, "Expected prim_main to be none after cleanup.");
-  release_assert(prim_last == prim_t::none, "Expected prim_last to be none after cleanup.");
-}
-
 bool mini_jit::TensorOperation::isUnary(prim_t prim)
 {
   return prim == prim_t::copy || prim == prim_t::relu || prim == prim_t::relu;
@@ -146,7 +111,7 @@ bool mini_jit::TensorOperation::isExpectedStride(int64_t expected, int index, co
   return strides[index] == expected;
 }
 
-mini_jit::Unary::error_t mini_jit::TensorOperation::generateUnary(Unary *unary, prim_t prim, const std::span<const dim_t> &dim_types,
+mini_jit::Unary::error_t mini_jit::TensorOperation::generateUnary(Unary &unary, prim_t prim, const std::span<const dim_t> &dim_types,
                                                                   const std::span<const exec_t> &exec_types,
                                                                   const std::span<const int64_t> &dim_sizes)
 {
@@ -172,7 +137,7 @@ mini_jit::Unary::error_t mini_jit::TensorOperation::generateUnary(Unary *unary, 
     release_assert(false, "Found a invalid type for the unary first touch.");
     break;
   }
-  return unary->generate(dim_sizes[indexPrimM], dim_sizes[indexPrimN], 0, Unary::dtype_t::fp32, type);
+  return unary.generate(dim_sizes[indexPrimM], dim_sizes[indexPrimN], 0, Unary::dtype_t::fp32, type);
 }
 
 mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtype, prim_t prim_first_touch, prim_t prim_main,
@@ -182,9 +147,6 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
                                                                     std::span<const int64_t> strides_in1,
                                                                     std::span<const int64_t> strides_out)
 {
-  // clear all old used resources
-  cleanup();
-
   TensorOperation::prim_first = prim_t::none;  // Not yet generated, correctness of cleanup
   TensorOperation::prim_main = prim_t::none;   // Not yet generated, correctness of cleanup
   TensorOperation::prim_last = prim_t::none;   // Not yet generated, correctness of cleanup
@@ -236,10 +198,10 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
   {
     if (prim_first_touch == prim_t::zero || prim_first_touch == prim_t::copy || prim_first_touch == prim_t::relu)
     {
-      first_touch.unary = new Unary();
+      first_touch.emplace<Unary>();
       TensorOperation::prim_first = prim_first_touch;
 
-      Unary::error_t error = generateUnary(first_touch.unary, prim_first_touch, dim_types, exec_types, dim_sizes);
+      Unary::error_t error = generateUnary(std::get<Unary>(first_touch), prim_first_touch, dim_types, exec_types, dim_sizes);
 
       if (error != Unary::error_t::success)
       {
@@ -256,7 +218,7 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
   {
     if (isBrgemm(prim_main))
     {
-      main.brgemm = new Brgemm();
+      main.emplace<Brgemm>();
       TensorOperation::prim_main = prim_main;
 
       if (prim_main == prim_t::brgemm)
@@ -264,13 +226,14 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
         indexPrimBatch = findMatch(dim_types, exec_types, dim_t::k, exec_t::prim);
         indexPrimK = findMatch(dim_types, exec_types, dim_t::k, exec_t::prim, indexPrimBatch);
 
-        main.brgemm->generate(dim_sizes[indexPrimM], dim_sizes[indexPrimN], dim_sizes[indexPrimK], dim_sizes[indexPrimBatch], 0, 0, 0,
-                              Brgemm::dtype_t::fp32);
+        std::get<Brgemm>(main).generate(dim_sizes[indexPrimM], dim_sizes[indexPrimN], dim_sizes[indexPrimK], dim_sizes[indexPrimBatch], 0,
+                                        0, 0, Brgemm::dtype_t::fp32);
       }
       else if (prim_main == prim_t::gemm)
       {
         indexPrimK = findMatch(dim_types, exec_types, dim_t::k, exec_t::prim);
-        main.brgemm->generate(dim_sizes[indexPrimM], dim_sizes[indexPrimN], dim_sizes[indexPrimK], 1, 0, 0, 0, Brgemm::dtype_t::fp32);
+        std::get<Brgemm>(main).generate(dim_sizes[indexPrimM], dim_sizes[indexPrimN], dim_sizes[indexPrimK], 1, 0, 0, 0,
+                                        Brgemm::dtype_t::fp32);
       }
       else
       {
@@ -279,10 +242,9 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
     }
     else if (isUnary(prim_main))
     {
-      main.unary = new Unary();
-      TensorOperation::prim_main = prim_main;
+      main.emplace<Unary>();
 
-      Unary::error_t error = generateUnary(main.unary, prim_main, dim_types, exec_types, dim_sizes);
+      Unary::error_t error = generateUnary(std::get<Unary>(main), prim_main, dim_types, exec_types, dim_sizes);
 
       if (error != Unary::error_t::success)
       {
@@ -299,10 +261,10 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
   {
     if (isUnary(prim_last_touch))
     {
-      last_touch.unary = new Unary();
+      last_touch.emplace<Unary>();
       TensorOperation::prim_last = prim_last_touch;
 
-      Unary::error_t error = generateUnary(last_touch.unary, prim_last_touch, dim_types, exec_types, dim_sizes);
+      Unary::error_t error = generateUnary(std::get<Unary>(last_touch), prim_last_touch, dim_types, exec_types, dim_sizes);
 
       if (error != Unary::error_t::success)
       {
