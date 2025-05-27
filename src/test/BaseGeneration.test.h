@@ -4,26 +4,41 @@
 #include "kernels/matmul.test.h"
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
+#include <vector>
+
+/**
+ * @brief List available unary operations.
+ */
+enum class UnaryType
+{
+  /// @brief Fills the matrix b with zeros.
+  Zero,
+
+  /// @brief Copies the matrix a to matrix b.
+  Identity,
+
+  /// @brief Applies the relu function (i.e. max(x, 0)) from matrix a to matrix b.
+  ReLu,
+};
 
 class GenerationTest
 {
-private:
+public:
   uint32_t M;
   uint32_t N;
   uint32_t K;
   uint32_t BatchSize;
-  uint32_t lda = 0;  // lda != 0 Use as indicator if any leading dimension higher than a size is used
+  uint32_t lda = 0;
   uint32_t ldb = 0;
   uint32_t ldc = 0;
   uint32_t batch_stride_a = 0;
   uint32_t batch_stride_b = 0;
-  float *matrix_a;
-  float *matrix_b;
-  float *matrix_c;
-  float *matrix_c_verify;
+  std::vector<float> matrix_a;
+  std::vector<float> matrix_b;
+  std::vector<float> matrix_c;
+  std::vector<float> matrix_c_verify;
   mini_jit::Brgemm::kernel_t kernel = nullptr;
 
-public:
   /**
    * @brief Fills the given matrix with random values.
    *
@@ -56,6 +71,21 @@ public:
                                 int64_t ldc, int64_t batch_stride_a, int64_t batch_stride_b);
 
   /**
+   * @brief Does a naive matmul for verification usage.
+   *
+   * @param a The a matrix.
+   * @param b The b matrix.
+   * @param c The c matrix.
+   * @param lda The leading dimension of matrix a.
+   * @param ldb The leading dimension of matrix b.
+   * @param ldc The leading dimension of matrix c.
+   * @param batch_stride_a The batch stride of matrix a.
+   * @param batch_stride_b The batch stride of matrix b.
+   * @param trans_b True if b is transposed.
+   */
+  void naive_unary_M_N(const float *__restrict__ a, float *__restrict__ b, int64_t lda, int64_t ldb, bool trans_b, UnaryType type);
+
+  /**
    * @brief Compares the two matrices by comparing each values.
    *
    * @param expected The matrix results that are expected.
@@ -66,11 +96,14 @@ public:
 
   GenerationTest() = delete;
   GenerationTest(uint32_t M, uint32_t N, uint32_t K);
+  GenerationTest(uint32_t M, uint32_t N, uint32_t K, std::vector<uint32_t> &matrix_a_sizes, std::vector<uint32_t> &matrix_b_sizes,
+                 std::vector<uint32_t> &matrix_c_sizes);
   GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t lda, uint32_t ldb, uint32_t ldc);
   GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t BatchSize);
+  GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t BatchSize, std::vector<uint32_t> &matrix_a_sizes,
+                 std::vector<uint32_t> &matrix_b_sizes, std::vector<uint32_t> &matrix_c_sizes);
   GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t BatchSize, uint32_t lda, uint32_t ldb, uint32_t ldc, uint32_t batch_stride_a,
                  uint32_t batch_stride_b);
-  ~GenerationTest();
 
   /**
    * @brief Set up the test fixture object.

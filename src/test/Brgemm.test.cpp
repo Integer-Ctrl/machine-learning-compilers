@@ -42,7 +42,7 @@ TEST_CASE("Test gemm generation (1≤M≤64, 1≤N≤64, K∈[1,16,32,64,128],ld
 
   mini_jit::Brgemm::kernel_t kernel = gemm.get_kernel();
   generatorTest.SetKernel(kernel);
-  generatorTest.RunTest(M, K, M, 0, 0);
+  generatorTest.RunTest(M, K, M, M * K, K * N);
 }
 
 TEST_CASE("Test gemm generation (1≤M≤64, 1≤N≤64, K∈[1,16,32,64,128],lda=M, ldb=K, and ldc=M) on counting data",
@@ -83,7 +83,7 @@ TEST_CASE("Test gemm generation (1≤M≤64, 1≤N≤64, K∈[1,16,32,64,128],ld
 
   mini_jit::Brgemm::kernel_t kernel = gemm.get_kernel();
   generatorTest.SetKernel(kernel);
-  generatorTest.RunTest(M, K, M, 0, 0);
+  generatorTest.RunTest(M, K, M, M * K, K * N);
 }
 
 TEST_CASE("Test gemm generation (1≤M≤64, 1≤N≤64, K∈[1,16,32,64,128],lda>M, ldb>K, and ldc>M) on random data",
