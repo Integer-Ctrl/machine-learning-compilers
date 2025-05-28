@@ -89,6 +89,7 @@
         "fmla",
         "heapbytes",
         "jited",
+        "linalg",
         "madd",
         "MATMUL",
         "MATMULS",
@@ -100,8 +101,7 @@
         "NVCOMPILER",
         "pnacl",
         "relu",
-        "xtensor",
-        "linalg"
+        "xtensor"
     ],
 
     // Include Paths

@@ -70,6 +70,15 @@ public:
     err_invalid_main_configuration = 10,
     err_invalid_last_touch_configuration = 11,
     err_invalid_execution_order = 12,
+    err_invalid_strides = 13,
+  };
+
+  // stride codes
+  enum class stride_t : int32_t
+  {
+    in0 = 0,
+    in1 = 1,
+    out = 2,
   };
 
 private:
@@ -96,17 +105,15 @@ private:
   std::variant<mini_jit::Brgemm, mini_jit::Unary> last_touch;
 
   bool hasSetupError = false;
-  
 
   /**
-    * @brief Indicates if a primitive fits the Unary generator.
-    *
-    * @param prim The primitive to check.
-    * @return true The primitive is a unary.
-    * @return false The primitive is NOT a unary.
-    */
-  static bool
-  isUnary(prim_t prim);
+   * @brief Indicates if a primitive fits the Unary generator.
+   *
+   * @param prim The primitive to check.
+   * @return true The primitive is a unary.
+   * @return false The primitive is NOT a unary.
+   */
+  static bool isUnary(prim_t prim);
 
   /**
    * @brief Indicates if a primitive fits the Brgemm generator.
@@ -173,6 +180,16 @@ private:
    * @return false The stride NOT matches the expected.
    */
   static bool isExpectedStride(int64_t expected, int index, const std::span<const int64_t> &strides);
+
+  /**
+   * @brief Checks if the strides are valid for the given dimension.
+   *
+   * @param dim The dimension types of the configuration.
+   * @param strides The strides of the configuration.
+   * @return true The strides are valid.
+   * @return false The strides are NOT valid.
+   */
+  static bool isValidStride(const std::span<const dim_t> &dim, const std::span<const int64_t> &strides, const stride_t strideType);
 
   Unary::error_t generateUnary(Unary &unary, prim_t prim, const std::span<const int64_t> &dim_sizes);
 
