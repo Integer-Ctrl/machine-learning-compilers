@@ -76,14 +76,12 @@ mini_jit::Unary::kernel_t mini_jit::Unary::get_kernel() const
 
 void mini_jit::Unary::fill_with_zero_unary_column_major_fp32(uint32_t m, uint32_t n)
 {
-  std::cout << "1: zero" << std::endl;
   kernels::unary_zero(native_kernel, m / 16, n, m % 16);  // logic of zero_16m_n combined with rest processing
   return;
 }
 
 void mini_jit::Unary::identity_unary_fp32(uint32_t m, uint32_t n, uint32_t trans_b)
 {
-  std::cout << "1: identity" << std::endl;
   if (trans_b == 1)
   {
     kernels::unary_identity_transpose(native_kernel, m, n);
@@ -97,7 +95,6 @@ void mini_jit::Unary::identity_unary_fp32(uint32_t m, uint32_t n, uint32_t trans
 
 void mini_jit::Unary::relu_unary_fp32(uint32_t m, uint32_t n, uint32_t trans_b)
 {
-  std::cout << "1: relu" << std::endl;
   if (trans_b == 1)
   {
     kernels::unary_relu_transpose(native_kernel, m, n);

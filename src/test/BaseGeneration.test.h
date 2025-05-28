@@ -41,6 +41,7 @@ public:
   std::vector<float> matrix_c;
   std::vector<float> matrix_c_verify;
   mini_jit::Brgemm::kernel_t kernel = nullptr;
+  bool isSetup = false;
 
   /**
    * @brief Fills the given matrix with random values.

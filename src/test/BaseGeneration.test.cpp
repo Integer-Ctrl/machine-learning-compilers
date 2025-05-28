@@ -35,6 +35,7 @@ void GenerationTest::fill_counting_matrix(float *matrix, uint32_t size)
 void GenerationTest::naive_matmul_M_N_K_Batch(const float *__restrict__ a, const float *__restrict__ b, float *__restrict__ c, int64_t lda,
                                               int64_t ldb, int64_t ldc, int64_t batch_stride_a, int64_t batch_stride_b)
 {
+  REQUIRE(isSetup == true);
   for (size_t iB = 0; iB < BatchSize; iB++)
   {
     for (size_t iM = 0; iM < M; iM++)
@@ -70,7 +71,6 @@ void GenerationTest::verify_matmul(const float *__restrict__ expected, const flo
 GenerationTest::GenerationTest(uint32_t M, uint32_t N, uint32_t K) : GenerationTest(M, N, K, 1)
 {
 }
-
 
 GenerationTest::GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t lda, uint32_t ldb, uint32_t ldc)
     : GenerationTest(M, N, K, 1, lda, ldb, ldc, lda * K, ldb * N)
@@ -122,56 +122,56 @@ void GenerationTest::SetUp(TestInfill fillType)
   }
 
   std::copy(matrix_c.begin(), matrix_c.end(), matrix_c_verify.begin());
+  isSetup = true;
 }
 
 void GenerationTest::naive_unary_M_N(const float *a, float *b, int64_t lda, int64_t ldb, bool trans_b, UnaryType type)
 {
-  for (size_t iK = 0; iK < K; iK++)
+  REQUIRE(isSetup == true);
+
+  for (size_t iN = 0; iN < N; iN++)
   {
-    for (size_t iN = 0; iN < N; iN++)
+    for (size_t iM = 0; iM < M; iM++)
     {
-      for (size_t iM = 0; iM < M; iM++)
+      switch (type)
       {
-        switch (type)
+      case UnaryType::Zero:
+        if (trans_b == true)
         {
-        case UnaryType::Zero:
-          if (trans_b == true)
-          {
-            b[ldb * iM + iN] = 0;
-          }
-          else
-          {
-            b[ldb * iN + iM] = 0;
-          }
-
-          break;
-
-        case UnaryType::Identity:
-          if (trans_b == true)
-          {
-            b[ldb * iM + iN] = a[lda * iK + iM];
-          }
-          else
-          {
-            b[ldb * iN + iM] = a[lda * iK + iM];
-          }
-          break;
-
-        case UnaryType::ReLu:
-          if (trans_b == true)
-          {
-            b[ldb * iM + iN] = std::max(a[lda * iK + iM], 0.f);
-          }
-          else
-          {
-            b[ldb * iN + iM] = std::max(a[lda * iK + iM], 0.f);
-          }
-          break;
-
-        default:
-          FAIL("Found unary invalid type for testing");
-          break;
+          b[ldb * iM + iN] = 0;
         }
+        else
+        {
+          b[ldb * iN + iM] = 0;
+        }
+
+        break;
+
+      case UnaryType::Identity:
+        if (trans_b == true)
+        {
+          b[ldb * iM + iN] = a[lda * iN + iM];
+        }
+        else
+        {
+          b[ldb * iN + iM] = a[lda * iN + iM];
+        }
+        break;
+
+      case UnaryType::ReLu:
+        if (trans_b == true)
+        {
+          b[ldb * iM + iN] = std::max(a[lda * iN + iM], 0.f);
+        }
+        else
+        {
+          b[ldb * iN + iM] = std::max(a[lda * iN + iM], 0.f);
+        }
+        break;
+
+      default:
+        FAIL("Found unary invalid type for testing");
+        break;
       }
     }
   }

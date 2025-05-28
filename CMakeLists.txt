@@ -228,6 +228,10 @@ set(TEST_ARM_INSTRUCTION_FILES
 )
 
 set(BENCH_FILES
+    TensorOperation.bench.cpp
+)
+
+set(BENCH_KERNLES_FILES
     matmul_16_6_1.bench.cpp
     matmul_16_6_k.bench.cpp
     matmul.bench.cpp
@@ -261,8 +265,12 @@ endforeach()
 foreach(file ${TEST_ARM_INSTRUCTION_FILES})
     list(APPEND TEST_FILEPATHS src/test/arm_instructions/${file})
 endforeach()
-    
+
 foreach(file ${BENCH_FILES})
+    list(APPEND BENCH_FILEPATHS src/test/${file})
+endforeach()
+    
+foreach(file ${BENCH_KERNELS_FILES})
     list(APPEND BENCH_FILEPATHS src/test/kernels/${file})
 endforeach()
 

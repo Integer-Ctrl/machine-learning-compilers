@@ -448,7 +448,6 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
     {
       main_kernel.emplace<Unary>();
       TensorOperation::prim_main = prim_main;
-      indexPrimK = indexPrimN;
 
       Unary::error_t error = generateUnary(std::get<Unary>(main_kernel), prim_main, dim_sizes);
 
@@ -525,7 +524,6 @@ void mini_jit::TensorOperation::execute_dimension(int64_t index_dim, char const 
   int64_t stride_in1 = isUnary(prim_main) ? 1 : strides_in1[index_dim];
   int64_t stride_out = strides_out[index_dim];
 
-  std::cout << "Execute check " << index_dim + 1 << " " << std::endl;
   if (exec_types[index_dim] == exec_t::seq)
   {
     release_assert(exec_types[index_dim] == exec_t::seq, "Expected a sequential loop");
@@ -535,7 +533,7 @@ void mini_jit::TensorOperation::execute_dimension(int64_t index_dim, char const 
 
     for (int64_t iDim = 0; iDim < dim_size; iDim++)
     {
-      if (dim_types[iDim] == dim_t::k)
+      if (dim_types[index_dim] == dim_t::k)
       {
         is_first = first_access && (iDim == 0);
         is_last = last_access && (iDim == (dim_size - 1));
@@ -556,7 +554,6 @@ void mini_jit::TensorOperation::execute_dimension(int64_t index_dim, char const 
     {
       if (std::holds_alternative<Unary>(first_touch))
       {
-        std::cout << "First touch: indexPrimN" << indexPrimN << " " << strides_out[indexPrimN] << std::endl;
         Unary::kernel_t kernel = std::get<Unary>(first_touch).get_kernel();
         kernel(ptr_out, ptr_out, strides_out[indexPrimN], strides_out[indexPrimN]);
       }
@@ -571,14 +568,11 @@ void mini_jit::TensorOperation::execute_dimension(int64_t index_dim, char const 
     {
       if (std::holds_alternative<Unary>(main_kernel))
       {
-        std::cout << "Unary: indexPrimN " << indexPrimN << " " << strides_in0[indexPrimN] << " " << strides_out[indexPrimN] << std::endl;
         Unary::kernel_t kernel = std::get<Unary>(main_kernel).get_kernel();
         kernel(ptr_in0, ptr_out, strides_in0[indexPrimN], strides_out[indexPrimN]);
       }
       else if (std::holds_alternative<Brgemm>(main_kernel))
       {
-        std::cout << "Gemm: indexPrimN " << indexPrimN << " " << "indexPrimK " << indexPrimK << " " << "indexPrimBatch " << indexPrimBatch
-                  << " " << strides_in0[indexPrimK] << " " << strides_in1[indexPrimN] << " " << strides_out[indexPrimN] << std::endl;
         Brgemm::kernel_t kernel = std::get<Brgemm>(main_kernel).get_kernel();
 
         if (prim_main == prim_t::gemm)
@@ -606,8 +600,6 @@ void mini_jit::TensorOperation::execute_dimension(int64_t index_dim, char const 
     {
       if (std::holds_alternative<Unary>(last_touch))
       {
-        std::cout << "Last touch: indexPrimK" << indexPrimK << " " << strides_in0[indexPrimK] << " " << strides_out[indexPrimN]
-                  << std::endl;
         Unary::kernel_t kernel = std::get<Unary>(last_touch).get_kernel();
         kernel(ptr_out, ptr_out, strides_out[indexPrimN], strides_out[indexPrimN]);
       }
