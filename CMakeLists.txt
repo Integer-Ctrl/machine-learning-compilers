@@ -65,31 +65,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(google_benchmark)
 
-FetchContent_Declare(
-    xtl
-    GIT_REPOSITORY https://github.com/xtensor-stack/xtl
-    GIT_TAG        0.8.0
-)
-FetchContent_MakeAvailable(xtl)
-
-FetchContent_Declare(
-    XTensor
-    GIT_REPOSITORY https://github.com/xtensor-stack/xtensor
-    GIT_TAG        0.26.0
-)
-FetchContent_MakeAvailable(XTensor)
-
-FetchContent_Declare(
-    XTensor-Blas
-    GIT_REPOSITORY https://github.com/xtensor-stack/xtensor-blas
-    GIT_TAG        0.22.0
-)
-FetchContent_MakeAvailable(XTensor-Blas)
-
-# Disables any compiler warnings (also warning as errors) from the specified lib
-# get_target_property(xtensor_include_dirs XTensor INTERFACE_INCLUDE_DIRECTORIES)
-# set_target_properties(XTensor PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${xtensor_include_dirs}")
-
 # ==============================================================
 # Source files
 # ==============================================================
@@ -298,7 +273,7 @@ add_executable(tests "${SOURCE_FILEPATHS}" "${TEST_FILEPATHS}")
 if(SAVE_JITS_TO_FILE)
 target_compile_definitions(tests PUBLIC SAVE_JITS_TO_FILE)
 endif(SAVE_JITS_TO_FILE)
-target_link_libraries(tests PRIVATE Catch2::Catch2WithMain xtensor xtensor-blas)
+target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
 
 add_executable(benchmarks "${SOURCE_FILEPATHS}" "${BENCH_FILEPATHS}")
 target_link_libraries(benchmarks benchmark::benchmark_main)

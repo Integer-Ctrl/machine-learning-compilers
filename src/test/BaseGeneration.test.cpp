@@ -71,11 +71,6 @@ GenerationTest::GenerationTest(uint32_t M, uint32_t N, uint32_t K) : GenerationT
 {
 }
 
-GenerationTest::GenerationTest(uint32_t M, uint32_t N, uint32_t K, std::vector<uint32_t> matrix_a_sizes,
-                               std::vector<uint32_t> matrix_b_sizes, std::vector<uint32_t> matrix_c_sizes)
-    : GenerationTest(M, N, K, 1, matrix_a_sizes, matrix_b_sizes, matrix_c_sizes)
-{
-}
 
 GenerationTest::GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t lda, uint32_t ldb, uint32_t ldc)
     : GenerationTest(M, N, K, 1, lda, ldb, ldc, lda * K, ldb * N)
@@ -87,15 +82,14 @@ GenerationTest::GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t Batc
 {
 }
 
-GenerationTest::GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t BatchSize, std::vector<uint32_t> matrix_a_sizes,
-                               std::vector<uint32_t> matrix_b_sizes, std::vector<uint32_t> matrix_c_sizes)
+GenerationTest::GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t BatchSize, uint32_t matrix_a_sizes, uint32_t matrix_b_sizes,
+                               uint32_t matrix_c_sizes)
     : M(M), N(N), K(K), BatchSize(BatchSize)
 {
-  matrix_a = std::vector<float>(std::accumulate(matrix_a_sizes.begin(), matrix_a_sizes.end(), 1, std::multiplies<uint64_t>()));
-  matrix_b = std::vector<float>(std::accumulate(matrix_b_sizes.begin(), matrix_b_sizes.end(), 1, std::multiplies<uint64_t>()));
-  uint64_t size_c = std::accumulate(matrix_c_sizes.begin(), matrix_c_sizes.end(), 1, std::multiplies<uint64_t>());
-  matrix_c = std::vector<float>(size_c);
-  matrix_c_verify = std::vector<float>(size_c);
+  matrix_a = std::vector<float>(matrix_a_sizes);
+  matrix_b = std::vector<float>(matrix_b_sizes);
+  matrix_c = std::vector<float>(matrix_c_sizes);
+  matrix_c_verify = std::vector<float>(matrix_c_sizes);
 }
 
 GenerationTest::GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t BatchSize, uint32_t lda, uint32_t ldb, uint32_t ldc,

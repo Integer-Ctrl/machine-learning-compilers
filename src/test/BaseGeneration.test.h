@@ -12,7 +12,7 @@
 enum class UnaryType
 {
   /// @brief None type for init
-   None,
+  None,
 
   /// @brief Fills the matrix b with zeros.
   Zero,
@@ -100,12 +100,10 @@ public:
 
   GenerationTest() = delete;
   GenerationTest(uint32_t M, uint32_t N, uint32_t K);
-  GenerationTest(uint32_t M, uint32_t N, uint32_t K, std::vector<uint32_t> matrix_a_sizes, std::vector<uint32_t> matrix_b_sizes,
-                 std::vector<uint32_t> matrix_c_sizes);
   GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t lda, uint32_t ldb, uint32_t ldc);
   GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t BatchSize);
-  GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t BatchSize, std::vector<uint32_t> matrix_a_sizes,
-                 std::vector<uint32_t> matrix_b_sizes, std::vector<uint32_t> matrix_c_sizes);
+  GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t BatchSize, uint32_t matrix_a_sizes, uint32_t matrix_b_sizes,
+                 uint32_t matrix_c_sizes);
   GenerationTest(uint32_t M, uint32_t N, uint32_t K, uint32_t BatchSize, uint32_t lda, uint32_t ldb, uint32_t ldc, uint32_t batch_stride_a,
                  uint32_t batch_stride_b);
 

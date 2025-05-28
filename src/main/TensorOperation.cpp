@@ -199,7 +199,6 @@ bool mini_jit::TensorOperation::isSortedConfiguration(const std::span<const exec
     if (!foundPrimitive && *type == exec_t::prim)
     {
       foundPrimitive = true;
-      indexPrimitiveLoop = std::distance(type, exec.begin());
     }
 
     if (foundPrimitive && *type != exec_t::prim)
@@ -299,7 +298,6 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
   indexPrimK = -1;
   indexPrimM = -1;
   indexPrimN = -1;
-  indexPrimitiveLoop = -1;
 
   // Validate dimensions
   if (dim_sizes.size() != dim_types.size() || dim_sizes.empty() || dim_types.empty())
@@ -390,7 +388,6 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
 
   release_assert(indexPrimM != -1, "Expected a valid index for the M dimension but found none.");
   release_assert(indexPrimN != -1, "Expected a valid index for the N dimension but found none.");
-  release_assert(indexPrimitiveLoop != -1, "Expected a valid start of the primitive loop but found none.");
 
   if (prim_first_touch != prim_t::none)
   {
@@ -522,17 +519,17 @@ void mini_jit::TensorOperation::execute(void const *tensor_in0, void const *tens
 void mini_jit::TensorOperation::execute_dimension(int64_t index_dim, char const *ptr_in0, char const *ptr_in1, char *ptr_out,
                                                   bool first_access, bool last_access)
 {
-  release_assert(exec_types[index_dim] != exec_t::seq, "Expected a sequential loop");
-
   uint32_t dtype_bytes = 4;
   int64_t dim_size = dim_sizes[index_dim];
   int64_t stride_in0 = strides_in0[index_dim];
   int64_t stride_in1 = isUnary(prim_main) ? 1 : strides_in1[index_dim];
   int64_t stride_out = strides_out[index_dim];
 
-  std::cout << "Execute check " << index_dim + 1 << " " << indexPrimitiveLoop << std::endl;
-  if (index_dim + 1 < indexPrimitiveLoop)
+  std::cout << "Execute check " << index_dim + 1 << " " << std::endl;
+  if (exec_types[index_dim] == exec_t::seq)
   {
+    release_assert(exec_types[index_dim] == exec_t::seq, "Expected a sequential loop");
+
     bool is_first = first_access;
     bool is_last = last_access;
 
@@ -552,13 +549,14 @@ void mini_jit::TensorOperation::execute_dimension(int64_t index_dim, char const 
   }
   else
   {
+    release_assert(exec_types[index_dim] == exec_t::prim, "Expected a primitive loop");
+
     // call first touch kernel if necessary
     if (first_access && prim_first != prim_t::none)
     {
       if (std::holds_alternative<Unary>(first_touch))
       {
-        std::cout << "First touch: indexPrimN" << indexPrimN << " " << strides_out[indexPrimN]
-                  << std::endl;
+        std::cout << "First touch: indexPrimN" << indexPrimN << " " << strides_out[indexPrimN] << std::endl;
         Unary::kernel_t kernel = std::get<Unary>(first_touch).get_kernel();
         kernel(ptr_out, ptr_out, strides_out[indexPrimN], strides_out[indexPrimN]);
       }

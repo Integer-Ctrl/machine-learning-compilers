@@ -98,7 +98,6 @@ private:
   int32_t indexPrimN = -1;
   int32_t indexPrimK = -1;
   int32_t indexPrimBatch = -1;
-  int32_t indexPrimitiveLoop = -1;
 
   std::variant<mini_jit::Brgemm, mini_jit::Unary> first_touch;
   std::variant<mini_jit::Brgemm, mini_jit::Unary> main_kernel;
