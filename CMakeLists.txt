@@ -31,6 +31,18 @@ if(SAVE_JITS_TO_FILE)
     # set per target
 endif()
 
+option(USE_OPENMP "Use OpenMP for parallelization of the TensorOperation" ON)
+
+if(USE_OPENMP)
+    find_package(OpenMP REQUIRED)
+
+    if(OpenMP_CXX_FOUND)
+        add_compile_options(-fopenmp)
+        add_compile_definitions(USE_OPENMP)
+    endif()
+endif()
+
+
 # ==============================================================
 # Setup compile Flags
 # ==============================================================
@@ -277,14 +289,25 @@ endforeach()
 # =============================================================
 # TARGETS
 # =============================================================
+# tests
 add_executable(tests "${SOURCE_FILEPATHS}" "${TEST_FILEPATHS}")
 if(SAVE_JITS_TO_FILE)
-target_compile_definitions(tests PUBLIC SAVE_JITS_TO_FILE)
+    target_compile_definitions(tests PUBLIC SAVE_JITS_TO_FILE)
 endif(SAVE_JITS_TO_FILE)
+
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
 
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(tests PRIVATE OpenMP::OpenMP_CXX)
+endif()
+
+# benchmarks
 add_executable(benchmarks "${SOURCE_FILEPATHS}" "${BENCH_FILEPATHS}")
-target_link_libraries(benchmarks benchmark::benchmark_main)
+
+target_link_libraries(benchmarks PRIVATE benchmark::benchmark_main)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(benchmarks PRIVATE OpenMP::OpenMP_CXX)
+endif()
 
 # ==============================================================
 # Ctest setup

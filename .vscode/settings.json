@@ -99,6 +99,7 @@
         "NOLINTNEXTLINE",
         "NVCC",
         "NVCOMPILER",
+        "OPENMP",
         "pnacl",
         "relu",
         "xtensor"
@@ -119,7 +120,8 @@
 
     // Cmake
     "cmake.configureArgs": [
-        "-DSAVE_JITS_TO_FILE=ON"
+        "-DSAVE_JITS_TO_FILE=ON",
+        "-DUSE_OPENMP=ON"
     ],
 
     "todo-tree.filtering.excludeGlobs": [

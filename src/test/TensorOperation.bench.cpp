@@ -19,6 +19,9 @@ public:
   mini_jit::TensorConfig config;
 
   std::vector<mini_jit::TensorConfig> configs{
+    // ################
+    // Serial execution
+    // ################
     {
       // config 0
       mini_jit::TensorConfig::prim_t::none,  // first_touch
@@ -124,6 +127,108 @@ public:
       {32768, 1024, 0, 1, 64, 0},                                                                                          // strides_out
       mini_jit::TensorConfig::dtype_t::fp32,                                                                               // dtype_t
     },
+
+    // ##################
+    // Parallel execution
+    // ##################
+    {
+      // config 7
+      mini_jit::TensorConfig::prim_t::none,  // first_touch
+      mini_jit::TensorConfig::prim_t::gemm,  // main
+      mini_jit::TensorConfig::prim_t::none,  // last touch
+      {mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k,
+       mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k},  // dim_types
+      {mini_jit::TensorConfig::exec_t::shared, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq,
+       mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim},  // exec_types
+      {32, 32, 8, 32, 32, 32},                                                                                             // dim_sizes
+      {8192, 0, 1024, 1, 0, 32},                                                                                           // strides_in0
+      {0, 8192, 1024, 0, 32, 1},                                                                                           // strides_in1
+      {32768, 1024, 0, 1, 32, 0},                                                                                          // strides_in2
+    },
+    {
+      // config 8
+      mini_jit::TensorConfig::prim_t::none,    // first_touch
+      mini_jit::TensorConfig::prim_t::brgemm,  // main
+      mini_jit::TensorConfig::prim_t::none,    // last touch
+      {mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k,
+       mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k},  // dim_types
+      {mini_jit::TensorConfig::exec_t::shared, mini_jit::TensorConfig::exec_t::shared, mini_jit::TensorConfig::exec_t::prim,
+       mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim},  // exec_types
+      {32, 32, 8, 32, 32, 32},                                                                                             // dim_sizes
+      {8192, 0, 1024, 1, 0, 32},                                                                                           // strides_in0
+      {0, 8192, 1024, 0, 32, 1},                                                                                           // strides_in1
+      {32768, 1024, 0, 1, 32, 0},                                                                                          // strides_in2
+    },
+    {
+      // config 9
+      mini_jit::TensorConfig::prim_t::zero,    // first_touch
+      mini_jit::TensorConfig::prim_t::brgemm,  // main
+      mini_jit::TensorConfig::prim_t::relu,    // last touch
+      {mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k,
+       mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k},  // dim_types
+      {mini_jit::TensorConfig::exec_t::shared, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::prim,
+       mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim},  // exec_types
+      {32, 32, 8, 32, 32, 32},                                                                                             // dim_sizes
+      {8192, 0, 1024, 1, 0, 32},                                                                                           // strides_in0
+      {0, 8192, 1024, 0, 32, 1},                                                                                           // strides_in1
+      {32768, 1024, 0, 1, 32, 0},                                                                                          // strides_in2
+    },
+    {
+      // config 10
+      mini_jit::TensorConfig::prim_t::zero,    // first_touch
+      mini_jit::TensorConfig::prim_t::brgemm,  // main
+      mini_jit::TensorConfig::prim_t::none,    // last touch
+      {mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k,
+       mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k},  // dim_types
+      {mini_jit::TensorConfig::exec_t::shared, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::prim,
+       mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim},  // exec_types
+      {32, 32, 8, 32, 32, 32},                                                                                             // dim_sizes
+      {8192, 0, 1024, 1, 0, 32},                                                                                           // strides_in0
+      {0, 8192, 1024, 0, 32, 1},                                                                                           // strides_in1
+      {32768, 1024, 0, 1, 32, 0},                                                                                          // strides_in2
+    },
+    {
+      // config 11
+      mini_jit::TensorConfig::prim_t::none,  // first_touch
+      mini_jit::TensorConfig::prim_t::relu,  // main
+      mini_jit::TensorConfig::prim_t::none,  // last touch
+      {mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::m,
+       mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n},  // dim_types
+      {mini_jit::TensorConfig::exec_t::shared, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq,
+       mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim},  // exec_types
+      {32, 32, 8, 32, 32},                                                           // dim_sizes
+      {32 * 32 * 8 * 32, 32 * 32 * 8, 32 * 32, 1, 32},                               // strides_in0
+      {0, 8192, 1024, 0, 32},                                                        // strides_in1
+      {32 * 32 * 8 * 32, 32 * 32 * 8, 32 * 32, 1, 32},                               // strides_in2
+    },
+    {
+      // config 12
+      mini_jit::TensorConfig::prim_t::none,    // first_touch
+      mini_jit::TensorConfig::prim_t::brgemm,  // main
+      mini_jit::TensorConfig::prim_t::relu,    // last touch
+      {mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k,
+       mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k},  // dim_types
+      {mini_jit::TensorConfig::exec_t::shared, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::prim,
+       mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim},  // exec_types
+      {32, 32, 8, 32, 32, 32},                                                                                             // dim_sizes
+      {8192, 0, 1024, 1, 0, 32},                                                                                           // strides_in0
+      {0, 8192, 1024, 0, 32, 1},                                                                                           // strides_in1
+      {32768, 1024, 0, 1, 32, 0},                                                                                          // strides_in2
+    },
+    {
+      // config 13
+      mini_jit::TensorConfig::prim_t::none,    // first_touch
+      mini_jit::TensorConfig::prim_t::brgemm,  // main
+      mini_jit::TensorConfig::prim_t::relu,    // last touch
+      {mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k,
+       mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k},  // dim_types
+      {mini_jit::TensorConfig::exec_t::shared, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::prim,
+       mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim},  // exec_types
+      {16, 16, 8, 64, 64, 64},                                                                                             // dim_sizes
+      {8192, 0, 1024, 1, 0, 64},                                                                                           // strides_in0
+      {0, 8192, 1024, 0, 64, 1},                                                                                           // strides_in1
+      {32768, 1024, 0, 1, 64, 0},                                                                                          // strides_in2
+    },
   };
 
   static void fill_random_matrix(float *matrix, uint32_t size)
@@ -169,7 +274,11 @@ public:
   }
 };
 
-BENCHMARK_DEFINE_F(TensorFixture, BM_tensor_variable_size)(benchmark::State &state)
+// ################
+// Serial execution
+// ################
+
+BENCHMARK_DEFINE_F(TensorFixture, BM_tensor_operation)(benchmark::State &state)
 {
   mini_jit::TensorOperation tensor_op;
   mini_jit::TensorOperation::error_t err =
@@ -187,7 +296,7 @@ BENCHMARK_DEFINE_F(TensorFixture, BM_tensor_variable_size)(benchmark::State &sta
   flops = std::accumulate(config.dim_sizes.begin(), config.dim_sizes.end(), 1, std::multiplies<uint64_t>()) * 2 * state.iterations();
 }
 
-BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_variable_size)
+BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_operation)
   ->ArgNames({"size_a", "size_b", "size_c", "config"})
   ->Args({
     32 * 1 * 8 * 32 * 1 * 32,   // size_a
@@ -199,7 +308,7 @@ BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_variable_size)
   ->DisplayAggregatesOnly(true)
   ->MinWarmUpTime(0.3);  // WarmUp in seconds
 
-BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_variable_size)
+BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_operation)
   ->ArgNames({"size_a", "size_b", "size_c", "config"})
   ->Args({
     32 * 1 * 8 * 32 * 1 * 32,   // size_a
@@ -211,7 +320,7 @@ BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_variable_size)
   ->DisplayAggregatesOnly(true)
   ->MinWarmUpTime(0.3);  // WarmUp in seconds
 
-BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_variable_size)
+BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_operation)
   ->ArgNames({"size_a", "size_b", "size_c", "config"})
   ->Args({
     32 * 1 * 8 * 32 * 1 * 32,   // size_a
@@ -223,7 +332,7 @@ BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_variable_size)
   ->DisplayAggregatesOnly(true)
   ->MinWarmUpTime(0.3);  // WarmUp in seconds
 
-BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_variable_size)
+BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_operation)
   ->ArgNames({"size_a", "size_b", "size_c", "config"})
   ->Args({
     32 * 1 * 8 * 32 * 1 * 32,   // size_a
@@ -235,7 +344,7 @@ BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_variable_size)
   ->DisplayAggregatesOnly(true)
   ->MinWarmUpTime(0.3);  // WarmUp in seconds
 
-BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_variable_size)
+BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_operation)
   ->ArgNames({"size_a", "size_b", "size_c", "config"})
   ->Args({
     32 * 32 * 8 * 32 * 32,  // size_a
@@ -247,7 +356,7 @@ BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_variable_size)
   ->DisplayAggregatesOnly(true)
   ->MinWarmUpTime(0.3);  // WarmUp in seconds
 
-BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_variable_size)
+BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_operation)
   ->ArgNames({"size_a", "size_b", "size_c", "config"})
   ->Args({
     32 * 1 * 8 * 32 * 1 * 32,   // size_a
@@ -259,7 +368,7 @@ BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_variable_size)
   ->DisplayAggregatesOnly(true)
   ->MinWarmUpTime(0.3);  // WarmUp in seconds
 
-BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_variable_size)
+BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_operation)
   ->ArgNames({"size_a", "size_b", "size_c", "config"})
   ->Args({
     16 * 1 * 8 * 64 * 1 * 64,   // size_a
@@ -269,4 +378,117 @@ BENCHMARK_REGISTER_F(TensorFixture, BM_tensor_variable_size)
   })
   ->Name("BM_tensor_BRGEMM+RELU")
   ->DisplayAggregatesOnly(true)
+  ->MinWarmUpTime(0.3);  // WarmUp in seconds
+
+// ##################
+// Parallel execution
+// ##################
+
+BENCHMARK_DEFINE_F(TensorFixture, BM_parallel_tensor_operation)(benchmark::State &state)
+{
+  mini_jit::TensorOperation tensor_op;
+  mini_jit::TensorOperation::error_t err =
+    tensor_op.setup(mini_jit::TensorConfig::dtype_t::fp32, config.first_touch, config.main, config.last_touch, std::span{config.dim_types},
+                    std::span{config.exec_types}, std::span{config.dim_sizes}, std::span{config.strides_in0}, std::span{config.strides_in1},
+                    std::span{config.strides_out});
+
+  release_assert(err == mini_jit::TensorOperation::error_t::success, "Failed to generate the setup");
+
+  for (auto _ : state)
+  {
+    tensor_op.execute(matrix_a.data(), matrix_b.data(), matrix_c.data());
+  }
+
+  flops = std::accumulate(config.dim_sizes.begin(), config.dim_sizes.end(), 1, std::multiplies<uint64_t>()) * 2 * state.iterations();
+}
+
+BENCHMARK_REGISTER_F(TensorFixture, BM_parallel_tensor_operation)
+  ->ArgNames({"size_a", "size_b", "size_c", "config"})
+  ->Args({
+    32 * 1 * 8 * 32 * 1 * 32,   // size_a
+    1 * 32 * 8 * 1 * 32 * 32,   // size_b
+    32 * 32 * 1 * 32 * 32 * 1,  // size_c
+    7,                          // Selected Config
+  })
+  ->Name("BM_parallel_tensor_GEMM")
+  ->DisplayAggregatesOnly(true)
+  ->Threads(4)           // Number of threads for parallel execution
+  ->MinWarmUpTime(0.3);  // WarmUp in seconds
+
+BENCHMARK_REGISTER_F(TensorFixture, BM_parallel_tensor_operation)
+  ->ArgNames({"size_a", "size_b", "size_c", "config"})
+  ->Args({
+    32 * 1 * 8 * 32 * 1 * 32,   // size_a
+    1 * 32 * 8 * 1 * 32 * 32,   // size_b
+    32 * 32 * 1 * 32 * 32 * 1,  // size_c
+    8,                          // Selected Config
+  })
+  ->Name("BM_parallel_tensor_BRGEMM")
+  ->DisplayAggregatesOnly(true)
+  ->Threads(4)           // Number of threads for parallel execution
+  ->MinWarmUpTime(0.3);  // WarmUp in seconds
+
+BENCHMARK_REGISTER_F(TensorFixture, BM_parallel_tensor_operation)
+  ->ArgNames({"size_a", "size_b", "size_c", "config"})
+  ->Args({
+    32 * 1 * 8 * 32 * 1 * 32,   // size_a
+    1 * 32 * 8 * 1 * 32 * 32,   // size_b
+    32 * 32 * 1 * 32 * 32 * 1,  // size_c
+    9,                          // Selected Config
+  })
+  ->Name("BM_parallel_tensor_Zero+BRGEMM+RELU")
+  ->DisplayAggregatesOnly(true)
+  ->Threads(4)           // Number of threads for parallel execution
+  ->MinWarmUpTime(0.3);  // WarmUp in seconds
+
+BENCHMARK_REGISTER_F(TensorFixture, BM_parallel_tensor_operation)
+  ->ArgNames({"size_a", "size_b", "size_c", "config"})
+  ->Args({
+    32 * 1 * 8 * 32 * 1 * 32,   // size_a
+    1 * 32 * 8 * 1 * 32 * 32,   // size_b
+    32 * 32 * 1 * 32 * 32 * 1,  // size_c
+    10,                         // Selected Config
+  })
+  ->Name("BM_parallel_tensor_Zero+BRGEMM")
+  ->DisplayAggregatesOnly(true)
+  ->Threads(4)           // Number of threads for parallel execution
+  ->MinWarmUpTime(0.3);  // WarmUp in seconds
+
+BENCHMARK_REGISTER_F(TensorFixture, BM_parallel_tensor_operation)
+  ->ArgNames({"size_a", "size_b", "size_c", "config"})
+  ->Args({
+    32 * 32 * 8 * 32 * 32,  // size_a
+    1 * 32 * 8 * 1 * 32,    // size_b
+    32 * 32 * 8 * 32 * 32,  // size_c
+    11,                     // Selected Config
+  })
+  ->Name("BM_parallel_tensor_Relu")
+  ->DisplayAggregatesOnly(true)
+  ->Threads(4)           // Number of threads for parallel execution
+  ->MinWarmUpTime(0.3);  // WarmUp in seconds
+
+BENCHMARK_REGISTER_F(TensorFixture, BM_parallel_tensor_operation)
+  ->ArgNames({"size_a", "size_b", "size_c", "config"})
+  ->Args({
+    32 * 1 * 8 * 32 * 1 * 32,   // size_a
+    1 * 32 * 8 * 1 * 32 * 32,   // size_b
+    32 * 32 * 1 * 32 * 32 * 1,  // size_c
+    12,                         // Selected Config
+  })
+  ->Name("BM_parallel_tensor_BRGEMM+RELU")
+  ->DisplayAggregatesOnly(true)
+  ->Threads(4)           // Number of threads for parallel execution
+  ->MinWarmUpTime(0.3);  // WarmUp in seconds
+
+BENCHMARK_REGISTER_F(TensorFixture, BM_parallel_tensor_operation)
+  ->ArgNames({"size_a", "size_b", "size_c", "config"})
+  ->Args({
+    16 * 1 * 8 * 64 * 1 * 64,   // size_a
+    1 * 16 * 8 * 1 * 64 * 64,   // size_b
+    16 * 16 * 1 * 64 * 64 * 1,  // size_c
+    13,                         // Selected Config
+  })
+  ->Name("BM_parallel_tensor_BRGEMM+RELU")
+  ->DisplayAggregatesOnly(true)
+  ->Threads(4)           // Number of threads for parallel execution
   ->MinWarmUpTime(0.3);  // WarmUp in seconds
