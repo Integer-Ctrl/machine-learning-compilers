@@ -23,12 +23,12 @@ TEST_CASE("Test tensor operation with main kernel: unary (zero, relu, copy)", "[
 {
   using namespace mini_jit;
 
-  auto type = GENERATE(TensorOperation::prim_t::zero, TensorOperation::prim_t::copy, TensorOperation::prim_t::relu);
+  auto type = GENERATE(TensorConfig::prim_t::zero, TensorConfig::prim_t::copy, TensorConfig::prim_t::relu);
 
   CAPTURE(type);
 
-  constexpr TensorOperation::dim_t dim_types[]{TensorOperation::dim_t::m, TensorOperation::dim_t::n};
-  constexpr TensorOperation::exec_t exec_types[]{TensorOperation::exec_t::prim, TensorOperation::exec_t::prim};
+  constexpr TensorConfig::dim_t dim_types[]{TensorConfig::dim_t::m, TensorConfig::dim_t::n};
+  constexpr TensorConfig::exec_t exec_types[]{TensorConfig::exec_t::prim, TensorConfig::exec_t::prim};
   constexpr int64_t dim_sizes[]{64, 64};
   constexpr int64_t strides_in0[]{1, 64};
   constexpr int64_t strides_in1[]{0, 0};
@@ -38,9 +38,9 @@ TEST_CASE("Test tensor operation with main kernel: unary (zero, relu, copy)", "[
   test.SetUp(TestInfill::Counting);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err = tensor_op.setup(
-    TensorOperation::dtype_t::fp32, TensorOperation::prim_t::none, type, TensorOperation::prim_t::none, std::span{dim_types},
-    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err =
+    tensor_op.setup(TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, type, TensorConfig::prim_t::none, std::span{dim_types},
+                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -49,13 +49,13 @@ TEST_CASE("Test tensor operation with main kernel: unary (zero, relu, copy)", "[
   UnaryType test_type = UnaryType::None;
   switch (type)
   {
-  case TensorOperation::prim_t::zero:
+  case TensorConfig::prim_t::zero:
     test_type = UnaryType::Zero;
     break;
-  case TensorOperation::prim_t::copy:
+  case TensorConfig::prim_t::copy:
     test_type = UnaryType::Identity;
     break;
-  case TensorOperation::prim_t::relu:
+  case TensorConfig::prim_t::relu:
     test_type = UnaryType::ReLu;
     break;
   default:
@@ -72,9 +72,8 @@ TEST_CASE("Test tensor operation with main kernel: gemm", "[tensor_operation][ge
 {
   using namespace mini_jit;
 
-  constexpr TensorOperation::dim_t dim_types[]{TensorOperation::dim_t::m, TensorOperation::dim_t::n, TensorOperation::dim_t::k};
-  constexpr TensorOperation::exec_t exec_types[]{TensorOperation::exec_t::prim, TensorOperation::exec_t::prim,
-                                                 TensorOperation::exec_t::prim};
+  constexpr TensorConfig::dim_t dim_types[]{TensorConfig::dim_t::m, TensorConfig::dim_t::n, TensorConfig::dim_t::k};
+  constexpr TensorConfig::exec_t exec_types[]{TensorConfig::exec_t::prim, TensorConfig::exec_t::prim, TensorConfig::exec_t::prim};
   constexpr int64_t dim_sizes[]{64, 64, 64};
   constexpr int64_t strides_in0[]{1, 0, 64};
   constexpr int64_t strides_in1[]{0, 64, 1};
@@ -84,10 +83,9 @@ TEST_CASE("Test tensor operation with main kernel: gemm", "[tensor_operation][ge
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorOperation::dtype_t::fp32, TensorOperation::prim_t::none, TensorOperation::prim_t::gemm,
-                    TensorOperation::prim_t::none, std::span{dim_types}, std::span{exec_types}, std::span{dim_sizes},
-                    std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup(
+    TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::gemm, TensorConfig::prim_t::none, std::span{dim_types},
+    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -102,10 +100,9 @@ TEST_CASE("Test tensor operation with main kernel: brgemm", "[tensor_operation][
 {
   using namespace mini_jit;
 
-  constexpr TensorOperation::dim_t dim_types[]{TensorOperation::dim_t::k, TensorOperation::dim_t::m, TensorOperation::dim_t::n,
-                                               TensorOperation::dim_t::k};
-  constexpr TensorOperation::exec_t exec_types[]{TensorOperation::exec_t::prim, TensorOperation::exec_t::prim,
-                                                 TensorOperation::exec_t::prim, TensorOperation::exec_t::prim};
+  constexpr TensorConfig::dim_t dim_types[]{TensorConfig::dim_t::k, TensorConfig::dim_t::m, TensorConfig::dim_t::n, TensorConfig::dim_t::k};
+  constexpr TensorConfig::exec_t exec_types[]{TensorConfig::exec_t::prim, TensorConfig::exec_t::prim, TensorConfig::exec_t::prim,
+                                              TensorConfig::exec_t::prim};
   constexpr int64_t dim_sizes[]{64, 64, 64, 64};
   constexpr int64_t strides_in0[]{64 * 64, 1, 0, 64};
   constexpr int64_t strides_in1[]{64 * 64, 0, 64, 1};
@@ -115,10 +112,9 @@ TEST_CASE("Test tensor operation with main kernel: brgemm", "[tensor_operation][
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorOperation::dtype_t::fp32, TensorOperation::prim_t::none, TensorOperation::prim_t::brgemm,
-                    TensorOperation::prim_t::none, std::span{dim_types}, std::span{exec_types}, std::span{dim_sizes},
-                    std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup(
+    TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::brgemm, TensorConfig::prim_t::none, std::span{dim_types},
+    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -133,12 +129,12 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy)", "[
 {
   using namespace mini_jit;
 
-  auto type = GENERATE(TensorOperation::prim_t::zero, TensorOperation::prim_t::relu, TensorOperation::prim_t::copy);
+  auto type = GENERATE(TensorConfig::prim_t::zero, TensorConfig::prim_t::relu, TensorConfig::prim_t::copy);
 
   CAPTURE(type);
 
-  constexpr TensorOperation::dim_t dim_types[]{TensorOperation::dim_t::m, TensorOperation::dim_t::n};
-  constexpr TensorOperation::exec_t exec_types[]{TensorOperation::exec_t::prim, TensorOperation::exec_t::prim};
+  constexpr TensorConfig::dim_t dim_types[]{TensorConfig::dim_t::m, TensorConfig::dim_t::n};
+  constexpr TensorConfig::exec_t exec_types[]{TensorConfig::exec_t::prim, TensorConfig::exec_t::prim};
   constexpr int64_t dim_sizes[]{64, 64};
   constexpr int64_t strides_in0[]{1, 64};
   constexpr int64_t strides_in1[]{1, 64};
@@ -148,9 +144,9 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy)", "[
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err = tensor_op.setup(
-    TensorOperation::dtype_t::fp32, type, TensorOperation::prim_t::none, TensorOperation::prim_t::none, std::span{dim_types},
-    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err =
+    tensor_op.setup(TensorConfig::dtype_t::fp32, type, TensorConfig::prim_t::none, TensorConfig::prim_t::none, std::span{dim_types},
+                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -160,13 +156,13 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy)", "[
   UnaryType test_last_type = UnaryType::None;
   switch (type)
   {
-  case TensorOperation::prim_t::zero:
+  case TensorConfig::prim_t::zero:
     test_last_type = UnaryType::Zero;
     break;
-  case TensorOperation::prim_t::copy:
+  case TensorConfig::prim_t::copy:
     test_last_type = UnaryType::Identity;
     break;
-  case TensorOperation::prim_t::relu:
+  case TensorConfig::prim_t::relu:
     test_last_type = UnaryType::ReLu;
     break;
   default:
@@ -184,12 +180,12 @@ TEST_CASE("Test tensor operation with last touch: unary (zero, relu, copy)", "[t
 {
   using namespace mini_jit;
 
-  auto type = GENERATE(TensorOperation::prim_t::zero, TensorOperation::prim_t::relu, TensorOperation::prim_t::copy);
+  auto type = GENERATE(TensorConfig::prim_t::zero, TensorConfig::prim_t::relu, TensorConfig::prim_t::copy);
 
   CAPTURE(type);
 
-  constexpr TensorOperation::dim_t dim_types[]{TensorOperation::dim_t::m, TensorOperation::dim_t::n};
-  constexpr TensorOperation::exec_t exec_types[]{TensorOperation::exec_t::prim, TensorOperation::exec_t::prim};
+  constexpr TensorConfig::dim_t dim_types[]{TensorConfig::dim_t::m, TensorConfig::dim_t::n};
+  constexpr TensorConfig::exec_t exec_types[]{TensorConfig::exec_t::prim, TensorConfig::exec_t::prim};
   constexpr int64_t dim_sizes[]{64, 64};
   constexpr int64_t strides_in0[]{1, 64};
   constexpr int64_t strides_in1[]{1, 64};
@@ -199,9 +195,9 @@ TEST_CASE("Test tensor operation with last touch: unary (zero, relu, copy)", "[t
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err = tensor_op.setup(
-    TensorOperation::dtype_t::fp32, TensorOperation::prim_t::none, TensorOperation::prim_t::none, type, std::span{dim_types},
-    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err =
+    tensor_op.setup(TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::none, type, std::span{dim_types},
+                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -211,13 +207,13 @@ TEST_CASE("Test tensor operation with last touch: unary (zero, relu, copy)", "[t
   UnaryType test_last_type = UnaryType::None;
   switch (type)
   {
-  case TensorOperation::prim_t::zero:
+  case TensorConfig::prim_t::zero:
     test_last_type = UnaryType::Zero;
     break;
-  case TensorOperation::prim_t::copy:
+  case TensorConfig::prim_t::copy:
     test_last_type = UnaryType::Identity;
     break;
-  case TensorOperation::prim_t::relu:
+  case TensorConfig::prim_t::relu:
     test_last_type = UnaryType::ReLu;
     break;
   default:
@@ -236,13 +232,12 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy) & ma
 {
   using namespace mini_jit;
 
-  auto first_type = GENERATE(TensorOperation::prim_t::zero, TensorOperation::prim_t::copy, TensorOperation::prim_t::relu);
+  auto first_type = GENERATE(TensorConfig::prim_t::zero, TensorConfig::prim_t::copy, TensorConfig::prim_t::relu);
 
   CAPTURE(first_type);
 
-  constexpr TensorOperation::dim_t dim_types[]{TensorOperation::dim_t::m, TensorOperation::dim_t::n, TensorOperation::dim_t::k};
-  constexpr TensorOperation::exec_t exec_types[]{TensorOperation::exec_t::prim, TensorOperation::exec_t::prim,
-                                                 TensorOperation::exec_t::prim};
+  constexpr TensorConfig::dim_t dim_types[]{TensorConfig::dim_t::m, TensorConfig::dim_t::n, TensorConfig::dim_t::k};
+  constexpr TensorConfig::exec_t exec_types[]{TensorConfig::exec_t::prim, TensorConfig::exec_t::prim, TensorConfig::exec_t::prim};
   constexpr int64_t dim_sizes[]{64, 64, 64};
   constexpr int64_t strides_in0[]{1, 0, 64};
   constexpr int64_t strides_in1[]{0, 64, 1};
@@ -252,9 +247,9 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy) & ma
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err = tensor_op.setup(
-    TensorOperation::dtype_t::fp32, first_type, TensorOperation::prim_t::gemm, TensorOperation::prim_t::none, std::span{dim_types},
-    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err =
+    tensor_op.setup(TensorConfig::dtype_t::fp32, first_type, TensorConfig::prim_t::gemm, TensorConfig::prim_t::none, std::span{dim_types},
+                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -264,13 +259,13 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy) & ma
   UnaryType test_fist_type = UnaryType::None;
   switch (first_type)
   {
-  case TensorOperation::prim_t::zero:
+  case TensorConfig::prim_t::zero:
     test_fist_type = UnaryType::Zero;
     break;
-  case TensorOperation::prim_t::copy:
+  case TensorConfig::prim_t::copy:
     test_fist_type = UnaryType::Identity;
     break;
-  case TensorOperation::prim_t::relu:
+  case TensorConfig::prim_t::relu:
     test_fist_type = UnaryType::ReLu;
     break;
 
@@ -292,13 +287,12 @@ TEST_CASE("Test tensor operation with last touch: unary (zero, relu, copy) & mai
 {
   using namespace mini_jit;
 
-  auto last_type = GENERATE(TensorOperation::prim_t::zero, TensorOperation::prim_t::copy, TensorOperation::prim_t::relu);
+  auto last_type = GENERATE(TensorConfig::prim_t::zero, TensorConfig::prim_t::copy, TensorConfig::prim_t::relu);
 
   CAPTURE(last_type);
 
-  constexpr TensorOperation::dim_t dim_types[]{TensorOperation::dim_t::m, TensorOperation::dim_t::n, TensorOperation::dim_t::k};
-  constexpr TensorOperation::exec_t exec_types[]{TensorOperation::exec_t::prim, TensorOperation::exec_t::prim,
-                                                 TensorOperation::exec_t::prim};
+  constexpr TensorConfig::dim_t dim_types[]{TensorConfig::dim_t::m, TensorConfig::dim_t::n, TensorConfig::dim_t::k};
+  constexpr TensorConfig::exec_t exec_types[]{TensorConfig::exec_t::prim, TensorConfig::exec_t::prim, TensorConfig::exec_t::prim};
   constexpr int64_t dim_sizes[]{64, 64, 64};
   constexpr int64_t strides_in0[]{1, 0, 64};
   constexpr int64_t strides_in1[]{0, 64, 1};
@@ -308,9 +302,9 @@ TEST_CASE("Test tensor operation with last touch: unary (zero, relu, copy) & mai
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err = tensor_op.setup(
-    TensorOperation::dtype_t::fp32, TensorOperation::prim_t::none, TensorOperation::prim_t::gemm, last_type, std::span{dim_types},
-    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err =
+    tensor_op.setup(TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::gemm, last_type, std::span{dim_types},
+                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -320,13 +314,13 @@ TEST_CASE("Test tensor operation with last touch: unary (zero, relu, copy) & mai
   UnaryType test_last_type = UnaryType::None;
   switch (last_type)
   {
-  case TensorOperation::prim_t::zero:
+  case TensorConfig::prim_t::zero:
     test_last_type = UnaryType::Zero;
     break;
-  case TensorOperation::prim_t::copy:
+  case TensorConfig::prim_t::copy:
     test_last_type = UnaryType::Identity;
     break;
-  case TensorOperation::prim_t::relu:
+  case TensorConfig::prim_t::relu:
     test_last_type = UnaryType::ReLu;
     break;
   default:
@@ -348,14 +342,13 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy) & ma
 {
   using namespace mini_jit;
 
-  auto first_type = GENERATE(TensorOperation::prim_t::zero, TensorOperation::prim_t::copy, TensorOperation::prim_t::relu);
-  auto last_type = GENERATE(TensorOperation::prim_t::zero, TensorOperation::prim_t::copy, TensorOperation::prim_t::relu);
+  auto first_type = GENERATE(TensorConfig::prim_t::zero, TensorConfig::prim_t::copy, TensorConfig::prim_t::relu);
+  auto last_type = GENERATE(TensorConfig::prim_t::zero, TensorConfig::prim_t::copy, TensorConfig::prim_t::relu);
 
   CAPTURE(first_type, last_type);
 
-  constexpr TensorOperation::dim_t dim_types[]{TensorOperation::dim_t::m, TensorOperation::dim_t::n, TensorOperation::dim_t::k};
-  constexpr TensorOperation::exec_t exec_types[]{TensorOperation::exec_t::prim, TensorOperation::exec_t::prim,
-                                                 TensorOperation::exec_t::prim};
+  constexpr TensorConfig::dim_t dim_types[]{TensorConfig::dim_t::m, TensorConfig::dim_t::n, TensorConfig::dim_t::k};
+  constexpr TensorConfig::exec_t exec_types[]{TensorConfig::exec_t::prim, TensorConfig::exec_t::prim, TensorConfig::exec_t::prim};
   constexpr int64_t dim_sizes[]{64, 64, 64};
   constexpr int64_t strides_in0[]{1, 0, 64};
   constexpr int64_t strides_in1[]{0, 64, 1};
@@ -366,7 +359,7 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy) & ma
 
   mini_jit::TensorOperation tensor_op;
   TensorOperation::error_t err =
-    tensor_op.setup(TensorOperation::dtype_t::fp32, first_type, TensorOperation::prim_t::gemm, last_type, std::span{dim_types},
+    tensor_op.setup(TensorConfig::dtype_t::fp32, first_type, TensorConfig::prim_t::gemm, last_type, std::span{dim_types},
                     std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
@@ -377,13 +370,13 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy) & ma
   UnaryType test_fist_type = UnaryType::None;
   switch (first_type)
   {
-  case TensorOperation::prim_t::zero:
+  case TensorConfig::prim_t::zero:
     test_fist_type = UnaryType::Zero;
     break;
-  case TensorOperation::prim_t::copy:
+  case TensorConfig::prim_t::copy:
     test_fist_type = UnaryType::Identity;
     break;
-  case TensorOperation::prim_t::relu:
+  case TensorConfig::prim_t::relu:
     test_fist_type = UnaryType::ReLu;
     break;
 
@@ -395,13 +388,13 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy) & ma
   UnaryType test_last_type = UnaryType::None;
   switch (last_type)
   {
-  case TensorOperation::prim_t::zero:
+  case TensorConfig::prim_t::zero:
     test_last_type = UnaryType::Zero;
     break;
-  case TensorOperation::prim_t::copy:
+  case TensorConfig::prim_t::copy:
     test_last_type = UnaryType::Identity;
     break;
-  case TensorOperation::prim_t::relu:
+  case TensorConfig::prim_t::relu:
     test_last_type = UnaryType::ReLu;
     break;
   default:
@@ -427,14 +420,13 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy) & ma
 {
   using namespace mini_jit;
 
-  auto first_type = GENERATE(TensorOperation::prim_t::zero, TensorOperation::prim_t::copy, TensorOperation::prim_t::relu);
+  auto first_type = GENERATE(TensorConfig::prim_t::zero, TensorConfig::prim_t::copy, TensorConfig::prim_t::relu);
 
   CAPTURE(first_type);
 
-  constexpr TensorOperation::dim_t dim_types[]{TensorOperation::dim_t::k, TensorOperation::dim_t::m, TensorOperation::dim_t::n,
-                                               TensorOperation::dim_t::k};
-  constexpr TensorOperation::exec_t exec_types[]{TensorOperation::exec_t::prim, TensorOperation::exec_t::prim,
-                                                 TensorOperation::exec_t::prim, TensorOperation::exec_t::prim};
+  constexpr TensorConfig::dim_t dim_types[]{TensorConfig::dim_t::k, TensorConfig::dim_t::m, TensorConfig::dim_t::n, TensorConfig::dim_t::k};
+  constexpr TensorConfig::exec_t exec_types[]{TensorConfig::exec_t::prim, TensorConfig::exec_t::prim, TensorConfig::exec_t::prim,
+                                              TensorConfig::exec_t::prim};
   constexpr int64_t dim_sizes[]{64, 64, 64, 64};
   constexpr int64_t strides_in0[]{64 * 64, 1, 0, 64};
   constexpr int64_t strides_in1[]{64 * 64, 0, 64, 1};
@@ -444,9 +436,9 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy) & ma
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err = tensor_op.setup(
-    TensorOperation::dtype_t::fp32, first_type, TensorOperation::prim_t::brgemm, TensorOperation::prim_t::none, std::span{dim_types},
-    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err =
+    tensor_op.setup(TensorConfig::dtype_t::fp32, first_type, TensorConfig::prim_t::brgemm, TensorConfig::prim_t::none, std::span{dim_types},
+                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -456,13 +448,13 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy) & ma
   UnaryType test_fist_type = UnaryType::None;
   switch (first_type)
   {
-  case TensorOperation::prim_t::zero:
+  case TensorConfig::prim_t::zero:
     test_fist_type = UnaryType::Zero;
     break;
-  case TensorOperation::prim_t::copy:
+  case TensorConfig::prim_t::copy:
     test_fist_type = UnaryType::Identity;
     break;
-  case TensorOperation::prim_t::relu:
+  case TensorConfig::prim_t::relu:
     test_fist_type = UnaryType::ReLu;
     break;
 
@@ -484,14 +476,13 @@ TEST_CASE("Test tensor operation with last touch: unary (zero, relu, copy) & mai
 {
   using namespace mini_jit;
 
-  auto last_type = GENERATE(TensorOperation::prim_t::zero, TensorOperation::prim_t::copy, TensorOperation::prim_t::relu);
+  auto last_type = GENERATE(TensorConfig::prim_t::zero, TensorConfig::prim_t::copy, TensorConfig::prim_t::relu);
 
   CAPTURE(last_type);
 
-  constexpr TensorOperation::dim_t dim_types[]{TensorOperation::dim_t::k, TensorOperation::dim_t::m, TensorOperation::dim_t::n,
-                                               TensorOperation::dim_t::k};
-  constexpr TensorOperation::exec_t exec_types[]{TensorOperation::exec_t::prim, TensorOperation::exec_t::prim,
-                                                 TensorOperation::exec_t::prim, TensorOperation::exec_t::prim};
+  constexpr TensorConfig::dim_t dim_types[]{TensorConfig::dim_t::k, TensorConfig::dim_t::m, TensorConfig::dim_t::n, TensorConfig::dim_t::k};
+  constexpr TensorConfig::exec_t exec_types[]{TensorConfig::exec_t::prim, TensorConfig::exec_t::prim, TensorConfig::exec_t::prim,
+                                              TensorConfig::exec_t::prim};
   constexpr int64_t dim_sizes[]{64, 64, 64, 64};
   constexpr int64_t strides_in0[]{64 * 64, 1, 0, 64};
   constexpr int64_t strides_in1[]{64 * 64, 0, 64, 1};
@@ -501,9 +492,9 @@ TEST_CASE("Test tensor operation with last touch: unary (zero, relu, copy) & mai
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err = tensor_op.setup(
-    TensorOperation::dtype_t::fp32, TensorOperation::prim_t::none, TensorOperation::prim_t::brgemm, last_type, std::span{dim_types},
-    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err =
+    tensor_op.setup(TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::brgemm, last_type, std::span{dim_types},
+                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -513,13 +504,13 @@ TEST_CASE("Test tensor operation with last touch: unary (zero, relu, copy) & mai
   UnaryType test_last_type = UnaryType::None;
   switch (last_type)
   {
-  case TensorOperation::prim_t::zero:
+  case TensorConfig::prim_t::zero:
     test_last_type = UnaryType::Zero;
     break;
-  case TensorOperation::prim_t::copy:
+  case TensorConfig::prim_t::copy:
     test_last_type = UnaryType::Identity;
     break;
-  case TensorOperation::prim_t::relu:
+  case TensorConfig::prim_t::relu:
     test_last_type = UnaryType::ReLu;
     break;
   default:
@@ -541,15 +532,14 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy) & ma
 {
   using namespace mini_jit;
 
-  auto first_type = GENERATE(TensorOperation::prim_t::zero, TensorOperation::prim_t::copy, TensorOperation::prim_t::relu);
-  auto last_type = GENERATE(TensorOperation::prim_t::zero, TensorOperation::prim_t::copy, TensorOperation::prim_t::relu);
+  auto first_type = GENERATE(TensorConfig::prim_t::zero, TensorConfig::prim_t::copy, TensorConfig::prim_t::relu);
+  auto last_type = GENERATE(TensorConfig::prim_t::zero, TensorConfig::prim_t::copy, TensorConfig::prim_t::relu);
 
   CAPTURE(first_type, last_type);
 
-  constexpr TensorOperation::dim_t dim_types[]{TensorOperation::dim_t::k, TensorOperation::dim_t::m, TensorOperation::dim_t::n,
-                                               TensorOperation::dim_t::k};
-  constexpr TensorOperation::exec_t exec_types[]{TensorOperation::exec_t::prim, TensorOperation::exec_t::prim,
-                                                 TensorOperation::exec_t::prim, TensorOperation::exec_t::prim};
+  constexpr TensorConfig::dim_t dim_types[]{TensorConfig::dim_t::k, TensorConfig::dim_t::m, TensorConfig::dim_t::n, TensorConfig::dim_t::k};
+  constexpr TensorConfig::exec_t exec_types[]{TensorConfig::exec_t::prim, TensorConfig::exec_t::prim, TensorConfig::exec_t::prim,
+                                              TensorConfig::exec_t::prim};
   constexpr int64_t dim_sizes[]{64, 64, 64, 64};
   constexpr int64_t strides_in0[]{64 * 64, 1, 0, 64};
   constexpr int64_t strides_in1[]{64 * 64, 0, 64, 1};
@@ -560,7 +550,7 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy) & ma
 
   mini_jit::TensorOperation tensor_op;
   TensorOperation::error_t err =
-    tensor_op.setup(TensorOperation::dtype_t::fp32, first_type, TensorOperation::prim_t::brgemm, last_type, std::span{dim_types},
+    tensor_op.setup(TensorConfig::dtype_t::fp32, first_type, TensorConfig::prim_t::brgemm, last_type, std::span{dim_types},
                     std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
@@ -571,13 +561,13 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy) & ma
   UnaryType test_fist_type = UnaryType::None;
   switch (first_type)
   {
-  case TensorOperation::prim_t::zero:
+  case TensorConfig::prim_t::zero:
     test_fist_type = UnaryType::Zero;
     break;
-  case TensorOperation::prim_t::copy:
+  case TensorConfig::prim_t::copy:
     test_fist_type = UnaryType::Identity;
     break;
-  case TensorOperation::prim_t::relu:
+  case TensorConfig::prim_t::relu:
     test_fist_type = UnaryType::ReLu;
     break;
 
@@ -589,13 +579,13 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy) & ma
   UnaryType test_last_type = UnaryType::None;
   switch (last_type)
   {
-  case TensorOperation::prim_t::zero:
+  case TensorConfig::prim_t::zero:
     test_last_type = UnaryType::Zero;
     break;
-  case TensorOperation::prim_t::copy:
+  case TensorConfig::prim_t::copy:
     test_last_type = UnaryType::Identity;
     break;
-  case TensorOperation::prim_t::relu:
+  case TensorConfig::prim_t::relu:
     test_last_type = UnaryType::ReLu;
     break;
   default:
@@ -629,42 +619,41 @@ TEST_CASE("Test tensor operation with outer loop with main kernel: unary (zero, 
 {
   using namespace mini_jit;
 
-  auto type = GENERATE(TensorOperation::prim_t::zero, TensorOperation::prim_t::relu, TensorOperation::prim_t::copy);
+  auto type = GENERATE(TensorConfig::prim_t::zero, TensorConfig::prim_t::relu, TensorConfig::prim_t::copy);
 
   CAPTURE(type);
 
-  constexpr TensorOperation::dim_t dim_types[]{TensorOperation::dim_t::n, TensorOperation::dim_t::k, TensorOperation::dim_t::c,
-                                               TensorOperation::dim_t::m, TensorOperation::dim_t::k, TensorOperation::dim_t::m,
-                                               TensorOperation::dim_t::m, TensorOperation::dim_t::n};
-  constexpr TensorOperation::exec_t exec_types[]{TensorOperation::exec_t::seq,  TensorOperation::exec_t::seq, TensorOperation::exec_t::seq,
-                                                 TensorOperation::exec_t::seq,  TensorOperation::exec_t::seq, TensorOperation::exec_t::seq,
-                                                 TensorOperation::exec_t::prim, TensorOperation::exec_t::prim};
-  constexpr int64_t dim_sizes[]{2, 3, 5, 8, 13, 21, 16, 16};
-  constexpr int64_t strides_in0[]{16 * 16 * 1 * 13 * 8 * 1 * 3,
+  constexpr TensorConfig::dim_t dim_types[]{TensorConfig::dim_t::n, TensorConfig::dim_t::k, TensorConfig::dim_t::c, TensorConfig::dim_t::m,
+                                            TensorConfig::dim_t::k, TensorConfig::dim_t::m, TensorConfig::dim_t::m, TensorConfig::dim_t::n};
+  constexpr TensorConfig::exec_t exec_types[]{TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq, TensorConfig::exec_t::seq,
+                                              TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq, TensorConfig::exec_t::seq,
+                                              TensorConfig::exec_t::prim, TensorConfig::exec_t::prim};
+  constexpr int64_t dim_sizes[]{2, 3, 5, 8, 13, 2, 16, 16};
+  constexpr int64_t strides_in0[]{16 * 16 * 2 * 1 * 8 * 5 * 1,
                                   0,  // k-dim
-                                  16 * 16 * 1 * 13 * 8,
-                                  16 * 16 * 1 * 13,
+                                  16 * 16 * 2 * 1 * 8,
+                                  16 * 16 * 2 * 1,
                                   0,  // k-dim
                                   16 * 16,
                                   1,
                                   16};
   constexpr int64_t strides_in1[]{0, 0, 0, 0, 0, 0, 0, 0};
-  constexpr int64_t strides_out[]{16 * 16 * 1 * 13 * 8 * 1 * 3,
+  constexpr int64_t strides_out[]{16 * 16 * 2 * 1 * 8 * 5 * 1,
                                   0,  // k-dim
-                                  16 * 16 * 1 * 13 * 8,
-                                  16 * 16 * 1 * 13,
+                                  16 * 16 * 2 * 1 * 8,
+                                  16 * 16 * 2 * 1,
                                   0,  // k-dim
                                   16 * 16,
                                   1,
                                   16};
 
-  GenerationTest test(16, 16, 16, 1, 16 * 16 * 21 * 13 * 8 * 5 * 3 * 2, 0, 16 * 16 * 21 * 13 * 8 * 5 * 3 * 2);
+  GenerationTest test(16, 16, 16, 1, 16 * 16 * 2 * 1 * 8 * 5 * 1 * 2, 0, 16 * 16 * 2 * 1 * 8 * 5 * 1 * 2);
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err = tensor_op.setup(
-    TensorOperation::dtype_t::fp32, TensorOperation::prim_t::none, type, TensorOperation::prim_t::none, std::span{dim_types},
-    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err =
+    tensor_op.setup(TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, type, TensorConfig::prim_t::none, std::span{dim_types},
+                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -673,13 +662,13 @@ TEST_CASE("Test tensor operation with outer loop with main kernel: unary (zero, 
   UnaryType test_type = UnaryType::None;
   switch (type)
   {
-  case TensorOperation::prim_t::zero:
+  case TensorConfig::prim_t::zero:
     test_type = UnaryType::Zero;
     break;
-  case TensorOperation::prim_t::copy:
+  case TensorConfig::prim_t::copy:
     test_type = UnaryType::Identity;
     break;
-  case TensorOperation::prim_t::relu:
+  case TensorConfig::prim_t::relu:
     test_type = UnaryType::ReLu;
     break;
   default:
@@ -718,14 +707,13 @@ TEST_CASE("Test tensor operation with outer loop with main kernel: gemm", "[tens
 {
   using namespace mini_jit;
 
-  constexpr TensorOperation::dim_t dim_types[]{TensorOperation::dim_t::n, TensorOperation::dim_t::k, TensorOperation::dim_t::c,
-                                               TensorOperation::dim_t::m, TensorOperation::dim_t::k, TensorOperation::dim_t::m,
-                                               TensorOperation::dim_t::m, TensorOperation::dim_t::n, TensorOperation::dim_t::k};
+  constexpr TensorConfig::dim_t dim_types[]{TensorConfig::dim_t::n, TensorConfig::dim_t::k, TensorConfig::dim_t::c,
+                                            TensorConfig::dim_t::m, TensorConfig::dim_t::k, TensorConfig::dim_t::m,
+                                            TensorConfig::dim_t::m, TensorConfig::dim_t::n, TensorConfig::dim_t::k};
 
-  constexpr TensorOperation::exec_t exec_types[]{
-    TensorOperation::exec_t::seq,  TensorOperation::exec_t::seq,  TensorOperation::exec_t::seq,
-    TensorOperation::exec_t::seq,  TensorOperation::exec_t::seq,  TensorOperation::exec_t::seq,
-    TensorOperation::exec_t::prim, TensorOperation::exec_t::prim, TensorOperation::exec_t::prim};
+  constexpr TensorConfig::exec_t exec_types[]{TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq,
+                                              TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq,
+                                              TensorConfig::exec_t::prim, TensorConfig::exec_t::prim, TensorConfig::exec_t::prim};
 
   constexpr int64_t dim_sizes[]{2, 3, 5, 8, 13, 21, 32, 32, 32};
   constexpr int64_t strides_in0[]{0,                          // n-dim
@@ -760,10 +748,9 @@ TEST_CASE("Test tensor operation with outer loop with main kernel: gemm", "[tens
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorOperation::dtype_t::fp32, TensorOperation::prim_t::none, TensorOperation::prim_t::gemm,
-                    TensorOperation::prim_t::none, std::span{dim_types}, std::span{exec_types}, std::span{dim_sizes},
-                    std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup(
+    TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::gemm, TensorConfig::prim_t::none, std::span{dim_types},
+    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -803,14 +790,14 @@ TEST_CASE("Test tensor operation with outer loop with main kernel: brgemm", "[te
 {
   using namespace mini_jit;
 
-  constexpr TensorOperation::dim_t dim_types[]{
-    TensorOperation::dim_t::n, TensorOperation::dim_t::k, TensorOperation::dim_t::c, TensorOperation::dim_t::m, TensorOperation::dim_t::k,
-    TensorOperation::dim_t::m, TensorOperation::dim_t::k, TensorOperation::dim_t::m, TensorOperation::dim_t::n, TensorOperation::dim_t::k};
+  constexpr TensorConfig::dim_t dim_types[]{TensorConfig::dim_t::n, TensorConfig::dim_t::k, TensorConfig::dim_t::c, TensorConfig::dim_t::m,
+                                            TensorConfig::dim_t::k, TensorConfig::dim_t::m, TensorConfig::dim_t::k, TensorConfig::dim_t::m,
+                                            TensorConfig::dim_t::n, TensorConfig::dim_t::k};
 
-  constexpr TensorOperation::exec_t exec_types[]{
-    TensorOperation::exec_t::seq,  TensorOperation::exec_t::seq, TensorOperation::exec_t::seq,  TensorOperation::exec_t::seq,
-    TensorOperation::exec_t::seq,  TensorOperation::exec_t::seq, TensorOperation::exec_t::prim, TensorOperation::exec_t::prim,
-    TensorOperation::exec_t::prim, TensorOperation::exec_t::prim};
+  constexpr TensorConfig::exec_t exec_types[]{TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq,
+                                              TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq,
+                                              TensorConfig::exec_t::prim, TensorConfig::exec_t::prim, TensorConfig::exec_t::prim,
+                                              TensorConfig::exec_t::prim};
 
   constexpr int64_t dim_sizes[]{2, 3, 5, 8, 13, 21, 3, 32, 32, 32};
   constexpr int64_t strides_in0[]{0,                              // n-dim
@@ -849,10 +836,9 @@ TEST_CASE("Test tensor operation with outer loop with main kernel: brgemm", "[te
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorOperation::dtype_t::fp32, TensorOperation::prim_t::none, TensorOperation::prim_t::brgemm,
-                    TensorOperation::prim_t::none, std::span{dim_types}, std::span{exec_types}, std::span{dim_sizes},
-                    std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup(
+    TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::brgemm, TensorConfig::prim_t::none, std::span{dim_types},
+    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -892,18 +878,18 @@ TEST_CASE("Test tensor operation with outer loop with first touch: unary (zero, 
 {
   using namespace mini_jit;
 
-  auto type = GENERATE(TensorOperation::prim_t::zero, TensorOperation::prim_t::relu, TensorOperation::prim_t::copy);
+  auto type = GENERATE(TensorConfig::prim_t::zero, TensorConfig::prim_t::relu, TensorConfig::prim_t::copy);
 
   CAPTURE(type);
 
-  constexpr TensorOperation::dim_t dim_types[]{
-    TensorOperation::dim_t::n, TensorOperation::dim_t::k, TensorOperation::dim_t::c, TensorOperation::dim_t::m, TensorOperation::dim_t::k,
-    TensorOperation::dim_t::m, TensorOperation::dim_t::k, TensorOperation::dim_t::m, TensorOperation::dim_t::n, TensorOperation::dim_t::k};
+  constexpr TensorConfig::dim_t dim_types[]{TensorConfig::dim_t::n, TensorConfig::dim_t::k, TensorConfig::dim_t::c, TensorConfig::dim_t::m,
+                                            TensorConfig::dim_t::k, TensorConfig::dim_t::m, TensorConfig::dim_t::k, TensorConfig::dim_t::m,
+                                            TensorConfig::dim_t::n, TensorConfig::dim_t::k};
 
-  constexpr TensorOperation::exec_t exec_types[]{
-    TensorOperation::exec_t::seq,  TensorOperation::exec_t::seq, TensorOperation::exec_t::seq,  TensorOperation::exec_t::seq,
-    TensorOperation::exec_t::seq,  TensorOperation::exec_t::seq, TensorOperation::exec_t::prim, TensorOperation::exec_t::prim,
-    TensorOperation::exec_t::prim, TensorOperation::exec_t::prim};
+  constexpr TensorConfig::exec_t exec_types[]{TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq,
+                                              TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq,
+                                              TensorConfig::exec_t::prim, TensorConfig::exec_t::prim, TensorConfig::exec_t::prim,
+                                              TensorConfig::exec_t::prim};
 
   constexpr int64_t dim_sizes[]{2, 3, 5, 8, 13, 21, 3, 32, 32, 32};
   constexpr int64_t strides_in0[]{0,                              // n-dim
@@ -942,9 +928,9 @@ TEST_CASE("Test tensor operation with outer loop with first touch: unary (zero, 
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err = tensor_op.setup(
-    TensorOperation::dtype_t::fp32, type, TensorOperation::prim_t::none, TensorOperation::prim_t::none, std::span{dim_types},
-    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err =
+    tensor_op.setup(TensorConfig::dtype_t::fp32, type, TensorConfig::prim_t::none, TensorConfig::prim_t::none, std::span{dim_types},
+                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -954,13 +940,13 @@ TEST_CASE("Test tensor operation with outer loop with first touch: unary (zero, 
   UnaryType test_first_type = UnaryType::None;
   switch (type)
   {
-  case TensorOperation::prim_t::zero:
+  case TensorConfig::prim_t::zero:
     test_first_type = UnaryType::Zero;
     break;
-  case TensorOperation::prim_t::copy:
+  case TensorConfig::prim_t::copy:
     test_first_type = UnaryType::Identity;
     break;
-  case TensorOperation::prim_t::relu:
+  case TensorConfig::prim_t::relu:
     test_first_type = UnaryType::ReLu;
     break;
   default:
@@ -1004,18 +990,18 @@ TEST_CASE("Test tensor operation with outer loop with last touch: unary (zero, r
 {
   using namespace mini_jit;
 
-  auto type = GENERATE(TensorOperation::prim_t::zero, TensorOperation::prim_t::relu, TensorOperation::prim_t::copy);
+  auto type = GENERATE(TensorConfig::prim_t::zero, TensorConfig::prim_t::relu, TensorConfig::prim_t::copy);
 
   CAPTURE(type);
 
-  constexpr TensorOperation::dim_t dim_types[]{
-    TensorOperation::dim_t::n, TensorOperation::dim_t::k, TensorOperation::dim_t::c, TensorOperation::dim_t::m, TensorOperation::dim_t::k,
-    TensorOperation::dim_t::m, TensorOperation::dim_t::k, TensorOperation::dim_t::m, TensorOperation::dim_t::n, TensorOperation::dim_t::k};
+  constexpr TensorConfig::dim_t dim_types[]{TensorConfig::dim_t::n, TensorConfig::dim_t::k, TensorConfig::dim_t::c, TensorConfig::dim_t::m,
+                                            TensorConfig::dim_t::k, TensorConfig::dim_t::m, TensorConfig::dim_t::k, TensorConfig::dim_t::m,
+                                            TensorConfig::dim_t::n, TensorConfig::dim_t::k};
 
-  constexpr TensorOperation::exec_t exec_types[]{
-    TensorOperation::exec_t::seq,  TensorOperation::exec_t::seq, TensorOperation::exec_t::seq,  TensorOperation::exec_t::seq,
-    TensorOperation::exec_t::seq,  TensorOperation::exec_t::seq, TensorOperation::exec_t::prim, TensorOperation::exec_t::prim,
-    TensorOperation::exec_t::prim, TensorOperation::exec_t::prim};
+  constexpr TensorConfig::exec_t exec_types[]{TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq,
+                                              TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq,
+                                              TensorConfig::exec_t::prim, TensorConfig::exec_t::prim, TensorConfig::exec_t::prim,
+                                              TensorConfig::exec_t::prim};
 
   constexpr int64_t dim_sizes[]{2, 3, 5, 8, 13, 21, 3, 32, 32, 32};
   constexpr int64_t strides_in0[]{0,                              // n-dim
@@ -1054,9 +1040,9 @@ TEST_CASE("Test tensor operation with outer loop with last touch: unary (zero, r
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err = tensor_op.setup(
-    TensorOperation::dtype_t::fp32, TensorOperation::prim_t::none, TensorOperation::prim_t::none, type, std::span{dim_types},
-    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err =
+    tensor_op.setup(TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::none, type, std::span{dim_types},
+                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -1066,13 +1052,13 @@ TEST_CASE("Test tensor operation with outer loop with last touch: unary (zero, r
   UnaryType test_last_type = UnaryType::None;
   switch (type)
   {
-  case TensorOperation::prim_t::zero:
+  case TensorConfig::prim_t::zero:
     test_last_type = UnaryType::Zero;
     break;
-  case TensorOperation::prim_t::copy:
+  case TensorConfig::prim_t::copy:
     test_last_type = UnaryType::Identity;
     break;
-  case TensorOperation::prim_t::relu:
+  case TensorConfig::prim_t::relu:
     test_last_type = UnaryType::ReLu;
     break;
   default:
@@ -1420,21 +1406,21 @@ TEST_CASE("Test tensor operation with outer loop with first touch: unary (zero, 
 {
   using namespace mini_jit;
 
-  auto first_type = GENERATE(TensorOperation::prim_t::zero, TensorOperation::prim_t::copy, TensorOperation::prim_t::relu);
-  auto last_type = GENERATE(TensorOperation::prim_t::zero, TensorOperation::prim_t::copy, TensorOperation::prim_t::relu);
+  auto first_type = GENERATE(TensorConfig::prim_t::zero, TensorConfig::prim_t::copy, TensorConfig::prim_t::relu);
+  auto last_type = GENERATE(TensorConfig::prim_t::zero, TensorConfig::prim_t::copy, TensorConfig::prim_t::relu);
 
   CAPTURE(first_type, last_type);
 
   using namespace mini_jit;
 
-  constexpr TensorOperation::dim_t dim_types[]{
-    TensorOperation::dim_t::n, TensorOperation::dim_t::k, TensorOperation::dim_t::c, TensorOperation::dim_t::m, TensorOperation::dim_t::k,
-    TensorOperation::dim_t::m, TensorOperation::dim_t::k, TensorOperation::dim_t::m, TensorOperation::dim_t::n, TensorOperation::dim_t::k};
+  constexpr TensorConfig::dim_t dim_types[]{TensorConfig::dim_t::n, TensorConfig::dim_t::k, TensorConfig::dim_t::c, TensorConfig::dim_t::m,
+                                            TensorConfig::dim_t::k, TensorConfig::dim_t::m, TensorConfig::dim_t::k, TensorConfig::dim_t::m,
+                                            TensorConfig::dim_t::n, TensorConfig::dim_t::k};
 
-  constexpr TensorOperation::exec_t exec_types[]{
-    TensorOperation::exec_t::seq,  TensorOperation::exec_t::seq, TensorOperation::exec_t::seq,  TensorOperation::exec_t::seq,
-    TensorOperation::exec_t::seq,  TensorOperation::exec_t::seq, TensorOperation::exec_t::prim, TensorOperation::exec_t::prim,
-    TensorOperation::exec_t::prim, TensorOperation::exec_t::prim};
+  constexpr TensorConfig::exec_t exec_types[]{TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq,
+                                              TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq,
+                                              TensorConfig::exec_t::prim, TensorConfig::exec_t::prim, TensorConfig::exec_t::prim,
+                                              TensorConfig::exec_t::prim};
 
   constexpr int64_t dim_sizes[]{2, 3, 5, 8, 13, 21, 3, 16, 16, 16};
   constexpr int64_t strides_in0[]{0,                              // n-dim
@@ -1474,7 +1460,7 @@ TEST_CASE("Test tensor operation with outer loop with first touch: unary (zero, 
 
   mini_jit::TensorOperation tensor_op;
   TensorOperation::error_t err =
-    tensor_op.setup(TensorOperation::dtype_t::fp32, first_type, TensorOperation::prim_t::brgemm, last_type, std::span{dim_types},
+    tensor_op.setup(TensorConfig::dtype_t::fp32, first_type, TensorConfig::prim_t::brgemm, last_type, std::span{dim_types},
                     std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
@@ -1485,13 +1471,13 @@ TEST_CASE("Test tensor operation with outer loop with first touch: unary (zero, 
   UnaryType test_fist_type = UnaryType::None;
   switch (first_type)
   {
-  case TensorOperation::prim_t::zero:
+  case TensorConfig::prim_t::zero:
     test_fist_type = UnaryType::Zero;
     break;
-  case TensorOperation::prim_t::copy:
+  case TensorConfig::prim_t::copy:
     test_fist_type = UnaryType::Identity;
     break;
-  case TensorOperation::prim_t::relu:
+  case TensorConfig::prim_t::relu:
     test_fist_type = UnaryType::ReLu;
     break;
 
@@ -1503,13 +1489,13 @@ TEST_CASE("Test tensor operation with outer loop with first touch: unary (zero, 
   UnaryType test_last_type = UnaryType::None;
   switch (last_type)
   {
-  case TensorOperation::prim_t::zero:
+  case TensorConfig::prim_t::zero:
     test_last_type = UnaryType::Zero;
     break;
-  case TensorOperation::prim_t::copy:
+  case TensorConfig::prim_t::copy:
     test_last_type = UnaryType::Identity;
     break;
-  case TensorOperation::prim_t::relu:
+  case TensorConfig::prim_t::relu:
     test_last_type = UnaryType::ReLu;
     break;
   default:

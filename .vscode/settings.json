@@ -126,5 +126,8 @@
         "**/Doxyfile.in",
     ],
 
-    "editor.rulers": [140]
+    "editor.rulers": [140],
+
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2
 }

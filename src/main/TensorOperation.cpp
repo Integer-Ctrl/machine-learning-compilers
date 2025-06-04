@@ -89,26 +89,30 @@
 
  */
 
-bool mini_jit::TensorOperation::isUnary(prim_t prim)
+bool mini_jit::TensorOperation::isUnary(TensorConfig::prim_t prim)
 {
-  return prim == prim_t::copy || prim == prim_t::relu || prim == prim_t::zero;
+  return prim == TensorConfig::prim_t::copy || prim == TensorConfig::prim_t::relu || prim == TensorConfig::prim_t::zero;
 }
 
-bool mini_jit::TensorOperation::isBrgemm(prim_t prim)
+bool mini_jit::TensorOperation::isBrgemm(TensorConfig::prim_t prim)
 {
-  return prim == prim_t::brgemm || prim == prim_t::gemm;
+  return prim == TensorConfig::prim_t::brgemm || prim == TensorConfig::prim_t::gemm;
 }
 
-int32_t mini_jit::TensorOperation::findMatch(const std::span<const dim_t> &dim, const std::span<const exec_t> &exec, dim_t searchDim,
-                                             exec_t searchExec, uint32_t startIndex)
+int32_t mini_jit::TensorOperation::findMatch(const std::span<const TensorConfig::dim_t> &dim,
+                                             const std::span<const TensorConfig::exec_t> &exec, TensorConfig::dim_t searchDim,
+                                             TensorConfig::exec_t searchExec, uint32_t startIndex)
 {
   release_assert(dim.size() == exec.size(), "Expected the dimension types size to match the execution types size.");
   release_assert(startIndex <= dim.size(), "Expected the start index to be less than the dimension types size.");
 
+  if (startIndex >= dim.size())
+  {
+    return -1;
+  }
+
   for (auto [iDim, iExec] = std::tuple{dim.begin() + startIndex, exec.begin() + startIndex}; iDim != dim.end(); ++iDim, ++iExec)
   {
-    // std::cerr << "iDim:" << (uint32_t)*iDim << " " << std::distance(dim.begin(), iDim) << ", iExec:" << (uint32_t)*iExec << " "
-    //           << std::distance(exec.begin(), iExec) << std::endl;
     if (*iDim == searchDim && *iExec == searchExec)
     {
       return std::distance(dim.begin(), iDim);
@@ -118,11 +122,12 @@ int32_t mini_jit::TensorOperation::findMatch(const std::span<const dim_t> &dim, 
   return -1;
 }
 
-bool mini_jit::TensorOperation::isValidPrimConfig(const std::span<const dim_t> &dim, const std::span<const exec_t> &exec,
+bool mini_jit::TensorOperation::isValidPrimConfig(const std::span<const TensorConfig::dim_t> &dim,
+                                                  const std::span<const TensorConfig::exec_t> &exec,
                                                   const std::span<const int64_t> &strides_in0, const std::span<const int64_t> &strides_out)
 {
-  int32_t indexM = findMatch(dim, exec, dim_t::m, exec_t::prim);
-  int32_t indexN = findMatch(dim, exec, dim_t::n, exec_t::prim);
+  int32_t indexM = findMatch(dim, exec, TensorConfig::dim_t::m, TensorConfig::exec_t::prim);
+  int32_t indexN = findMatch(dim, exec, TensorConfig::dim_t::n, TensorConfig::exec_t::prim);
   if (indexM == -1 || indexN == -1)
   {
     std::cerr << "1: Could not find a matching index: indexM:" << indexM << ", indexN:" << indexN << std::endl;
@@ -135,8 +140,8 @@ bool mini_jit::TensorOperation::isValidPrimConfig(const std::span<const dim_t> &
   }
 
   // Search for new that fits the configuration, both should return -1
-  indexM = findMatch(dim, exec, dim_t::m, exec_t::prim, indexM + 1);
-  indexN = findMatch(dim, exec, dim_t::n, exec_t::prim, indexN + 1);
+  indexM = findMatch(dim, exec, TensorConfig::dim_t::m, TensorConfig::exec_t::prim, indexM + 1);
+  indexN = findMatch(dim, exec, TensorConfig::dim_t::n, TensorConfig::exec_t::prim, indexN + 1);
   if (indexM != -1 || indexN != -1)
   {
     std::cerr << "2: Could not find a matching index: indexM:" << indexM << ", indexN" << indexN << std::endl;
@@ -146,22 +151,23 @@ bool mini_jit::TensorOperation::isValidPrimConfig(const std::span<const dim_t> &
   return true;
 }
 
-bool mini_jit::TensorOperation::isValidKDim(const std::span<const dim_t> &dim, const std::span<const exec_t> &exec,
-                                            const std::span<const int64_t> &strides_in1, prim_t prim)
+bool mini_jit::TensorOperation::isValidKDim(const std::span<const TensorConfig::dim_t> &dim,
+                                            const std::span<const TensorConfig::exec_t> &exec, const std::span<const int64_t> &strides_in1,
+                                            TensorConfig::prim_t prim)
 {
   if (isBrgemm(prim))
   {
-    int32_t indexK = findMatch(dim, exec, dim_t::k, exec_t::prim);
+    int32_t indexK = findMatch(dim, exec, TensorConfig::dim_t::k, TensorConfig::exec_t::prim);
 
     if (indexK == -1)
     {
       return false;
     }
 
-    if (prim == prim_t::brgemm)
+    if (prim == TensorConfig::prim_t::brgemm)
     {
       // Another k dim should exists
-      indexK = findMatch(dim, exec, dim_t::k, exec_t::prim, indexK + 1);
+      indexK = findMatch(dim, exec, TensorConfig::dim_t::k, TensorConfig::exec_t::prim, indexK + 1);
 
       if (indexK == -1)
       {
@@ -175,13 +181,13 @@ bool mini_jit::TensorOperation::isValidKDim(const std::span<const dim_t> &dim, c
     }
 
     // No other k dim should exists
-    indexK = findMatch(dim, exec, dim_t::k, exec_t::prim, indexK + 1);
+    indexK = findMatch(dim, exec, TensorConfig::dim_t::k, TensorConfig::exec_t::prim, indexK + 1);
     return indexK == -1;
   }
   else if (isUnary(prim))
   {
     // Expected to find not K dim
-    int32_t indexK = findMatch(dim, exec, dim_t::k, exec_t::prim);
+    int32_t indexK = findMatch(dim, exec, TensorConfig::dim_t::k, TensorConfig::exec_t::prim);
 
     return indexK == -1;
   }
@@ -191,17 +197,17 @@ bool mini_jit::TensorOperation::isValidKDim(const std::span<const dim_t> &dim, c
   }
 }
 
-bool mini_jit::TensorOperation::isSortedConfiguration(const std::span<const exec_t> &exec)
+bool mini_jit::TensorOperation::isSortedConfiguration(const std::span<const TensorConfig::exec_t> &exec)
 {
   bool foundPrimitive = false;
   for (auto type = exec.begin(); type != exec.end(); ++type)
   {
-    if (!foundPrimitive && *type == exec_t::prim)
+    if (!foundPrimitive && *type == TensorConfig::exec_t::prim)
     {
       foundPrimitive = true;
     }
 
-    if (foundPrimitive && *type != exec_t::prim)
+    if (foundPrimitive && *type != TensorConfig::exec_t::prim)
     {
       return false;
     }
@@ -220,7 +226,7 @@ bool mini_jit::TensorOperation::isExpectedStride(int64_t expected, int index, co
   return strides[index] == expected;
 }
 
-bool mini_jit::TensorOperation::isValidStride(const std::span<const dim_t> &dim, const std::span<const int64_t> &strides,
+bool mini_jit::TensorOperation::isValidStride(const std::span<const TensorConfig::dim_t> &dim, const std::span<const int64_t> &strides,
                                               const stride_t strideType)
 {
   release_assert(dim.size() == strides.size(), "Expected the dim and the strides to have same size.");
@@ -230,21 +236,21 @@ bool mini_jit::TensorOperation::isValidStride(const std::span<const dim_t> &dim,
     switch (strideType)
     {
     case stride_t::in0:
-      if (*iDim == dim_t::n && *iStride != 0)
+      if (*iDim == TensorConfig::dim_t::n && *iStride != 0)
       {
         return false;
       }
       break;
 
     case stride_t::in1:
-      if (*iDim == dim_t::m && *iStride != 0)
+      if (*iDim == TensorConfig::dim_t::m && *iStride != 0)
       {
         return false;
       }
       break;
 
     case stride_t::out:
-      if (*iDim == dim_t::k && *iStride != 0)
+      if (*iDim == TensorConfig::dim_t::k && *iStride != 0)
       {
         return false;
       }
@@ -259,7 +265,8 @@ bool mini_jit::TensorOperation::isValidStride(const std::span<const dim_t> &dim,
   return true;
 }
 
-mini_jit::Unary::error_t mini_jit::TensorOperation::generateUnary(Unary &unary, prim_t prim, const std::span<const int64_t> &dim_sizes)
+mini_jit::Unary::error_t mini_jit::TensorOperation::generateUnary(Unary &unary, TensorConfig::prim_t prim,
+                                                                  const std::span<const int64_t> &dim_sizes)
 {
   release_assert(indexPrimM != -1, "Expected a match for the m primitive dimension");
   release_assert(indexPrimN != -1, "Expected a match for the n primitive dimension");
@@ -267,15 +274,15 @@ mini_jit::Unary::error_t mini_jit::TensorOperation::generateUnary(Unary &unary, 
   Unary::ptype_t type;
   switch (prim)
   {
-  case prim_t::zero:
+  case TensorConfig::prim_t::zero:
     type = Unary::ptype_t::zero;
     break;
 
-  case prim_t::copy:
+  case TensorConfig::prim_t::copy:
     type = Unary::ptype_t::identity;
     break;
 
-  case prim_t::relu:
+  case TensorConfig::prim_t::relu:
     type = Unary::ptype_t::relu;
     break;
 
@@ -286,12 +293,16 @@ mini_jit::Unary::error_t mini_jit::TensorOperation::generateUnary(Unary &unary, 
   return unary.generate(dim_sizes[indexPrimM], dim_sizes[indexPrimN], 0, Unary::dtype_t::fp32, type);
 }
 
-mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtype, prim_t prim_first_touch, prim_t prim_main,
-                                                                    prim_t prim_last_touch, std::span<const dim_t> dim_types,
-                                                                    std::span<const exec_t> exec_types, std::span<const int64_t> dim_sizes,
-                                                                    std::span<const int64_t> strides_in0,
-                                                                    std::span<const int64_t> strides_in1,
-                                                                    std::span<const int64_t> strides_out)
+mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(const TensorConfig &config)
+{
+  return setup(config.dtype, config.first_touch, config.main, config.last_touch, config.dim_types, config.exec_types, config.dim_sizes,
+               config.strides_in0, config.strides_in1, config.strides_out);
+}
+
+mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(
+  TensorConfig::dtype_t dtype, TensorConfig::prim_t prim_first_touch, TensorConfig::prim_t prim_main, TensorConfig::prim_t prim_last_touch,
+  std::span<const TensorConfig::dim_t> dim_types, std::span<const TensorConfig::exec_t> exec_types, std::span<const int64_t> dim_sizes,
+  std::span<const int64_t> strides_in0, std::span<const int64_t> strides_in1, std::span<const int64_t> strides_out)
 {
   hasSetupError = false;
   indexPrimBatch = -1;
@@ -311,8 +322,9 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
   if (!(strides_in0.size() == dim_sizes.size() && strides_out.size() == dim_sizes.size() &&
         (strides_in1.size() == dim_sizes.size()
          // strides_in1 can be empty for unary operations
-         || ((isUnary(prim_first_touch) || prim_first_touch == prim_t::none) && (isUnary(prim_main) || prim_main == prim_t::none) &&
-             (isUnary(prim_last_touch) || prim_last_touch == prim_t::none) && strides_in1.empty()))))
+         || ((isUnary(prim_first_touch) || prim_first_touch == TensorConfig::prim_t::none) &&
+             (isUnary(prim_main) || prim_main == TensorConfig::prim_t::none) &&
+             (isUnary(prim_last_touch) || prim_last_touch == TensorConfig::prim_t::none) && strides_in1.empty()))))
   {
     hasSetupError = true;
     std::cerr << "Error: Strides must match the number of dimensions, but got dim_sizes: " << dim_sizes.size()
@@ -321,9 +333,9 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
     return error_t::err_wrong_dimension;  // Strides must match the number of dimensions
   }
 
-  for (exec_t exec : exec_types)
+  for (TensorConfig::exec_t exec : exec_types)
   {
-    if (exec == exec_t::shared)
+    if (exec == TensorConfig::exec_t::shared)
     {
       hasSetupError = true;
       return error_t::err_execution_type_not_supported;
@@ -331,7 +343,7 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
   }
 
   // Validate dtype types - currently only fp32 is supported
-  if (dtype != dtype_t::fp32)
+  if (dtype != TensorConfig::dtype_t::fp32)
   {
     hasSetupError = true;
     std::cerr << "Error: data type must be fp32, but got " << static_cast<uint32_t>(dtype) << std::endl;
@@ -383,7 +395,7 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
       return error_t::err_invalid_strides;
     }
   }
-  else if (prim_main == prim_t::none)
+  else if (prim_main == TensorConfig::prim_t::none)
   {
     // Do nothing
   }
@@ -393,13 +405,13 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
   }
 
   // Validated through isValidPrimConfig that these indices exists
-  indexPrimM = findMatch(dim_types, exec_types, dim_t::m, exec_t::prim);
-  indexPrimN = findMatch(dim_types, exec_types, dim_t::n, exec_t::prim);
+  indexPrimM = findMatch(dim_types, exec_types, TensorConfig::dim_t::m, TensorConfig::exec_t::prim);
+  indexPrimN = findMatch(dim_types, exec_types, TensorConfig::dim_t::n, TensorConfig::exec_t::prim);
 
   release_assert(indexPrimM != -1, "Expected a valid index for the M dimension but found none.");
   release_assert(indexPrimN != -1, "Expected a valid index for the N dimension but found none.");
 
-  if (prim_first_touch != prim_t::none)
+  if (prim_first_touch != TensorConfig::prim_t::none)
   {
     if (isUnary(prim_first_touch))
     {
@@ -423,17 +435,17 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
     }
   }
 
-  if (prim_main != prim_t::none)
+  if (prim_main != TensorConfig::prim_t::none)
   {
     if (isBrgemm(prim_main))
     {
       main_kernel.emplace<Brgemm>();
       TensorOperation::prim_main = prim_main;
 
-      if (prim_main == prim_t::brgemm)
+      if (prim_main == TensorConfig::prim_t::brgemm)
       {
-        indexPrimBatch = findMatch(dim_types, exec_types, dim_t::k, exec_t::prim);
-        indexPrimK = findMatch(dim_types, exec_types, dim_t::k, exec_t::prim, indexPrimBatch + 1);
+        indexPrimBatch = findMatch(dim_types, exec_types, TensorConfig::dim_t::k, TensorConfig::exec_t::prim);
+        indexPrimK = findMatch(dim_types, exec_types, TensorConfig::dim_t::k, TensorConfig::exec_t::prim, indexPrimBatch + 1);
 
         release_assert(indexPrimBatch != -1, "Expected a valid index for the Batch dimension but found none.");
         release_assert(indexPrimK != -1, "Expected a valid index for the Batch dimension but found none.");
@@ -448,9 +460,9 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
           return error_t::err_invalid_main_configuration;
         }
       }
-      else if (prim_main == prim_t::gemm)
+      else if (prim_main == TensorConfig::prim_t::gemm)
       {
-        indexPrimK = findMatch(dim_types, exec_types, dim_t::k, exec_t::prim);
+        indexPrimK = findMatch(dim_types, exec_types, TensorConfig::dim_t::k, TensorConfig::exec_t::prim);
 
         release_assert(indexPrimK != -1, "Expected a valid index for the K dimension but found none.");
 
@@ -492,7 +504,7 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
     }
   }
 
-  if (prim_last_touch != prim_t::none)
+  if (prim_last_touch != TensorConfig::prim_t::none)
   {
     if (isUnary(prim_last_touch))
     {
@@ -554,16 +566,16 @@ void mini_jit::TensorOperation::execute_dimension(int64_t index_dim, char const 
   int64_t stride_in1 = isUnary(prim_main) ? 1 : strides_in1[index_dim];
   int64_t stride_out = strides_out[index_dim];
 
-  if (exec_types[index_dim] == exec_t::seq)
+  if (exec_types[index_dim] == TensorConfig::exec_t::seq)
   {
-    release_assert(exec_types[index_dim] == exec_t::seq, "Expected a sequential loop");
+    release_assert(exec_types[index_dim] == TensorConfig::exec_t::seq, "Expected a sequential loop");
 
     bool is_first = first_access;
     bool is_last = last_access;
 
     for (int64_t iDim = 0; iDim < dim_size; iDim++)
     {
-      if (dim_types[index_dim] == dim_t::k)
+      if (dim_types[index_dim] == TensorConfig::dim_t::k)
       {
         is_first = first_access && (iDim == 0);
         is_last = last_access && (iDim == (dim_size - 1));
@@ -577,10 +589,10 @@ void mini_jit::TensorOperation::execute_dimension(int64_t index_dim, char const 
   }
   else
   {
-    release_assert(exec_types[index_dim] == exec_t::prim, "Expected a primitive loop");
+    release_assert(exec_types[index_dim] == TensorConfig::exec_t::prim, "Expected a primitive loop");
 
     // call first touch kernel if necessary
-    if (first_access && prim_first != prim_t::none)
+    if (first_access && prim_first != TensorConfig::prim_t::none)
     {
       if (std::holds_alternative<Unary>(first_touch))
       {
@@ -594,7 +606,7 @@ void mini_jit::TensorOperation::execute_dimension(int64_t index_dim, char const 
     }
 
     // call main_kernel kernel
-    if (prim_main != prim_t::none)
+    if (prim_main != TensorConfig::prim_t::none)
     {
       if (std::holds_alternative<Unary>(main_kernel))
       {
@@ -605,11 +617,11 @@ void mini_jit::TensorOperation::execute_dimension(int64_t index_dim, char const 
       {
         Brgemm::kernel_t kernel = std::get<Brgemm>(main_kernel).get_kernel();
 
-        if (prim_main == prim_t::gemm)
+        if (prim_main == TensorConfig::prim_t::gemm)
         {
           kernel(ptr_in0, ptr_in1, ptr_out, strides_in0[indexPrimK], strides_in1[indexPrimN], strides_out[indexPrimN], 1, 1);
         }
-        else if (prim_main == prim_t::brgemm)
+        else if (prim_main == TensorConfig::prim_t::brgemm)
         {
           kernel(ptr_in0, ptr_in1, ptr_out, strides_in0[indexPrimK], strides_in1[indexPrimN], strides_out[indexPrimN],
                  strides_in0[indexPrimBatch], strides_in1[indexPrimBatch]);
@@ -626,7 +638,7 @@ void mini_jit::TensorOperation::execute_dimension(int64_t index_dim, char const 
     }
 
     // call last touch kernel if necessary
-    if (last_access && prim_last != prim_t::none)
+    if (last_access && prim_last != TensorConfig::prim_t::none)
     {
       if (std::holds_alternative<Unary>(last_touch))
       {
