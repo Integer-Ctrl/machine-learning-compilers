@@ -255,3 +255,98 @@ TEST_CASE("Test tensor optimization shared identification unary", "[tensor_optim
   REQUIRE_FALSE(mini_jit::TensorConfig::equals(config, new_config));
   REQUIRE(mini_jit::TensorConfig::equals(expected, new_config));
 }
+
+TEST_CASE("Test tensor optimization dimension splitting", "[tensor_optimization][correctness]")
+{
+  auto type = GENERATE(mini_jit::TensorConfig::prim_t::zero, mini_jit::TensorConfig::prim_t::copy, mini_jit::TensorConfig::prim_t::relu);
+
+  CAPTURE(type);
+
+  mini_jit::TensorConfig config{
+    mini_jit::TensorConfig::prim_t::none,  // first_touch
+    type,                                  // main
+    mini_jit::TensorConfig::prim_t::none,  // last touch
+    {mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k, mini_jit::TensorConfig::dim_t::m,
+     mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k},  // dim_types
+    {mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq,
+     mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq},  // exec_types
+    {500, 32, 8, 32, 32, 32},                                                                                         // dim_sizes
+    {8192, 0, 1024, 1, 0, 32},                                                                                        // strides_in0
+    {0, 8192, 1024, 0, 32, 1},                                                                                        // strides_in1
+    {32768, 1024, 0, 1, 32, 0},                                                                                       // strides_out
+    mini_jit::TensorConfig::dtype_t::fp32,                                                                            // dtype_t
+  };
+
+  mini_jit::TensorConfig expected{
+    mini_jit::TensorConfig::prim_t::none,  // first_touch
+    type,                                  // main
+    mini_jit::TensorConfig::prim_t::none,  // last touch
+    {mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k,
+     mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k},  // dim_types
+    {mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq,
+     mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq,
+     mini_jit::TensorConfig::exec_t::seq},   // exec_types
+    {25, 20, 32, 8, 32, 32, 32},             // dim_sizes
+    {8192 * 20, 8192, 0, 1024, 1, 0, 32},    // strides_in0
+    {0, 0, 8192, 1024, 0, 32, 1},            // strides_in1
+    {32768 * 20, 32768, 1024, 0, 1, 32, 0},  // strides_out
+    mini_jit::TensorConfig::dtype_t::fp32,   // dtype_t
+  };
+
+  mini_jit::TensorOptimization optimization;
+  mini_jit::TensorConfig new_config = optimization.optimize_dimension_splitting(config);
+
+  // Print dimensions for debugging
+  std::cout << "New Config Dimensions: ";
+  for (const auto &dim : new_config.dim_sizes)
+  {
+    std::cout << static_cast<uint32_t>(dim) << " ";
+  }
+  std::cout << std::endl;
+
+  REQUIRE_FALSE(mini_jit::TensorConfig::equals(config, new_config));
+  REQUIRE(mini_jit::TensorConfig::equals(expected, new_config));
+}
+
+TEST_CASE("Test tensor optimization shared identification", "[tensor_optimization][correctness]")
+{
+  auto type = GENERATE(mini_jit::TensorConfig::prim_t::zero, mini_jit::TensorConfig::prim_t::copy, mini_jit::TensorConfig::prim_t::relu);
+
+  CAPTURE(type);
+
+  mini_jit::TensorConfig config{
+    mini_jit::TensorConfig::prim_t::none,  // first_touch
+    type,                                  // main
+    mini_jit::TensorConfig::prim_t::none,  // last touch
+    {mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k, mini_jit::TensorConfig::dim_t::m,
+     mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k},  // dim_types
+    {mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq,
+     mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq},  // exec_types
+    {5, 32, 8, 32, 32, 32},                                                                                           // dim_sizes
+    {8192, 0, 1024, 1, 0, 32},                                                                                        // strides_in0
+    {0, 8192, 1024, 0, 32, 1},                                                                                        // strides_in1
+    {32768, 1024, 0, 1, 32, 0},                                                                                       // strides_out
+    mini_jit::TensorConfig::dtype_t::fp32,                                                                            // dtype_t
+  };
+
+  mini_jit::TensorConfig expected{
+    mini_jit::TensorConfig::prim_t::none,  // first_touch
+    type,                                  // main
+    mini_jit::TensorConfig::prim_t::none,  // last touch
+    {mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k, mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n,
+     mini_jit::TensorConfig::dim_t::k},  // dim_types
+    {mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq,
+     mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq},  // exec_types
+    {5 * 32, 8, 32, 32, 32},                                                     // dim_sizes
+    {8192, 1024, 1, 0, 32},                                                      // strides_in0
+    {0, 1024, 0, 32, 1},                                                         // strides_in1
+    {32768, 0, 1, 32, 0},                                                        // strides_out
+    mini_jit::TensorConfig::dtype_t::fp32,                                       // dtype_t
+  };
+
+  mini_jit::TensorOptimization optimization;
+  mini_jit::TensorConfig new_config = optimization.optimize_dimension_fusing(config);
+
+  REQUIRE_FALSE(mini_jit::TensorConfig::equals(config, new_config));
+  REQUIRE(mini_jit::TensorConfig::equals(expected, new_config));
+}

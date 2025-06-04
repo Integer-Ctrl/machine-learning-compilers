@@ -36,6 +36,20 @@ namespace mini_jit
      */
     void _shared_identification(TensorConfig &config);
 
+    /**
+     * @brief Runs the optimization dimension splitting.
+     *
+     * @param config The configuration object to use.
+     */
+    void _dimension_splitting(TensorConfig &config);
+
+    /**
+     * @brief Runs the optimization dimension fusing.
+     *
+     * @param config The configuration object to use.
+     */
+    void _dimension_fusing(TensorConfig &config);
+
   public:
     /**
      * @brief Optimize the given configuration.
@@ -60,6 +74,22 @@ namespace mini_jit
      * @return TensorConfig The optimized configuration.
      */
     TensorConfig optimize_shared_identification(TensorConfig config);
+
+    /**
+     * @brief Optimizes the config by splitting the dimensions.
+     *
+     * @param config The configuration to be optimized.
+     * @return TensorConfig The optimized configuration.
+     */
+    TensorConfig optimize_dimension_splitting(TensorConfig config);
+
+    /**
+     * @brief Optimizes the config by fusing the dimensions.
+     *
+     * @param config The configuration to be optimized.
+     * @return TensorConfig The optimized configuration.
+     */
+    TensorConfig optimize_dimension_fusing(TensorConfig config);
   };
 }  // namespace mini_jit
 

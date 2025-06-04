@@ -1,6 +1,7 @@
 #include "TensorOptimization.h"
 #include "TensorOperation.h"
 #include "release_assert.h"
+#include <cmath>
 #include <iostream>
 #include <limits>
 #include <omp.h>
@@ -160,6 +161,70 @@ void mini_jit::TensorOptimization::_shared_identification(TensorConfig &config)
 #endif  // USE_OPENMP
 }
 
+void mini_jit::TensorOptimization::_dimension_splitting(TensorConfig &config)
+{
+  for (size_t i = 0; i < config.dim_sizes.size(); ++i)
+  {
+    int64_t size = config.dim_sizes[i];
+    if (size >= 256)
+    {
+      int64_t best_dominator = -1;
+      for (int64_t d = std::floor(std::sqrt(size)); d > 1; --d)
+      {
+        if (size % d == 0)
+        {
+          best_dominator = d;
+          break;
+        }
+      }
+      if (best_dominator != -1)
+      {
+        int64_t new_size1 = best_dominator;
+        int64_t new_size2 = size / best_dominator;
+
+        // Insert new dimension after i
+        config.dim_types.insert(config.dim_types.begin() + i, config.dim_types[i]);
+        config.dim_sizes.insert(config.dim_sizes.begin() + i, new_size2);
+        config.strides_in0.insert(config.strides_in0.begin() + i, config.strides_in0[i] * new_size1);
+        config.strides_in1.insert(config.strides_in1.begin() + i, config.strides_in1[i] * new_size1);
+        config.strides_out.insert(config.strides_out.begin() + i, config.strides_out[i] * new_size1);
+        config.exec_types.insert(config.exec_types.begin() + i, config.exec_types[i]);
+
+        // Update the original dimension
+        config.dim_sizes[i + 1] = new_size1;
+
+        // Skip the next dimension since it's the one we just inserted
+        ++i;
+      }
+    }
+  }
+}
+
+void mini_jit::TensorOptimization::_dimension_fusing(TensorConfig &config)
+{
+  for (size_t i = 0; i + 1 < config.dim_sizes.size(); ++i)
+  {
+    // Check if adjacent dims have the same type and their product is less equal than 256
+    if (config.dim_types[i] == config.dim_types[i + 1])
+    {
+      int64_t fused_size = config.dim_sizes[i] * config.dim_sizes[i + 1];
+      if (fused_size <= 256)
+      {
+        // Fuse dimension i and i+1
+        config.dim_sizes[i] = fused_size;
+        config.dim_types.erase(config.dim_types.begin() + i + 1);
+        config.dim_sizes.erase(config.dim_sizes.begin() + i + 1);
+        config.strides_in0.erase(config.strides_in0.begin() + i + 1);
+        config.strides_in1.erase(config.strides_in1.begin() + i + 1);
+        config.strides_out.erase(config.strides_out.begin() + i + 1);
+        config.exec_types.erase(config.exec_types.begin() + i + 1);
+        // Stay at the same index to check for further fusing
+        --i;
+      }
+    }
+  }
+}
+
 mini_jit::TensorConfig mini_jit::TensorOptimization::optimize(TensorConfig config)
 {
   _primitive_identification(config);
@@ -180,5 +245,17 @@ mini_jit::TensorConfig mini_jit::TensorOptimization::optimize_primitive_identifi
 mini_jit::TensorConfig mini_jit::TensorOptimization::optimize_shared_identification(TensorConfig config)
 {
   _shared_identification(config);
+  return config;
+}
+
+mini_jit::TensorConfig mini_jit::TensorOptimization::optimize_dimension_splitting(TensorConfig config)
+{
+  _dimension_splitting(config);
+  return config;
+}
+
+mini_jit::TensorConfig mini_jit::TensorOptimization::optimize_dimension_fusing(TensorConfig config)
+{
+  _dimension_fusing(config);
   return config;
 }
