@@ -246,6 +246,7 @@ set(TEST_ARM_INSTRUCTION_FILES
 
 set(BENCH_FILES
     TensorOperation.bench.cpp
+    TensorOptimization.bench.cpp
 )
 
 set(BENCH_KERNLES_FILES
