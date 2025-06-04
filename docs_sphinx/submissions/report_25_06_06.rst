@@ -1,0 +1,133 @@
+Submission 2025-06-06
+=====================
+
+Shared Memory Parallelization
+-----------------------------
+
+In the shared memory domain, loops can be parallelized at any point within the nested loop structure. However, to simplify the
+implementation, we only parallelize the outermost loops. In other words, we do not parallelize loops that are nested inside
+sequential loops.
+
+1. Implement the function execute_iter_parallel
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+File: ``TensorOperation.cpp``
+
+To enable our tensor operations to be processed in parallel, we now accept ``shared`` as an execution type. In the setup, we check if
+an execution type of ``shared`` exists. Additionally, we ensure that the k dimensions are not ``shared``.
+
+.. code-block:: cpp
+
+    // Check if shared exists and set parallel flag
+    for (exec_t exec : exec_types)
+    {
+        if (exec == exec_t::shared)
+        {
+        isParallel = true;
+        }
+    }
+
+    if (isParallel)
+    {
+        // K dimension must not be shared
+        int32_t kDimExecType = findMatch(dim_types, exec_types, dim_t::k, exec_t::shared);
+        if (kDimExecType != -1)
+        {
+        hasSetupError = true;
+        return error_t::err_k_dimension_must_not_be_shared;
+        }
+    }
+
+Lastly, we check if the execution types are sorted in the correct order:
+first ``shared``, then ``sequential``, and finally ``primitive``.
+
+.. code-block:: cpp
+
+    bool mini_jit::TensorOperation::isSortedConfiguration(const std::span<const exec_t> &exec)
+    {
+    bool seenSequential = false;
+    bool seenPrimitive = false;
+    for (exec_t exec_type : exec)
+    {
+        if (exec_type == exec_t::shared && !seenSequential && !seenPrimitive)
+        {
+        // Nothing to do, shared must be first
+        }
+        else if (exec_type == exec_t::shared && (seenSequential || seenPrimitive))
+        {
+        return false;
+        }
+        else if (exec_type == exec_t::seq && !seenPrimitive)
+        {
+        seenSequential = true;
+        }
+        else if (exec_type == exec_t::seq && seenPrimitive)
+        {
+        return false;
+        }
+        else if (exec_type == exec_t::prim)
+        {
+        seenPrimitive = true;
+        }
+    }
+
+    return true;
+    }
+
+
+The benchmark results of the serial tensor operations had a peak performance of around :math:`120` GFLOPS. Now, we benchmark using OpenMP
+and 4 threads, resulting in performance measurements around :math:`420` GFLOPS.
+
+.. code-block:: bash
+    :emphasize-lines: 4, 8, 12, 16, 20, 24, 28
+
+    ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    Benchmark                                                                                                                               Time             CPU   Iterations      FLOPS
+    ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    BM_parallel_tensor_GEMM/size_a:262144/size_b:262144/size_c:1048576/config:7/min_warmup_time:0.300/threads:4_mean                  5201950 ns      1292865 ns           10 415.261G/s
+    BM_parallel_tensor_GEMM/size_a:262144/size_b:262144/size_c:1048576/config:7/min_warmup_time:0.300/threads:4_median                5193611 ns      1291863 ns           10 415.579G/s
+    BM_parallel_tensor_GEMM/size_a:262144/size_b:262144/size_c:1048576/config:7/min_warmup_time:0.300/threads:4_stddev                  32185 ns         4344 ns           10 1.39347G/s
+    BM_parallel_tensor_GEMM/size_a:262144/size_b:262144/size_c:1048576/config:7/min_warmup_time:0.300/threads:4_cv                       0.62 %          0.34 %            10      0.34%
+    BM_parallel_tensor_BRGEMM/size_a:262144/size_b:262144/size_c:1048576/config:8/min_warmup_time:0.300/threads:4_mean                5195357 ns      1287333 ns           10 417.045G/s
+    BM_parallel_tensor_BRGEMM/size_a:262144/size_b:262144/size_c:1048576/config:8/min_warmup_time:0.300/threads:4_median              5167859 ns      1287433 ns           10 417.009G/s
+    BM_parallel_tensor_BRGEMM/size_a:262144/size_b:262144/size_c:1048576/config:8/min_warmup_time:0.300/threads:4_stddev                80687 ns         4319 ns           10 1.39959G/s
+    BM_parallel_tensor_BRGEMM/size_a:262144/size_b:262144/size_c:1048576/config:8/min_warmup_time:0.300/threads:4_cv                     1.55 %          0.34 %            10      0.34%
+    BM_parallel_tensor_Zero+BRGEMM+RELU/size_a:262144/size_b:262144/size_c:1048576/config:9/min_warmup_time:0.300/threads:4_mean      5577549 ns      1313489 ns           10 408.757G/s
+    BM_parallel_tensor_Zero+BRGEMM+RELU/size_a:262144/size_b:262144/size_c:1048576/config:9/min_warmup_time:0.300/threads:4_median    5491313 ns      1310114 ns           10 409.789G/s
+    BM_parallel_tensor_Zero+BRGEMM+RELU/size_a:262144/size_b:262144/size_c:1048576/config:9/min_warmup_time:0.300/threads:4_stddev     353091 ns         9804 ns           10 3.03171G/s
+    BM_parallel_tensor_Zero+BRGEMM+RELU/size_a:262144/size_b:262144/size_c:1048576/config:9/min_warmup_time:0.300/threads:4_cv           6.33 %          0.75 %            10      0.74%
+    BM_parallel_tensor_Zero+BRGEMM/size_a:262144/size_b:262144/size_c:1048576/config:10/min_warmup_time:0.300/threads:4_mean          5336436 ns      1295288 ns           10 414.481G/s
+    BM_parallel_tensor_Zero+BRGEMM/size_a:262144/size_b:262144/size_c:1048576/config:10/min_warmup_time:0.300/threads:4_median        5306927 ns      1295453 ns           10 414.427G/s
+    BM_parallel_tensor_Zero+BRGEMM/size_a:262144/size_b:262144/size_c:1048576/config:10/min_warmup_time:0.300/threads:4_stddev          95431 ns         1975 ns           10  632.06M/s
+    BM_parallel_tensor_Zero+BRGEMM/size_a:262144/size_b:262144/size_c:1048576/config:10/min_warmup_time:0.300/threads:4_cv               1.79 %          0.15 %            10      0.15%
+    BM_parallel_tensor_Relu/size_a:8388608/size_b:8192/size_c:8388608/config:11/min_warmup_time:0.300/threads:4_mean                  2954501 ns       735408 ns           10 22.8172G/s
+    BM_parallel_tensor_Relu/size_a:8388608/size_b:8192/size_c:8388608/config:11/min_warmup_time:0.300/threads:4_median                2947921 ns       735807 ns           10 22.8011G/s
+    BM_parallel_tensor_Relu/size_a:8388608/size_b:8192/size_c:8388608/config:11/min_warmup_time:0.300/threads:4_stddev                  55255 ns         9959 ns           10 307.823M/s
+    BM_parallel_tensor_Relu/size_a:8388608/size_b:8192/size_c:8388608/config:11/min_warmup_time:0.300/threads:4_cv                       1.87 %          1.35 %            10      1.35%
+    BM_parallel_tensor_BRGEMM+RELU/size_a:262144/size_b:262144/size_c:1048576/config:12/min_warmup_time:0.300/threads:4_mean          5243909 ns      1301545 ns           10 412.507G/s
+    BM_parallel_tensor_BRGEMM+RELU/size_a:262144/size_b:262144/size_c:1048576/config:12/min_warmup_time:0.300/threads:4_median        5239656 ns      1299425 ns           10 413.161G/s
+    BM_parallel_tensor_BRGEMM+RELU/size_a:262144/size_b:262144/size_c:1048576/config:12/min_warmup_time:0.300/threads:4_stddev          35856 ns         9430 ns           10 2.98182G/s
+    BM_parallel_tensor_BRGEMM+RELU/size_a:262144/size_b:262144/size_c:1048576/config:12/min_warmup_time:0.300/threads:4_cv               0.68 %          0.72 %            10      0.72%
+    BM_parallel_tensor_BRGEMM+RELU/size_a:524288/size_b:524288/size_c:1048576/config:13/min_warmup_time:0.300/threads:4_mean         10136019 ns      2524142 ns           10 425.392G/s
+    BM_parallel_tensor_BRGEMM+RELU/size_a:524288/size_b:524288/size_c:1048576/config:13/min_warmup_time:0.300/threads:4_median       10143290 ns      2523724 ns           10 425.459G/s
+    BM_parallel_tensor_BRGEMM+RELU/size_a:524288/size_b:524288/size_c:1048576/config:13/min_warmup_time:0.300/threads:4_stddev          59898 ns         7583 ns           10 1.27538G/s
+    BM_parallel_tensor_BRGEMM+RELU/size_a:524288/size_b:524288/size_c:1048576/config:13/min_warmup_time:0.300/threads:4_cv               0.59 %          0.30 %            10      0.30%
+
+
+Optimization Passes
+-------------------
+
+1. IR that supports transformations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+2. Implement optimization passes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+3. Lower the optimized IR code to your tensor operation backend
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+4. Benchmark the performance of your implementation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+5. Demonstrate the capabilities of your optimization passes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

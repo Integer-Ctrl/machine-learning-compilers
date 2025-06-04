@@ -71,6 +71,8 @@ public:
     err_invalid_last_touch_configuration = 11,
     err_invalid_execution_order = 12,
     err_invalid_strides = 13,
+    err_k_dimension_must_not_be_shared = 14,
+    err_shared_required_for_parallel_execution = 15,
   };
 
   // stride codes
@@ -102,6 +104,8 @@ private:
   std::variant<mini_jit::Brgemm, mini_jit::Unary> first_touch;
   std::variant<mini_jit::Brgemm, mini_jit::Unary> main_kernel;
   std::variant<mini_jit::Brgemm, mini_jit::Unary> last_touch;
+
+  bool isParallel = false;  // default is sequential execution
 
   bool hasSetupError = false;
 
@@ -234,6 +238,20 @@ public:
    **/
   void execute_dimension(int64_t index_dimension, char const *ptr_in0, char const *ptr_in1, char *ptr_out, bool first_access,
                          bool last_access);
+
+  /**
+   * Parallel loop implementation featuring first and last touch operations.
+   * No threading is applied.
+   *
+   * @param index_dimension      Dimension index of the loop which is executed.
+   * @param ptr_in0      Pointer to the first input tensor's data.
+   * @param ptr_in1      Pointer to the second input tensor's data (use nullptr if unary).
+   * @param ptr_out      Pointer to the output tensor's data.
+   * @param first_access True if first time accessing data of output tensor.
+   * @param last_access  True if last time accessing data of output tensor.
+   **/
+  void execute_dimension_parallel(int64_t index_dimension, char const *ptr_in0, char const *ptr_in1, char *ptr_out, bool first_access,
+                                  bool last_access);
 };
 
 #endif
