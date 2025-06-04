@@ -316,7 +316,8 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
   if (dim_sizes.size() != dim_types.size() || dim_sizes.empty() || dim_types.empty())
   {
     hasSetupError = true;
-    std::cerr << "Error: Dimension sizes and types must match and cannot be empty." << std::endl;
+    std::cerr << "Error: Dimension sizes and types must match and cannot be empty, but got dim_sizes: " << dim_sizes.size() << ", dim_types"
+              << dim_types.size() << std::endl;
     return error_t::err_wrong_dimension;
   }
 
@@ -327,7 +328,9 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
              (isUnary(prim_last_touch) || prim_last_touch == prim_t::none) && strides_in1.empty()))))
   {
     hasSetupError = true;
-    std::cerr << "Error: Strides must match the number of dimensions." << std::endl;
+    std::cerr << "Error: Strides must match the number of dimensions, but got dim_sizes: " << dim_sizes.size()
+              << ", strides_in0: " << strides_in0.size() << ", strides_in1: " << strides_in1.size()
+              << ", strides_out:" << strides_out.size() << std::endl;
     return error_t::err_wrong_dimension;  // Strides must match the number of dimensions
   }
 
@@ -355,6 +358,7 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
   if (dtype != dtype_t::fp32)
   {
     hasSetupError = true;
+    std::cerr << "Error: data type must be fp32, but got " << static_cast<uint32_t>(dtype) << std::endl;
     return error_t::err_wrong_dtype;
   }
 
@@ -362,20 +366,24 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
   if (!isSortedConfiguration(exec_types))
   {
     hasSetupError = true;
+    std::cerr << "Error: Expected the execution types to be sorted in the order: (shared*, sequential*, primitive*)" << std::endl;
     return error_t::err_invalid_execution_order;
   }
 
   if (!isValidPrimConfig(dim_types, exec_types, strides_in0, strides_out))
   {
     hasSetupError = true;
-    std::cerr << "1: Invalid primitive configuration detected" << std::endl;
+    std::cerr << "Error: Invalid primitive configuration detected. Expected one primitive for m and one primitive for n to exist"
+              << std::endl;
     return error_t::err_invalid_primitive_configuration;
   }
 
   if (!isValidKDim(dim_types, exec_types, strides_in1, prim_main))
   {
     hasSetupError = true;
-    std::cerr << "2: Invalid primitive configuration detected" << std::endl;
+    std::cerr << "Error: Invalid primitive configuration detected. Expected to find zero primitive k dimension for unary, one primitive k "
+                 "dimension for gemm, two primitive k dimension."
+              << std::endl;
     return error_t::err_invalid_primitive_configuration;
   }
 
@@ -384,7 +392,7 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
     if (!isValidStride(dim_types, strides_in0, stride_t::out) || !isValidStride(dim_types, strides_out, stride_t::out))
     {
       hasSetupError = true;
-      std::cerr << "3: Invalid stride configuration detected for unary" << std::endl;
+      std::cerr << "Error: Invalid stride configuration detected for unary. Expected k-dimension to have a stride of zero." << std::endl;
       return error_t::err_invalid_strides;
     }
   }
@@ -394,7 +402,9 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
         !isValidStride(dim_types, strides_out, stride_t::out))
     {
       hasSetupError = true;
-      std::cerr << "3: Invalid stride configuration detected for brgemm" << std::endl;
+      std::cerr << "Error: Invalid stride configuration detected for brgemm. Expected for in0 to have n-dimension stride of zero, in1 to "
+                   "have m-dimension stride of zero and out to have k-dimension stride of zero."
+                << std::endl;
       return error_t::err_invalid_strides;
     }
   }
@@ -426,12 +436,14 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
       if (error != Unary::error_t::success)
       {
         hasSetupError = true;
+        std::cerr << "Error: while generating the first touch unary: " << static_cast<uint32_t>(error) << std::endl;
         return error_t::err_invalid_first_touch_configuration;
       }
     }
     else
     {
       hasSetupError = true;
+      std::cerr << "Error: Invalid type for the first touch primitive, only support zero, copy, relu." << std::endl;
       return error_t::err_wrong_first_touch_primitive;
     }
   }
@@ -451,9 +463,15 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
         release_assert(indexPrimBatch != -1, "Expected a valid index for the Batch dimension but found none.");
         release_assert(indexPrimK != -1, "Expected a valid index for the Batch dimension but found none.");
 
-        std::get<Brgemm>(main_kernel)
-          .generate(dim_sizes[indexPrimM], dim_sizes[indexPrimN], dim_sizes[indexPrimK], dim_sizes[indexPrimBatch], 0, 0, 0,
-                    Brgemm::dtype_t::fp32);
+        Brgemm::error_t error = std::get<Brgemm>(main_kernel)
+                                  .generate(dim_sizes[indexPrimM], dim_sizes[indexPrimN], dim_sizes[indexPrimK], dim_sizes[indexPrimBatch],
+                                            0, 0, 0, Brgemm::dtype_t::fp32);
+        if (error != Brgemm::error_t::success)
+        {
+          hasSetupError = true;
+          std::cerr << "Error: while generating the main brgemm: " << static_cast<uint32_t>(error) << std::endl;
+          return error_t::err_invalid_main_configuration;
+        }
       }
       else if (prim_main == prim_t::gemm)
       {
@@ -461,8 +479,16 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
 
         release_assert(indexPrimK != -1, "Expected a valid index for the K dimension but found none.");
 
-        std::get<Brgemm>(main_kernel)
-          .generate(dim_sizes[indexPrimM], dim_sizes[indexPrimN], dim_sizes[indexPrimK], 1, 0, 0, 0, Brgemm::dtype_t::fp32);
+        Brgemm::error_t error =
+          std::get<Brgemm>(main_kernel)
+            .generate(dim_sizes[indexPrimM], dim_sizes[indexPrimN], dim_sizes[indexPrimK], 1, 0, 0, 0, Brgemm::dtype_t::fp32);
+
+        if (error != Brgemm::error_t::success)
+        {
+          hasSetupError = true;
+          std::cerr << "Error: while generating the main gemm: " << static_cast<uint32_t>(error) << std::endl;
+          return error_t::err_invalid_main_configuration;
+        }
       }
       else
       {
@@ -479,12 +505,14 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
       if (error != Unary::error_t::success)
       {
         hasSetupError = true;
+        std::cerr << "Error: while generating the main unary: " << static_cast<uint32_t>(error) << std::endl;
         return error_t::err_invalid_main_configuration;
       }
     }
     else
     {
       hasSetupError = true;
+      std::cerr << "Error: Invalid type for the main primitive, only support zero, copy, relu, gemm, brgemm." << std::endl;
       return error_t::err_wrong_main_primitive;
     }
   }
@@ -501,12 +529,14 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(dtype_t dtyp
       if (error != Unary::error_t::success)
       {
         hasSetupError = true;
-        return error_t::err_invalid_main_configuration;
+        std::cerr << "Error: while generating the last touch unary: " << static_cast<uint32_t>(error) << std::endl;
+        return error_t::err_invalid_last_touch_configuration;
       }
     }
     else
     {
       hasSetupError = true;
+      std::cerr << "Error: Invalid type for the last touch primitive, only support zero, copy, relu." << std::endl;
       return error_t::err_wrong_last_touch_primitive;
     }
   }
