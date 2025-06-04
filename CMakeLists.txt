@@ -88,8 +88,12 @@ set(SRC_MAIN_FILES
     release_assert.h
     Unary.h
     Unary.cpp
+    TensorConfig.h
+    TensorConfig.cpp
     TensorOperation.h
     TensorOperation.cpp
+    TensorOptimization.h
+    TensorOptimization.cpp
 )
 
 set(KERNEL_FILES
@@ -178,6 +182,7 @@ set(TEST_FILES
     BaseGeneration.test.cpp
     Brgemm.test.cpp
     TensorOperation.test.cpp
+    TensorOptimization.test.cpp
 )
 
 set(TEST_KERNELS

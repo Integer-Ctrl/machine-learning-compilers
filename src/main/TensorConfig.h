@@ -1,7 +1,8 @@
 #ifndef MINI_JIT_TENSORCONFIG_H
 #define MINI_JIT_TENSORCONFIG_H
 
-#include "TensorOperation.h"
+#include <cstdint>
+#include <vector>
 
 namespace mini_jit
 {

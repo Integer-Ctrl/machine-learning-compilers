@@ -1,6 +1,7 @@
 #include "../main/TensorOptimization.h"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
+#include <iostream>
 
 // ==================================================================
 // Primitive Identification
@@ -42,7 +43,7 @@ TEST_CASE("Test tensor optimization primitive identification gemm", "[tensor_opt
   mini_jit::TensorConfig new_config = optimization.optimize_primitive_identification(config);
 
   REQUIRE_FALSE(mini_jit::TensorConfig::equals(config, new_config));
-  REQUIRE(mini_jit::TensorConfig::equals(config, expected));
+  REQUIRE(mini_jit::TensorConfig::equals(expected, new_config));
 }
 
 TEST_CASE("Test tensor optimization primitive identification brgemm", "[tensor_optimization][brgemm][correctness]")
@@ -63,9 +64,9 @@ TEST_CASE("Test tensor optimization primitive identification brgemm", "[tensor_o
   };
 
   mini_jit::TensorConfig expected{
-    mini_jit::TensorConfig::prim_t::none,  // first_touch
-    mini_jit::TensorConfig::prim_t::gemm,  // main
-    mini_jit::TensorConfig::prim_t::none,  // last touch
+    mini_jit::TensorConfig::prim_t::none,    // first_touch
+    mini_jit::TensorConfig::prim_t::brgemm,  // main
+    mini_jit::TensorConfig::prim_t::none,    // last touch
     {mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k, mini_jit::TensorConfig::dim_t::m,
      mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k},  // dim_types
     {mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::prim,
@@ -81,7 +82,7 @@ TEST_CASE("Test tensor optimization primitive identification brgemm", "[tensor_o
   mini_jit::TensorConfig new_config = optimization.optimize_primitive_identification(config);
 
   REQUIRE_FALSE(mini_jit::TensorConfig::equals(config, new_config));
-  REQUIRE(mini_jit::TensorConfig::equals(config, expected));
+  REQUIRE(mini_jit::TensorConfig::equals(expected, new_config));
 }
 
 TEST_CASE("Test tensor optimization primitive identification unary", "[tensor_optimization][unary][correctness]")
@@ -124,7 +125,7 @@ TEST_CASE("Test tensor optimization primitive identification unary", "[tensor_op
   mini_jit::TensorConfig new_config = optimization.optimize_primitive_identification(config);
 
   REQUIRE_FALSE(mini_jit::TensorConfig::equals(config, new_config));
-  REQUIRE(mini_jit::TensorConfig::equals(config, expected));
+  REQUIRE(mini_jit::TensorConfig::equals(expected, new_config));
 }
 
 // ==================================================================
@@ -168,7 +169,7 @@ TEST_CASE("Test tensor optimization shared identification gemm", "[tensor_optimi
   mini_jit::TensorConfig new_config = optimization.optimize_shared_identification(config);
 
   REQUIRE_FALSE(mini_jit::TensorConfig::equals(config, new_config));
-  REQUIRE(mini_jit::TensorConfig::equals(config, expected));
+  REQUIRE(mini_jit::TensorConfig::equals(expected, new_config));
 }
 
 TEST_CASE("Test tensor optimization shared identification brgemm", "[tensor_optimization][brgemm][correctness]")
@@ -189,9 +190,9 @@ TEST_CASE("Test tensor optimization shared identification brgemm", "[tensor_opti
   };
 
   mini_jit::TensorConfig expected{
-    mini_jit::TensorConfig::prim_t::none,  // first_touch
-    mini_jit::TensorConfig::prim_t::gemm,  // main
-    mini_jit::TensorConfig::prim_t::none,  // last touch
+    mini_jit::TensorConfig::prim_t::none,    // first_touch
+    mini_jit::TensorConfig::prim_t::brgemm,  // main
+    mini_jit::TensorConfig::prim_t::none,    // last touch
     {mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k, mini_jit::TensorConfig::dim_t::m,
      mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k},  // dim_types
     {mini_jit::TensorConfig::exec_t::shared, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq,
@@ -208,7 +209,7 @@ TEST_CASE("Test tensor optimization shared identification brgemm", "[tensor_opti
   mini_jit::TensorConfig new_config = optimization.optimize_shared_identification(config);
 
   REQUIRE_FALSE(mini_jit::TensorConfig::equals(config, new_config));
-  REQUIRE(mini_jit::TensorConfig::equals(config, expected));
+  REQUIRE(mini_jit::TensorConfig::equals(expected, new_config));
 }
 
 TEST_CASE("Test tensor optimization shared identification unary", "[tensor_optimization][unary][correctness]")
@@ -252,5 +253,5 @@ TEST_CASE("Test tensor optimization shared identification unary", "[tensor_optim
   mini_jit::TensorConfig new_config = optimization.optimize_shared_identification(config);
 
   REQUIRE_FALSE(mini_jit::TensorConfig::equals(config, new_config));
-  REQUIRE(mini_jit::TensorConfig::equals(config, expected));
+  REQUIRE(mini_jit::TensorConfig::equals(expected, new_config));
 }

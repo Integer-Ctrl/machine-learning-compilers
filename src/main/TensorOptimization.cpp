@@ -1,5 +1,8 @@
 #include "TensorOptimization.h"
+#include "TensorOperation.h"
 #include "release_assert.h"
+#include <iostream>
+#include <limits>
 #include <omp.h>
 
 void mini_jit::TensorOptimization::_primitive_identification(TensorConfig &config)
@@ -33,12 +36,18 @@ void mini_jit::TensorOptimization::_primitive_identification(TensorConfig &confi
       if (*iStrideIn1 == 1 && primitive_k1 == -1)
       {
         primitive_k1 = std::distance(config.dim_types.begin(), iDim);
+        continue;
       }
 
-      int64_t primitive_k2_stride = std::min(config.strides_in0[primitive_k2], config.strides_in1[primitive_k2]);
+      int64_t primitive_k2_stride = std::numeric_limits<int64_t>::max();
+      if (primitive_k2 != -1)
+      {
+        primitive_k2_stride = std::min(config.strides_in0[primitive_k2], config.strides_in1[primitive_k2]);
+      }
+
       int64_t primitive_stride = std::min(*iStrideIn0, *iStrideIn1);
 
-      if (fixed_k2 == false && primitive_k2 != primitive_k1 && (primitive_k2 == -1 || primitive_k2_stride > primitive_stride))
+      if (fixed_k2 == false && (primitive_k2 == -1 || primitive_stride < primitive_k2_stride))
       {
         primitive_k2 = std::distance(config.dim_types.begin(), iDim);
       }
@@ -52,13 +61,20 @@ void mini_jit::TensorOptimization::_primitive_identification(TensorConfig &confi
     }
     else if (*iDim == TensorConfig::dim_t::n)
     {
-      int64_t primitive_n_stride = std::min(config.strides_out[primitive_n], config.strides_in1[primitive_n]);
+      int64_t primitive_n_stride = std::numeric_limits<int64_t>::max();
+      if (primitive_n != -1)
+      {
+        primitive_n_stride = std::min(config.strides_out[primitive_n], config.strides_in1[primitive_n]);
+      }
+
+      int64_t primitive_stride = std::min(*iStrideOut, *iStrideIn1);
       if (TensorOperation::isUnary(config.main))  // ignore second input
       {
         primitive_n_stride = config.strides_out[primitive_n];
+        primitive_stride = *iStrideOut;
       }
 
-      if (fixed_n == false && (primitive_n == -1 || primitive_n > primitive_n_stride))
+      if (fixed_n == false && (primitive_n == -1 || primitive_stride < primitive_n_stride))
       {
         primitive_n = std::distance(config.dim_types.begin(), iDim);
       }
@@ -81,7 +97,7 @@ void mini_jit::TensorOptimization::_primitive_identification(TensorConfig &confi
     if (config.main == TensorConfig::prim_t::gemm)
     {
       // one additional k dim
-      if (primitive_k1 = !-1)
+      if (primitive_k1 != -1)
       {
         config.exec_types[primitive_k1] = TensorConfig::exec_t::prim;
       }
@@ -89,11 +105,11 @@ void mini_jit::TensorOptimization::_primitive_identification(TensorConfig &confi
     else if (config.main == TensorConfig::prim_t::brgemm)
     {
       // two additional k dims
-      if (primitive_k1 = !-1)
+      if (primitive_k1 != -1)
       {
         config.exec_types[primitive_k1] = TensorConfig::exec_t::prim;
       }
-      if (primitive_k2 = !-1)
+      if (primitive_k2 != -1)
       {
         config.exec_types[primitive_k2] = TensorConfig::exec_t::prim;
       }

@@ -144,6 +144,7 @@ public:
       {8192, 0, 1024, 1, 0, 32},                                                                                           // strides_in0
       {0, 8192, 1024, 0, 32, 1},                                                                                           // strides_in1
       {32768, 1024, 0, 1, 32, 0},                                                                                          // strides_in2
+      mini_jit::TensorConfig::dtype_t::fp32,                                                                               // dtype_t
     },
     {
       // config 8
@@ -158,6 +159,7 @@ public:
       {8192, 0, 1024, 1, 0, 32},                                                                                           // strides_in0
       {0, 8192, 1024, 0, 32, 1},                                                                                           // strides_in1
       {32768, 1024, 0, 1, 32, 0},                                                                                          // strides_in2
+      mini_jit::TensorConfig::dtype_t::fp32,                                                                               // dtype_t
     },
     {
       // config 9
@@ -172,6 +174,7 @@ public:
       {8192, 0, 1024, 1, 0, 32},                                                                                           // strides_in0
       {0, 8192, 1024, 0, 32, 1},                                                                                           // strides_in1
       {32768, 1024, 0, 1, 32, 0},                                                                                          // strides_in2
+      mini_jit::TensorConfig::dtype_t::fp32,                                                                               // dtype_t
     },
     {
       // config 10
@@ -186,6 +189,7 @@ public:
       {8192, 0, 1024, 1, 0, 32},                                                                                           // strides_in0
       {0, 8192, 1024, 0, 32, 1},                                                                                           // strides_in1
       {32768, 1024, 0, 1, 32, 0},                                                                                          // strides_in2
+      mini_jit::TensorConfig::dtype_t::fp32,                                                                               // dtype_t
     },
     {
       // config 11
@@ -200,6 +204,7 @@ public:
       {32 * 32 * 8 * 32, 32 * 32 * 8, 32 * 32, 1, 32},                               // strides_in0
       {0, 8192, 1024, 0, 32},                                                        // strides_in1
       {32 * 32 * 8 * 32, 32 * 32 * 8, 32 * 32, 1, 32},                               // strides_in2
+      mini_jit::TensorConfig::dtype_t::fp32,                                         // dtype_t
     },
     {
       // config 12
@@ -214,6 +219,7 @@ public:
       {8192, 0, 1024, 1, 0, 32},                                                                                           // strides_in0
       {0, 8192, 1024, 0, 32, 1},                                                                                           // strides_in1
       {32768, 1024, 0, 1, 32, 0},                                                                                          // strides_in2
+      mini_jit::TensorConfig::dtype_t::fp32,                                                                               // dtype_t
     },
     {
       // config 13
@@ -228,6 +234,7 @@ public:
       {8192, 0, 1024, 1, 0, 64},                                                                                           // strides_in0
       {0, 8192, 1024, 0, 64, 1},                                                                                           // strides_in1
       {32768, 1024, 0, 1, 64, 0},                                                                                          // strides_in2
+      mini_jit::TensorConfig::dtype_t::fp32,                                                                               // dtype_t
     },
   };
 
