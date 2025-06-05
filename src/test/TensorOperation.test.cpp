@@ -1083,7 +1083,6 @@ TEST_CASE("Test tensor operation with outer loop with last touch: unary (zero, r
                                   i4 * strides_out[4] + i5 * strides_out[5];
               if (i1 == (dim_sizes[1] - 1) && i4 == (dim_sizes[4] - 1))
               {
-                std::cout << "LAST TOUCH" << std::endl;
                 // last touch
                 test.naive_unary_M_N(test.matrix_c_verify.data() + offset_c, test.matrix_c_verify.data() + offset_c, 32, 32, false,
                                      test_last_type);
@@ -1733,7 +1732,6 @@ TEST_CASE("Test parallel tensor operation with outer loop with last touch: unary
                                   i4 * strides_out[4] + i5 * strides_out[5];
               if (i4 == (dim_sizes[4] - 1))
               {
-                std::cout << "LAST TOUCH" << std::endl;
                 // last touch
                 test.naive_unary_M_N(test.matrix_c_verify.data() + offset_c, test.matrix_c_verify.data() + offset_c, 32, 32, false,
                                      test_last_type);
