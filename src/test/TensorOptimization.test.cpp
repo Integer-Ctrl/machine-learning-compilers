@@ -381,10 +381,10 @@ TEST_CASE("Test tensor optimization shared identification unary 3 Threads", "[te
 }
 
 // ==================================================================
-// Reordering Identification
+// Dimension Reordering
 // ==================================================================
 
-TEST_CASE("Test tensor optimization reordering gemm", "[tensor_optimization][gemm][correctness]")
+TEST_CASE("Test tensor optimization reordering gemm", "[tensor_optimization][correctness]")
 {
   mini_jit::TensorConfig config{
     mini_jit::TensorConfig::prim_t::none,  // first_touch
@@ -423,6 +423,11 @@ TEST_CASE("Test tensor optimization reordering gemm", "[tensor_optimization][gem
   CAPTURE(config.dim_sizes);
   REQUIRE(mini_jit::TensorConfig::equals(expected, new_config));
 }
+
+// ==================================================================
+// Dimension Splitting
+// ==================================================================
+
 TEST_CASE("Test tensor optimization dimension splitting", "[tensor_optimization][correctness]")
 {
   auto type = GENERATE(mini_jit::TensorConfig::prim_t::zero, mini_jit::TensorConfig::prim_t::copy, mini_jit::TensorConfig::prim_t::relu);
@@ -475,7 +480,11 @@ TEST_CASE("Test tensor optimization dimension splitting", "[tensor_optimization]
   REQUIRE(mini_jit::TensorConfig::equals(expected, new_config));
 }
 
-TEST_CASE("Test tensor optimization shared identification", "[tensor_optimization][correctness]")
+// ==================================================================
+// Dimension Fusing
+// ==================================================================
+
+TEST_CASE("Test tensor optimization dimension fusing", "[tensor_optimization][correctness]")
 {
   auto type = GENERATE(mini_jit::TensorConfig::prim_t::zero, mini_jit::TensorConfig::prim_t::copy, mini_jit::TensorConfig::prim_t::relu);
 
