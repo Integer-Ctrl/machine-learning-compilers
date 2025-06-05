@@ -200,7 +200,8 @@ Additionally, we do not modify any existing chosen primitives by the user.
 We added shared identification support to our optimization pass. At most, we can convert to shared until the first primitive arises or the
 first k-dimensional primitive. We only tag as many dimensions as are shared, i.e., if the first dimension is perfectly divisible by the
 number of OpenMP threads in use, we do not convert any further dimensions as shared. Additionally, we only convert to shared if the
-unbalanced ratio of the dimensions is greater than 1%. :math:`(shared_dimensions_size % thread_count) / shared_dimensions_size < 1%`.
+unbalanced ratio of the dimensions is greater than 1%.
+:code:`(shared_dimensions_size % thread_count) / shared_dimensions_size < 1%`.
 
 .. code-block::
 
@@ -284,7 +285,7 @@ We tested our optimization passes in ``TensorOptimization.test.cpp``. One exhaus
 primitive ``reordering``, ``fusing``, ``primitive identification``, and ``shared identification``. In addition to testing the correctness of the tensor
 configuration after the optimization passes, we also test the correctness of the tensor operation.
 
-.. code-block::cpp
+.. code-block:: cpp
     :emphasize-lines: 5-18, 20-33, 35-36
 
     TEST_CASE("Test tensor operation with optimization dimension test reordering and fusing", "[tensor_optimization][gemm][correctness]")
