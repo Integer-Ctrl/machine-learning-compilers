@@ -38,9 +38,9 @@ TEST_CASE("Test tensor operation with main kernel: unary (zero, relu, copy)", "[
   test.SetUp(TestInfill::Counting);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, type, TensorConfig::prim_t::none, std::span{dim_types},
-                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
+    TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, type, TensorConfig::prim_t::none, std::span{dim_types}, std::span{exec_types},
+    std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -83,7 +83,7 @@ TEST_CASE("Test tensor operation with main kernel: gemm", "[tensor_operation][ge
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err = tensor_op.setup(
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
     TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::gemm, TensorConfig::prim_t::none, std::span{dim_types},
     std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
@@ -112,7 +112,7 @@ TEST_CASE("Test tensor operation with main kernel: brgemm", "[tensor_operation][
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err = tensor_op.setup(
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
     TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::brgemm, TensorConfig::prim_t::none, std::span{dim_types},
     std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
@@ -144,9 +144,9 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy)", "[
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorConfig::dtype_t::fp32, type, TensorConfig::prim_t::none, TensorConfig::prim_t::none, std::span{dim_types},
-                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
+    TensorConfig::dtype_t::fp32, type, TensorConfig::prim_t::none, TensorConfig::prim_t::none, std::span{dim_types}, std::span{exec_types},
+    std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -195,9 +195,9 @@ TEST_CASE("Test tensor operation with last touch: unary (zero, relu, copy)", "[t
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::none, type, std::span{dim_types},
-                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
+    TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::none, type, std::span{dim_types}, std::span{exec_types},
+    std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -247,9 +247,9 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy) & ma
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorConfig::dtype_t::fp32, first_type, TensorConfig::prim_t::gemm, TensorConfig::prim_t::none, std::span{dim_types},
-                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
+    TensorConfig::dtype_t::fp32, first_type, TensorConfig::prim_t::gemm, TensorConfig::prim_t::none, std::span{dim_types},
+    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -302,9 +302,9 @@ TEST_CASE("Test tensor operation with last touch: unary (zero, relu, copy) & mai
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::gemm, last_type, std::span{dim_types},
-                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
+    TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::gemm, last_type, std::span{dim_types},
+    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -358,9 +358,9 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy) & ma
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorConfig::dtype_t::fp32, first_type, TensorConfig::prim_t::gemm, last_type, std::span{dim_types},
-                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
+    TensorConfig::dtype_t::fp32, first_type, TensorConfig::prim_t::gemm, last_type, std::span{dim_types}, std::span{exec_types},
+    std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -436,9 +436,9 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy) & ma
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorConfig::dtype_t::fp32, first_type, TensorConfig::prim_t::brgemm, TensorConfig::prim_t::none, std::span{dim_types},
-                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
+    TensorConfig::dtype_t::fp32, first_type, TensorConfig::prim_t::brgemm, TensorConfig::prim_t::none, std::span{dim_types},
+    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -492,9 +492,9 @@ TEST_CASE("Test tensor operation with last touch: unary (zero, relu, copy) & mai
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::brgemm, last_type, std::span{dim_types},
-                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
+    TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::brgemm, last_type, std::span{dim_types},
+    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -549,9 +549,9 @@ TEST_CASE("Test tensor operation with first touch: unary (zero, relu, copy) & ma
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorConfig::dtype_t::fp32, first_type, TensorConfig::prim_t::brgemm, last_type, std::span{dim_types},
-                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
+    TensorConfig::dtype_t::fp32, first_type, TensorConfig::prim_t::brgemm, last_type, std::span{dim_types}, std::span{exec_types},
+    std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -651,9 +651,9 @@ TEST_CASE("Test tensor operation with outer loop with main kernel: unary (zero, 
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, type, TensorConfig::prim_t::none, std::span{dim_types},
-                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
+    TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, type, TensorConfig::prim_t::none, std::span{dim_types}, std::span{exec_types},
+    std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -748,7 +748,7 @@ TEST_CASE("Test tensor operation with outer loop with main kernel: gemm", "[tens
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err = tensor_op.setup(
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
     TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::gemm, TensorConfig::prim_t::none, std::span{dim_types},
     std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
@@ -836,7 +836,7 @@ TEST_CASE("Test tensor operation with outer loop with main kernel: brgemm", "[te
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err = tensor_op.setup(
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
     TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::brgemm, TensorConfig::prim_t::none, std::span{dim_types},
     std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
@@ -928,9 +928,9 @@ TEST_CASE("Test tensor operation with outer loop with first touch: unary (zero, 
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorConfig::dtype_t::fp32, type, TensorConfig::prim_t::none, TensorConfig::prim_t::none, std::span{dim_types},
-                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
+    TensorConfig::dtype_t::fp32, type, TensorConfig::prim_t::none, TensorConfig::prim_t::none, std::span{dim_types}, std::span{exec_types},
+    std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -971,7 +971,6 @@ TEST_CASE("Test tensor operation with outer loop with first touch: unary (zero, 
                                   i4 * strides_out[4] + i5 * strides_out[5];
               if (i1 == 0 && i4 == 0)
               {
-                std::cout << "FIRST TOUCH" << std::endl;
                 // First touch
                 test.naive_unary_M_N(test.matrix_c_verify.data() + offset_c, test.matrix_c_verify.data() + offset_c, 32, 32, false,
                                      test_first_type);
@@ -1040,9 +1039,9 @@ TEST_CASE("Test tensor operation with outer loop with last touch: unary (zero, r
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::none, type, std::span{dim_types},
-                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
+    TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::none, type, std::span{dim_types}, std::span{exec_types},
+    std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -1156,9 +1155,9 @@ TEST_CASE("Test tensor operation with outer loop with first touch: unary (zero, 
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorConfig::dtype_t::fp32, first_type, TensorConfig::prim_t::brgemm, last_type, std::span{dim_types},
-                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
+    TensorConfig::dtype_t::fp32, first_type, TensorConfig::prim_t::brgemm, last_type, std::span{dim_types}, std::span{exec_types},
+    std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -1298,9 +1297,9 @@ TEST_CASE("Test parallel tensor operation with outer loop with main kernel: unar
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, type, TensorConfig::prim_t::none, std::span{dim_types},
-                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
+    TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, type, TensorConfig::prim_t::none, std::span{dim_types}, std::span{exec_types},
+    std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -1395,7 +1394,7 @@ TEST_CASE("Test parallel tensor operation with outer loop with main kernel: gemm
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err = tensor_op.setup(
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
     TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::gemm, TensorConfig::prim_t::none, std::span{dim_types},
     std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
@@ -1483,7 +1482,7 @@ TEST_CASE("Test parallel tensor operation with outer loop with main kernel: brge
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err = tensor_op.setup(
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
     TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::brgemm, TensorConfig::prim_t::none, std::span{dim_types},
     std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
@@ -1576,9 +1575,9 @@ TEST_CASE("Test parallel tensor operation with outer loop with first touch: unar
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorConfig::dtype_t::fp32, type, TensorConfig::prim_t::none, TensorConfig::prim_t::none, std::span{dim_types},
-                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
+    TensorConfig::dtype_t::fp32, type, TensorConfig::prim_t::none, TensorConfig::prim_t::none, std::span{dim_types}, std::span{exec_types},
+    std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -1619,7 +1618,6 @@ TEST_CASE("Test parallel tensor operation with outer loop with first touch: unar
                                   i4 * strides_out[4] + i5 * strides_out[5];
               if (i4 == 0)
               {
-                std::cout << "FIRST TOUCH" << std::endl;
                 // First touch
                 test.naive_unary_M_N(test.matrix_c_verify.data() + offset_c, test.matrix_c_verify.data() + offset_c, 32, 32, false,
                                      test_first_type);
@@ -1689,9 +1687,9 @@ TEST_CASE("Test parallel tensor operation with outer loop with last touch: unary
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::none, type, std::span{dim_types},
-                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
+    TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, TensorConfig::prim_t::none, type, std::span{dim_types}, std::span{exec_types},
+    std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 
@@ -1806,9 +1804,9 @@ TEST_CASE(
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;
-  TensorOperation::error_t err =
-    tensor_op.setup(TensorConfig::dtype_t::fp32, first_type, TensorConfig::prim_t::brgemm, last_type, std::span{dim_types},
-                    std::span{exec_types}, std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
+    TensorConfig::dtype_t::fp32, first_type, TensorConfig::prim_t::brgemm, last_type, std::span{dim_types}, std::span{exec_types},
+    std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
 
   REQUIRE(err == TensorOperation::error_t::success);
 

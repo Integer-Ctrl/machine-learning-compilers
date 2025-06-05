@@ -165,7 +165,7 @@ void mini_jit::TensorOptimization::_shared_identification(TensorConfig &config)
 #endif  // USE_OPENMP
 }
 
-void mini_jit::TensorOptimization::_dimension_reordering(TensorConfig &config)
+void mini_jit::TensorOptimization::_dimension_reordering_shared(TensorConfig &config)
 {
   release_assert(config.dim_types.size() == config.dim_sizes.size(),
                  "Expected the dimension types size to match the dimension sizes size.");
@@ -201,12 +201,12 @@ void mini_jit::TensorOptimization::_dimension_reordering(TensorConfig &config)
   }
   if (primitive_n != -1)
   {
-    _swap_elements(config, primitive_n, config.dim_types.size() - 2);
+    _swap_elements(config, primitive_n, config.dim_types.size() - 1 - (primitive_k1 != -1));
     first_prim_index = std::min(primitive_n, first_prim_index);
   }
   if (primitive_m != -1)
   {
-    _swap_elements(config, primitive_m, config.dim_types.size() - 3);
+    _swap_elements(config, primitive_m, config.dim_types.size() - 2 - (primitive_k1 != -1));
     first_prim_index = std::min(primitive_m, first_prim_index);
   }
   if (primitive_k2 != -1)
@@ -257,6 +257,101 @@ void mini_jit::TensorOptimization::_dimension_reordering(TensorConfig &config)
   }
 }
 
+void mini_jit::TensorOptimization::_dimension_reordering_fusing(TensorConfig &config)
+{
+  release_assert(config.dim_types.size() == config.dim_sizes.size(),
+                 "Expected the dimension types size to match the dimension sizes size.");
+  release_assert(config.dim_types.size() == config.strides_in0.size(), "Expected the dimension types size to match the strides_in0 size.");
+  release_assert(config.dim_types.size() == config.strides_in1.size(), "Expected the dimension types size to match the strides_in1 size.");
+  release_assert(config.dim_types.size() == config.strides_out.size(), "Expected the dimension types size to match the strides_out size.");
+  release_assert(config.dim_types.size() == config.dim_sizes.size(), "Expected the dimension types size to match the dim_sizes size.");
+
+  int32_t primitive_m =
+    TensorOperation::findMatch(config.dim_types, config.exec_types, mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::exec_t::prim);
+  int32_t primitive_n =
+    TensorOperation::findMatch(config.dim_types, config.exec_types, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::exec_t::prim);
+  int32_t primitive_k1 =
+    TensorOperation::findMatch(config.dim_types, config.exec_types, mini_jit::TensorConfig::dim_t::k, mini_jit::TensorConfig::exec_t::prim);
+  int32_t primitive_k2 = -1;
+  if (primitive_k1 != -1)
+  {
+    primitive_k2 = primitive_k1;
+    primitive_k1 = TensorOperation::findMatch(config.dim_types, config.exec_types, mini_jit::TensorConfig::dim_t::k,
+                                              mini_jit::TensorConfig::exec_t::prim, primitive_k2 + 1);
+    if (primitive_k1 == -1)
+    {
+      primitive_k1 = primitive_k2;
+      primitive_k2 = -1;
+    }
+  }
+
+  // Put the primitive dimension at the back
+  int32_t first_prim_index = config.dim_types.size();
+  if (primitive_k1 != -1)
+  {
+    _swap_elements(config, primitive_k1, config.dim_types.size() - 1);
+    first_prim_index = std::min(primitive_k1, first_prim_index);
+  }
+  if (primitive_n != -1)
+  {
+    _swap_elements(config, primitive_n, config.dim_types.size() - 1 - (primitive_k1 != -1));
+    first_prim_index = std::min(primitive_n, first_prim_index);
+  }
+  if (primitive_m != -1)
+  {
+    _swap_elements(config, primitive_m, config.dim_types.size() - 2 - (primitive_k1 != -1));
+    first_prim_index = std::min(primitive_m, first_prim_index);
+  }
+  if (primitive_k2 != -1)
+  {
+    _swap_elements(config, primitive_k2, config.dim_types.size() - 4);
+    first_prim_index = std::min(primitive_k2, first_prim_index);
+  }
+
+  int32_t offset_end = first_prim_index == -1 ? 0 : (config.dim_types.size() - first_prim_index);
+
+  // Order by the fusion capabilities, but stop at first execution type primitive
+  for (auto [iDim, iStrideIn0, iStrideIn1, iStrideOut, iExec, iSize] =
+         std::tuple{config.dim_types.begin(), config.strides_in0.begin(), config.strides_in1.begin(), config.strides_out.begin(),
+                    config.exec_types.begin(), config.dim_sizes.begin()};
+       iDim != (config.dim_types.end() - offset_end); ++iDim, ++iStrideIn0, ++iStrideIn1, ++iStrideOut, ++iExec, ++iSize)
+  {
+    for (auto [jDim, jStrideIn0, jStrideIn1, jStrideOut, jExec, jSize] =
+           std::tuple{iDim + 1, iStrideIn0 + 1, iStrideIn1 + 1, iStrideOut + 1, iExec + 1, iSize + 1};
+         jDim != (config.dim_types.end() - offset_end); ++jDim, ++jStrideIn0, ++jStrideIn1, ++jStrideOut, ++jExec, ++jSize)
+    {
+      if ((*iExec != TensorConfig::exec_t::shared && *jExec == TensorConfig::exec_t::shared) ||
+          (*iExec == TensorConfig::exec_t::shared && *jExec != TensorConfig::exec_t::shared))
+      {
+        // Do not reorder shared with none shared dimension
+        continue;
+      }
+
+      if (*iDim != *jDim)
+      {
+        continue;
+      }
+
+      if (*iStrideIn0 == (*jSize * *jStrideIn0) && *iStrideIn1 == (*jSize * *jStrideIn1) && *iStrideOut == (*jSize * *jStrideOut))
+      {
+        int32_t matching_index = std::distance(config.dim_types.begin(), jDim);
+        int32_t current_index = std::distance(config.dim_types.begin(), iDim);
+
+        _move_elements(config, current_index, matching_index);
+        break;
+      }
+      else if (*jStrideIn0 == (*iSize * *iStrideIn0) && *jStrideIn1 == (*iSize * *iStrideIn1) && *jStrideOut == (*iSize * *iStrideOut))
+      {
+        int32_t matching_index = std::distance(config.dim_types.begin(), jDim);
+        int32_t current_index = std::distance(config.dim_types.begin(), iDim);
+
+        _move_elements(config, matching_index, current_index);
+        break;
+      }
+    }
+  }
+}
+
 void mini_jit::TensorOptimization::_swap_elements(TensorConfig &config, size_t index1, size_t index2)
 {
   release_assert(config.dim_types.size() == config.dim_sizes.size(),
@@ -277,12 +372,32 @@ void mini_jit::TensorOptimization::_swap_elements(TensorConfig &config, size_t i
   std::iter_swap(config.strides_out.begin() + index1, config.strides_out.begin() + index2);
 }
 
+void mini_jit::TensorOptimization::_move_elements(TensorConfig &config, size_t old_index, size_t new_index)
+{
+  release_assert(config.dim_types.size() == config.dim_sizes.size(),
+                 "Expected the dimension types size to match the dimension sizes size.");
+  release_assert(config.dim_types.size() == config.exec_types.size(),
+                 "Expected the dimension types size to match the execution types size.");
+  release_assert(config.dim_types.size() == config.strides_in0.size(), "Expected the dimension types size to match the strides_in0 size.");
+  release_assert(config.dim_types.size() == config.strides_in1.size(), "Expected the dimension types size to match the strides_in1 size.");
+  release_assert(config.dim_types.size() == config.strides_out.size(), "Expected the dimension types size to match the strides_out size.");
+  release_assert(old_index <= config.dim_types.size(), "Expected the index1 to be less than the dimension types size.");
+  release_assert(new_index <= config.dim_types.size(), "Expected the index2 to be less than the dimension types size.");
+
+  std::rotate(config.dim_types.begin() + new_index, config.dim_types.begin() + old_index, config.dim_types.begin() + old_index + 1);
+  std::rotate(config.dim_sizes.begin() + new_index, config.dim_sizes.begin() + old_index, config.dim_sizes.begin() + old_index + 1);
+  std::rotate(config.exec_types.begin() + new_index, config.exec_types.begin() + old_index, config.exec_types.begin() + old_index + 1);
+  std::rotate(config.strides_in0.begin() + new_index, config.strides_in0.begin() + old_index, config.strides_in0.begin() + old_index + 1);
+  std::rotate(config.strides_in1.begin() + new_index, config.strides_in1.begin() + old_index, config.strides_in1.begin() + old_index + 1);
+  std::rotate(config.strides_out.begin() + new_index, config.strides_out.begin() + old_index, config.strides_out.begin() + old_index + 1);
+}
+
 void mini_jit::TensorOptimization::_dimension_splitting(TensorConfig &config)
 {
   for (size_t i = 0; i < config.dim_sizes.size(); ++i)
   {
     int64_t size = config.dim_sizes[i];
-    if (size >= 256)
+    if (size >= fuse_split_dimension_size)
     {
       int64_t best_dominator = -1;
       for (int64_t d = std::floor(std::sqrt(size)); d > 1; --d)
@@ -321,7 +436,29 @@ void mini_jit::TensorOptimization::_dimension_fusing(TensorConfig &config)
   for (size_t i = 0; i + 1 < config.dim_sizes.size(); ++i)
   {
     // Check if adjacent dims have the same type and their product is less equal than 256
-    if (config.dim_types[i] == config.dim_types[i + 1])
+    // stride(X) = |Y| * stride(Y)
+    if (config.dim_types[i] == config.dim_types[i + 1] && config.strides_in0[i] == (config.dim_sizes[i + 1] * config.strides_in0[i + 1]) &&
+        config.strides_in1[i] == (config.dim_sizes[i + 1] * config.strides_in1[i + 1]) &&
+        config.strides_out[i] == (config.dim_sizes[i + 1] * config.strides_out[i + 1]))
+    {
+      int64_t fused_size = config.dim_sizes[i] * config.dim_sizes[i + 1];
+      if (fused_size <= fuse_split_dimension_size)
+      {
+        // Fuse dimension i and i+1
+        config.dim_sizes[i + 1] = fused_size;
+        config.dim_types.erase(config.dim_types.begin() + i);
+        config.dim_sizes.erase(config.dim_sizes.begin() + i);
+        config.strides_in0.erase(config.strides_in0.begin() + i);
+        config.strides_in1.erase(config.strides_in1.begin() + i);
+        config.strides_out.erase(config.strides_out.begin() + i);
+        config.exec_types.erase(config.exec_types.begin() + i);
+        // Stay at the same index to check for further fusing
+        --i;
+      }
+    }
+    else if (config.dim_types[i] == config.dim_types[i + 1] && config.strides_in0[i + 1] == (config.dim_sizes[i] * config.strides_in0[i]) &&
+             config.strides_in1[i + 1] == (config.dim_sizes[i] * config.strides_in1[i]) &&
+             config.strides_out[i + 1] == (config.dim_sizes[i] * config.strides_out[i]))
     {
       int64_t fused_size = config.dim_sizes[i] * config.dim_sizes[i + 1];
       if (fused_size <= 256)
@@ -343,9 +480,15 @@ void mini_jit::TensorOptimization::_dimension_fusing(TensorConfig &config)
 
 mini_jit::TensorConfig mini_jit::TensorOptimization::optimize(TensorConfig config)
 {
+  _dimension_reordering_fusing(config);
+
+  _dimension_splitting(config);
+
+  _dimension_fusing(config);
+
   _primitive_identification(config);
 
-  _dimension_reordering(config);
+  _dimension_reordering_shared(config);
 
   // Only call shared after reordering it only parallelize the first loops until the first seq k-loops at maximum
   _shared_identification(config);
@@ -364,12 +507,17 @@ mini_jit::TensorConfig mini_jit::TensorOptimization::optimize_shared_identificat
   return config;
 }
 
-mini_jit::TensorConfig mini_jit::TensorOptimization::optimize_dimension_reordering(TensorConfig config)
+mini_jit::TensorConfig mini_jit::TensorOptimization::optimize_dimension_reordering_shared(TensorConfig config)
 {
-  _dimension_reordering(config);
+  _dimension_reordering_shared(config);
   return config;
 }
 
+mini_jit::TensorConfig mini_jit::TensorOptimization::optimize_dimension_reordering_fusing(TensorConfig config)
+{
+  _dimension_reordering_fusing(config);
+  return config;
+}
 
 mini_jit::TensorConfig mini_jit::TensorOptimization::optimize_dimension_splitting(TensorConfig config)
 {

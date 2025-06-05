@@ -289,9 +289,9 @@ BENCHMARK_DEFINE_F(TensorFixture, BM_tensor_operation)(benchmark::State &state)
 {
   mini_jit::TensorOperation tensor_op;
   mini_jit::TensorOperation::error_t err =
-    tensor_op.setup(mini_jit::TensorConfig::dtype_t::fp32, config.first_touch, config.main, config.last_touch, std::span{config.dim_types},
-                    std::span{config.exec_types}, std::span{config.dim_sizes}, std::span{config.strides_in0}, std::span{config.strides_in1},
-                    std::span{config.strides_out});
+    tensor_op.setup_no_optimization(mini_jit::TensorConfig::dtype_t::fp32, config.first_touch, config.main, config.last_touch,
+                                    std::span{config.dim_types}, std::span{config.exec_types}, std::span{config.dim_sizes},
+                                    std::span{config.strides_in0}, std::span{config.strides_in1}, std::span{config.strides_out});
 
   release_assert(err == mini_jit::TensorOperation::error_t::success, "Failed to generate the setup");
 
@@ -395,7 +395,7 @@ BENCHMARK_DEFINE_F(TensorFixture, BM_parallel_tensor_operation)(benchmark::State
 {
   mini_jit::TensorOperation tensor_op;
   mini_jit::TensorOperation::error_t err =
-    tensor_op.setup(mini_jit::TensorConfig::dtype_t::fp32, config.first_touch, config.main, config.last_touch, std::span{config.dim_types},
+    tensor_op.setup_no_optimization(mini_jit::TensorConfig::dtype_t::fp32, config.first_touch, config.main, config.last_touch, std::span{config.dim_types},
                     std::span{config.exec_types}, std::span{config.dim_sizes}, std::span{config.strides_in0}, std::span{config.strides_in1},
                     std::span{config.strides_out});
 

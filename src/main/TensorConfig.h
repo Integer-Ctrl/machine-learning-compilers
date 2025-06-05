@@ -2,6 +2,7 @@
 #define MINI_JIT_TENSORCONFIG_H
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 namespace mini_jit
@@ -72,6 +73,13 @@ namespace mini_jit
 
     /// @brief The data type to be used in the tensor operation.
     dtype_t dtype;
+
+    /**
+     * @brief Converts the config to a string.
+     *
+     * @return std::string The string representation
+     */
+    std::string to_string() const;
 
     /**
      * @brief Compares the two configuration and check if all values are equal.

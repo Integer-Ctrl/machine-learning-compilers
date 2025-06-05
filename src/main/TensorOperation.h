@@ -48,6 +48,7 @@ namespace mini_jit
 
   private:
     // Keep track over configuration parameters
+    TensorConfig config;
     TensorConfig::dtype_t dtype;
     TensorConfig::prim_t prim_first = TensorConfig::prim_t::none;
     TensorConfig::prim_t prim_main = TensorConfig::prim_t::none;
@@ -191,10 +192,11 @@ namespace mini_jit
      * @param strides_out       Strides of the output tensor.
      * @return error_t::success on success, another error_t value otherwise.
      **/
-    error_t setup(TensorConfig::dtype_t dtype, TensorConfig::prim_t prim_first_touch, TensorConfig::prim_t prim_main,
-                  TensorConfig::prim_t prim_last_touch, std::span<const TensorConfig::dim_t> dim_types,
-                  std::span<const TensorConfig::exec_t> exec_types, std::span<const int64_t> dim_sizes,
-                  std::span<const int64_t> strides_in0, std::span<const int64_t> strides_in1, std::span<const int64_t> strides_out);
+    error_t setup_no_optimization(TensorConfig::dtype_t dtype, TensorConfig::prim_t prim_first_touch, TensorConfig::prim_t prim_main,
+                                  TensorConfig::prim_t prim_last_touch, std::span<const TensorConfig::dim_t> dim_types,
+                                  std::span<const TensorConfig::exec_t> exec_types, std::span<const int64_t> dim_sizes,
+                                  std::span<const int64_t> strides_in0, std::span<const int64_t> strides_in1,
+                                  std::span<const int64_t> strides_out);
 
     /**
      * Execute the tensor operation.
@@ -232,6 +234,13 @@ namespace mini_jit
      **/
     void execute_dimension_parallel(int64_t index_dimension, char const *ptr_in0, char const *ptr_in1, char *ptr_out, bool first_access,
                                     bool last_access);
+    
+    /**
+     * @brief Get the current configuration object.
+     * 
+     * @return TensorConfig used by the Tensor operation. 
+     */
+    TensorConfig get_config();
   };
 };  // namespace mini_jit
 

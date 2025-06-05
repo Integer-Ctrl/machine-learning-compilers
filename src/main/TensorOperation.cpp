@@ -1,4 +1,5 @@
 #include "TensorOperation.h"
+#include "TensorOptimization.h"
 #include "release_assert.h"
 #include <iostream>
 #include <omp.h>
@@ -307,11 +308,16 @@ mini_jit::Unary::error_t mini_jit::TensorOperation::generateUnary(Unary &unary, 
 
 mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(const TensorConfig &config)
 {
-  return setup(config.dtype, config.first_touch, config.main, config.last_touch, config.dim_types, config.exec_types, config.dim_sizes,
-               config.strides_in0, config.strides_in1, config.strides_out);
+  mini_jit::TensorOptimization optimization;
+  TensorOperation::config = optimization.optimize(config);
+
+  return setup_no_optimization(TensorOperation::config.dtype, TensorOperation::config.first_touch, TensorOperation::config.main,
+                               TensorOperation::config.last_touch, TensorOperation::config.dim_types, TensorOperation::config.exec_types,
+                               TensorOperation::config.dim_sizes, TensorOperation::config.strides_in0, TensorOperation::config.strides_in1,
+                               TensorOperation::config.strides_out);
 }
 
-mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(
+mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup_no_optimization(
   TensorConfig::dtype_t dtype, TensorConfig::prim_t prim_first_touch, TensorConfig::prim_t prim_main, TensorConfig::prim_t prim_last_touch,
   std::span<const TensorConfig::dim_t> dim_types, std::span<const TensorConfig::exec_t> exec_types, std::span<const int64_t> dim_sizes,
   std::span<const int64_t> strides_in0, std::span<const int64_t> strides_in1, std::span<const int64_t> strides_out)
@@ -800,4 +806,9 @@ void mini_jit::TensorOperation::execute_dimension_parallel(int64_t index_dim, ch
       }
     }
   }
+}
+
+mini_jit::TensorConfig mini_jit::TensorOperation::get_config()
+{
+  return config;
 }

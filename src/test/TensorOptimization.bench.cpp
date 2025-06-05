@@ -95,14 +95,8 @@ public:
 
 BENCHMARK_DEFINE_F(TensorFixture, BM_tensor_optimization)(benchmark::State &state)
 {
-  mini_jit::TensorOptimization optimization;
-  mini_jit::TensorConfig new_config = optimization.optimize_shared_identification(config);
-
   mini_jit::TensorOperation tensor_op;
-  mini_jit::TensorOperation::error_t err =
-    tensor_op.setup(mini_jit::TensorConfig::dtype_t::fp32, new_config.first_touch, new_config.main, new_config.last_touch,
-                    std::span{new_config.dim_types}, std::span{new_config.exec_types}, std::span{new_config.dim_sizes},
-                    std::span{new_config.strides_in0}, std::span{new_config.strides_in1}, std::span{new_config.strides_out});
+  mini_jit::TensorOperation::error_t err = tensor_op.setup(config);
 
   release_assert(err == mini_jit::TensorOperation::error_t::success, "Failed to generate the setup");
 
