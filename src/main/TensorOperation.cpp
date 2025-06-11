@@ -584,114 +584,11 @@ void mini_jit::TensorOperation::execute(void const *tensor_in0, void const *tens
   char const *ptr_in1 = static_cast<char const *>(tensor_in1);
   char *ptr_out = static_cast<char *>(tensor_out);
 
-  if (isParallel)
-  {
-    execute_dimension_parallel(0, ptr_in0, ptr_in1, ptr_out, true, true);
-  }
-  else
-  {
-    execute_dimension(0, ptr_in0, ptr_in1, ptr_out, true, true);
-  }
+  execute_dimension(0, ptr_in0, ptr_in1, ptr_out, true, true);
 }
 
 void mini_jit::TensorOperation::execute_dimension(int64_t index_dim, char const *ptr_in0, char const *ptr_in1, char *ptr_out,
                                                   bool first_access, bool last_access)
-{
-  uint32_t dtype_bytes = 4;
-  int64_t dim_size = dim_sizes[index_dim];
-  int64_t stride_in0 = strides_in0[index_dim];
-  int64_t stride_in1 = isUnary(prim_main) ? 1 : strides_in1[index_dim];
-  int64_t stride_out = strides_out[index_dim];
-
-  if (exec_types[index_dim] == TensorConfig::exec_t::seq)
-  {
-    release_assert(exec_types[index_dim] == TensorConfig::exec_t::seq, "Expected a sequential loop");
-
-    bool is_first = first_access;
-    bool is_last = last_access;
-
-    for (int64_t iDim = 0; iDim < dim_size; iDim++)
-    {
-      if (dim_types[index_dim] == TensorConfig::dim_t::k)
-      {
-        is_first = first_access && (iDim == 0);
-        is_last = last_access && (iDim == (dim_size - 1));
-      }
-
-      char const *rec_ptr_in0 = ptr_in0 + iDim * stride_in0 * dtype_bytes;
-      char const *rec_ptr_in1 = ptr_in1 + iDim * stride_in1 * dtype_bytes;
-      char *rec_ptr_out = ptr_out + iDim * stride_out * dtype_bytes;
-      execute_dimension(index_dim + 1, rec_ptr_in0, rec_ptr_in1, rec_ptr_out, is_first, is_last);
-    }
-  }
-  else
-  {
-    release_assert(exec_types[index_dim] == TensorConfig::exec_t::prim, "Expected a primitive loop");
-
-    // call first touch kernel if necessary
-    if (first_access && prim_first != TensorConfig::prim_t::none)
-    {
-      if (std::holds_alternative<Unary>(first_touch))
-      {
-        Unary::kernel_t kernel = std::get<Unary>(first_touch).get_kernel();
-        kernel(ptr_out, ptr_out, strides_out[indexPrimN], strides_out[indexPrimN]);
-      }
-      else
-      {
-        release_assert(false, "Unexpected first touch primitive");
-      }
-    }
-
-    // call main_kernel kernel
-    if (prim_main != TensorConfig::prim_t::none)
-    {
-      if (std::holds_alternative<Unary>(main_kernel))
-      {
-        Unary::kernel_t kernel = std::get<Unary>(main_kernel).get_kernel();
-        kernel(ptr_in0, ptr_out, strides_in0[indexPrimN], strides_out[indexPrimN]);
-      }
-      else if (std::holds_alternative<Brgemm>(main_kernel))
-      {
-        Brgemm::kernel_t kernel = std::get<Brgemm>(main_kernel).get_kernel();
-
-        if (prim_main == TensorConfig::prim_t::gemm)
-        {
-          kernel(ptr_in0, ptr_in1, ptr_out, strides_in0[indexPrimK], strides_in1[indexPrimN], strides_out[indexPrimN], 1, 1);
-        }
-        else if (prim_main == TensorConfig::prim_t::brgemm)
-        {
-          kernel(ptr_in0, ptr_in1, ptr_out, strides_in0[indexPrimK], strides_in1[indexPrimN], strides_out[indexPrimN],
-                 strides_in0[indexPrimBatch], strides_in1[indexPrimBatch]);
-        }
-        else
-        {
-          release_assert(false, "Unexpected Brgemm primitive.");
-        }
-      }
-      else
-      {
-        release_assert(false, "Unexpected main primitive.");
-      }
-    }
-
-    // call last touch kernel if necessary
-    if (last_access && prim_last != TensorConfig::prim_t::none)
-    {
-      if (std::holds_alternative<Unary>(last_touch))
-      {
-        Unary::kernel_t kernel = std::get<Unary>(last_touch).get_kernel();
-        kernel(ptr_out, ptr_out, strides_out[indexPrimN], strides_out[indexPrimN]);
-      }
-      else
-      {
-        release_assert(false, "Unexpected last touch primitive");
-      }
-    }
-  }
-}
-
-void mini_jit::TensorOperation::execute_dimension_parallel(int64_t index_dim, char const *ptr_in0, char const *ptr_in1, char *ptr_out,
-                                                           bool first_access, bool last_access)
 {
   uint32_t dtype_bytes = 4;
   int64_t dim_size = dim_sizes[index_dim];
@@ -719,7 +616,7 @@ void mini_jit::TensorOperation::execute_dimension_parallel(int64_t index_dim, ch
       char const *rec_ptr_in0 = ptr_in0 + iDim * stride_in0 * dtype_bytes;
       char const *rec_ptr_in1 = ptr_in1 + iDim * stride_in1 * dtype_bytes;
       char *rec_ptr_out = ptr_out + iDim * stride_out * dtype_bytes;
-      execute_dimension_parallel(index_dim + 1, rec_ptr_in0, rec_ptr_in1, rec_ptr_out, is_first, is_last);
+      execute_dimension(index_dim + 1, rec_ptr_in0, rec_ptr_in1, rec_ptr_out, is_first, is_last);
     }
   }
   else if (exec_types[index_dim] == TensorConfig::exec_t::seq)
@@ -739,7 +636,7 @@ void mini_jit::TensorOperation::execute_dimension_parallel(int64_t index_dim, ch
       char const *rec_ptr_in0 = ptr_in0 + iDim * stride_in0 * dtype_bytes;
       char const *rec_ptr_in1 = ptr_in1 + iDim * stride_in1 * dtype_bytes;
       char *rec_ptr_out = ptr_out + iDim * stride_out * dtype_bytes;
-      execute_dimension_parallel(index_dim + 1, rec_ptr_in0, rec_ptr_in1, rec_ptr_out, is_first, is_last);
+      execute_dimension(index_dim + 1, rec_ptr_in0, rec_ptr_in1, rec_ptr_out, is_first, is_last);
     }
   }
   else
