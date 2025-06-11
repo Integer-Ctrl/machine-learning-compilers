@@ -71,6 +71,8 @@ namespace mini_jit
 
     bool isParallel = false;  // default is sequential execution
 
+    bool isTranspose = false;  // default is no transpose
+
     bool hasSetupError = false;
 
     /**
@@ -81,21 +83,33 @@ namespace mini_jit
      * @return true The configuration is a valid primitive setup.
      * @return false The configuration is NOT a valid primitive setup.
      */
-    bool isValidPrimConfig(const std::span<const TensorConfig::dim_t> &dim, const std::span<const TensorConfig::exec_t> &exec,
-                           const std::span<const int64_t> &strides_in0, const std::span<const int64_t> &strides_out);
+    bool isValidPrimConfig(const std::span<const TensorConfig::dim_t> &dim, const std::span<const TensorConfig::exec_t> &exec);
+
+    /**
+     * @brief Validates that the strides of the m primitives and n primitives dimension are unit strides.
+     *
+     * @param dim The dimension types to search through.
+     * @param exec The execution types to search through.
+     * @param prim_main The main primitive of the tensor operation.
+     * @return true The configuration has valid strides.
+     * @return false The configuration does not have valid unit strides.
+     */
+    bool isValidPrimStrides(const std::span<const TensorConfig::dim_t> &dim, const std::span<const TensorConfig::exec_t> &exec,
+                            const std::span<const int64_t> &strides_in0, const std::span<const int64_t> &strides_out,
+                            const TensorConfig::prim_t main_prim);
 
     /**
      * @brief Checks if the K dimension is valid for the given primitive.
      *
      * @param dim The dimension types to search through.
      * @param exec The execution types to search through.
-     * @param
+     * @param strides_in1 The strides of the second input.
      * @param prim The primitive i.e. Gemm or Brgemm to be executed.
      * @return true The configuration is a valid setup.
      * @return false The configuration is NOT a valid setup.
      */
     bool isValidKDim(const std::span<const TensorConfig::dim_t> &dim, const std::span<const TensorConfig::exec_t> &exec,
-                     const std::span<const int64_t> &strides_in1, TensorConfig::prim_t prim);
+                     const std::span<const int64_t> &strides_in1, const TensorConfig::prim_t prim);
 
     /**
      * @brief Checks if the configuration is sorted such that the primitives are last.
@@ -112,9 +126,10 @@ namespace mini_jit
      * @param unary The unary used for generation.
      * @param prim The primitive that is generated.
      * @param dim_sizes The sizes of each dimension.
+     * @param isTranspose Indicates if the unary is executes a tranpose operation.
      * @return Unary::error_t
      */
-    Unary::error_t generateUnary(Unary &unary, TensorConfig::prim_t prim, const std::span<const int64_t> &dim_sizes);
+    Unary::error_t generateUnary(Unary &unary, TensorConfig::prim_t prim, const std::span<const int64_t> &dim_sizes, bool isTranspose);
 
   public:
     /**
@@ -221,11 +236,10 @@ namespace mini_jit
     void execute_dimension(int64_t index_dimension, char const *ptr_in0, char const *ptr_in1, char *ptr_out, bool first_access,
                            bool last_access);
 
-    
     /**
      * @brief Get the current configuration object.
-     * 
-     * @return TensorConfig used by the Tensor operation. 
+     *
+     * @return TensorConfig used by the Tensor operation.
      */
     TensorConfig get_config();
   };

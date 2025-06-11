@@ -68,6 +68,55 @@ TEST_CASE("Test tensor operation with main kernel: unary (zero, relu, copy)", "[
   test.verify_matmul(test.matrix_c_verify.data(), test.matrix_c.data(), test.matrix_c.size());
 }
 
+TEST_CASE("Test tensor operation with main kernel: unary transpose (zero, relu, copy)", "[tensor_operation][unary][transpose][correctness]")
+{
+  using namespace mini_jit;
+
+  auto type = GENERATE(TensorConfig::prim_t::zero, TensorConfig::prim_t::copy, TensorConfig::prim_t::relu);
+
+  CAPTURE(type);
+
+  constexpr TensorConfig::dim_t dim_types[]{TensorConfig::dim_t::m, TensorConfig::dim_t::n};
+  constexpr TensorConfig::exec_t exec_types[]{TensorConfig::exec_t::prim, TensorConfig::exec_t::prim};
+  constexpr int64_t dim_sizes[]{64, 64};
+  constexpr int64_t strides_in0[]{1, 64};
+  constexpr int64_t strides_in1[]{0, 0};
+  constexpr int64_t strides_out[]{64, 1};
+
+  GenerationTest test(64, 64, 64);
+  test.SetUp(TestInfill::Counting);
+
+  mini_jit::TensorOperation tensor_op;
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
+    TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, type, TensorConfig::prim_t::none, std::span{dim_types}, std::span{exec_types},
+    std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+
+  REQUIRE(err == TensorOperation::error_t::success);
+
+  tensor_op.execute(test.matrix_a.data(), nullptr, test.matrix_c.data());
+
+  UnaryType test_type = UnaryType::None;
+  switch (type)
+  {
+  case TensorConfig::prim_t::zero:
+    test_type = UnaryType::Zero;
+    break;
+  case TensorConfig::prim_t::copy:
+    test_type = UnaryType::Identity;
+    break;
+  case TensorConfig::prim_t::relu:
+    test_type = UnaryType::ReLu;
+    break;
+  default:
+    FAIL("Could not parse the unary type!");
+    break;
+  }
+
+  test.naive_unary_M_N(test.matrix_a.data(), test.matrix_c_verify.data(), 64, 64, true, test_type);
+
+  test.verify_matmul(test.matrix_c_verify.data(), test.matrix_c.data(), test.matrix_c.size());
+}
+
 TEST_CASE("Test tensor operation with main kernel: gemm", "[tensor_operation][gemm][correctness]")
 {
   using namespace mini_jit;
@@ -703,6 +752,95 @@ TEST_CASE("Test tensor operation with outer loop with main kernel: unary (zero, 
   test.verify_matmul(test.matrix_c_verify.data(), test.matrix_c.data(), test.matrix_c.size());
 }
 
+TEST_CASE("Test tensor operation with outer loop with main kernel: unary transpose (zero, relu, copy)",
+          "[tensor_operation][unary][transpose][correctness]")
+{
+  using namespace mini_jit;
+
+  auto type = GENERATE(TensorConfig::prim_t::zero, TensorConfig::prim_t::relu, TensorConfig::prim_t::copy);
+
+  CAPTURE(type);
+
+  constexpr TensorConfig::dim_t dim_types[]{TensorConfig::dim_t::n, TensorConfig::dim_t::k, TensorConfig::dim_t::c, TensorConfig::dim_t::m,
+                                            TensorConfig::dim_t::k, TensorConfig::dim_t::m, TensorConfig::dim_t::m, TensorConfig::dim_t::n};
+  constexpr TensorConfig::exec_t exec_types[]{TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq, TensorConfig::exec_t::seq,
+                                              TensorConfig::exec_t::seq,  TensorConfig::exec_t::seq, TensorConfig::exec_t::seq,
+                                              TensorConfig::exec_t::prim, TensorConfig::exec_t::prim};
+  constexpr int64_t dim_sizes[]{2, 3, 5, 8, 13, 2, 16, 16};
+  constexpr int64_t strides_in0[]{16 * 16 * 2 * 1 * 8 * 5 * 1,
+                                  0,  // k-dim
+                                  16 * 16 * 2 * 1 * 8,
+                                  16 * 16 * 2 * 1,
+                                  0,  // k-dim
+                                  16 * 16,
+                                  1,
+                                  16};
+  constexpr int64_t strides_in1[]{0, 0, 0, 0, 0, 0, 0, 0};
+  constexpr int64_t strides_out[]{16 * 16 * 2 * 1 * 8 * 5 * 1,
+                                  0,  // k-dim
+                                  16 * 16 * 2 * 1 * 8,
+                                  16 * 16 * 2 * 1,
+                                  0,  // k-dim
+                                  16 * 16,
+                                  16,
+                                  1};
+
+  GenerationTest test(16, 16, 16, 1, 16 * 16 * 2 * 1 * 8 * 5 * 1 * 2, 0, 16 * 16 * 2 * 1 * 8 * 5 * 1 * 2);
+  test.SetUp(TestInfill::Random);
+
+  mini_jit::TensorOperation tensor_op;
+  TensorOperation::error_t err = tensor_op.setup_no_optimization(
+    TensorConfig::dtype_t::fp32, TensorConfig::prim_t::none, type, TensorConfig::prim_t::none, std::span{dim_types}, std::span{exec_types},
+    std::span{dim_sizes}, std::span{strides_in0}, std::span{strides_in1}, std::span{strides_out});
+
+  REQUIRE(err == TensorOperation::error_t::success);
+
+  tensor_op.execute(test.matrix_a.data(), nullptr, test.matrix_c.data());
+
+  UnaryType test_type = UnaryType::None;
+  switch (type)
+  {
+  case TensorConfig::prim_t::zero:
+    test_type = UnaryType::Zero;
+    break;
+  case TensorConfig::prim_t::copy:
+    test_type = UnaryType::Identity;
+    break;
+  case TensorConfig::prim_t::relu:
+    test_type = UnaryType::ReLu;
+    break;
+  default:
+    FAIL("Could not parse the unary type!");
+    break;
+  }
+
+  for (size_t i0 = 0; i0 < dim_sizes[0]; i0++)
+  {
+    for (size_t i1 = 0; i1 < dim_sizes[1]; i1++)
+    {
+      for (size_t i2 = 0; i2 < dim_sizes[2]; i2++)
+      {
+        for (size_t i3 = 0; i3 < dim_sizes[3]; i3++)
+        {
+          for (size_t i4 = 0; i4 < dim_sizes[4]; i4++)
+          {
+            for (size_t i5 = 0; i5 < dim_sizes[5]; i5++)
+            {
+              uint64_t offset_a = i0 * strides_in0[0] + i1 * strides_in0[1] + i2 * strides_in0[2] + i3 * strides_in0[3] +
+                                  i4 * strides_in0[4] + i5 * strides_in0[5];
+              uint64_t offset_c = i0 * strides_out[0] + i1 * strides_out[1] + i2 * strides_out[2] + i3 * strides_out[3] +
+                                  i4 * strides_out[4] + i5 * strides_out[5];
+              test.naive_unary_M_N(test.matrix_a.data() + offset_a, test.matrix_c_verify.data() + offset_c, 16, 16, true, test_type);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  test.verify_matmul(test.matrix_c_verify.data(), test.matrix_c.data(), test.matrix_c.size());
+}
+
 TEST_CASE("Test tensor operation with outer loop with main kernel: gemm", "[tensor_operation][gemm][correctness]")
 {
   using namespace mini_jit;
@@ -1275,8 +1413,8 @@ TEST_CASE("Test parallel tensor operation with outer loop with main kernel: unar
                                               TensorConfig::exec_t::seq,    TensorConfig::exec_t::seq,    TensorConfig::exec_t::seq,
                                               TensorConfig::exec_t::prim,   TensorConfig::exec_t::prim};
   constexpr int64_t dim_sizes[]{2, 3, 5, 8, 13, 2, 16, 16};
-  constexpr int64_t strides_in0[]{16 * 16 * 2 * 1 * 8 * 5 * 1,
-                                  0,  // k-dim
+  constexpr int64_t strides_in0[]{16 * 16 * 2 * 1 * 8 * 5 * 3,
+                                  16 * 16 * 2 * 1 * 8 * 5,
                                   16 * 16 * 2 * 1 * 8,
                                   16 * 16 * 2 * 1,
                                   0,  // k-dim
@@ -1284,8 +1422,8 @@ TEST_CASE("Test parallel tensor operation with outer loop with main kernel: unar
                                   1,
                                   16};
   constexpr int64_t strides_in1[]{0, 0, 0, 0, 0, 0, 0, 0};
-  constexpr int64_t strides_out[]{16 * 16 * 2 * 1 * 8 * 5 * 1,
-                                  0,  // k-dim
+  constexpr int64_t strides_out[]{16 * 16 * 2 * 1 * 8 * 5 * 3,
+                                  16 * 16 * 2 * 1 * 8 * 5,
                                   16 * 16 * 2 * 1 * 8,
                                   16 * 16 * 2 * 1,
                                   0,  // k-dim
@@ -1293,7 +1431,7 @@ TEST_CASE("Test parallel tensor operation with outer loop with main kernel: unar
                                   1,
                                   16};
 
-  GenerationTest test(16, 16, 16, 1, 16 * 16 * 2 * 1 * 8 * 5 * 1 * 2, 0, 16 * 16 * 2 * 1 * 8 * 5 * 1 * 2);
+  GenerationTest test(16, 16, 16, 1, 16 * 16 * 2 * 1 * 8 * 5 * 3 * 2, 0, 16 * 16 * 2 * 1 * 8 * 5 * 3 * 2);
   test.SetUp(TestInfill::Random);
 
   mini_jit::TensorOperation tensor_op;

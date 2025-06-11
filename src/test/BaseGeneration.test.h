@@ -79,12 +79,8 @@ public:
    *
    * @param a The a matrix.
    * @param b The b matrix.
-   * @param c The c matrix.
    * @param lda The leading dimension of matrix a.
    * @param ldb The leading dimension of matrix b.
-   * @param ldc The leading dimension of matrix c.
-   * @param batch_stride_a The batch stride of matrix a.
-   * @param batch_stride_b The batch stride of matrix b.
    * @param trans_b True if b is transposed.
    * @param type The type of unary operation to do.
    */

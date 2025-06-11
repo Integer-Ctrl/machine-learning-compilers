@@ -20,6 +20,7 @@ void mini_jit::TensorOptimization::_primitive_identification(TensorConfig &confi
   int32_t primitive_k1 =
     TensorOperation::findMatch(config.dim_types, config.exec_types, mini_jit::TensorConfig::dim_t::k, mini_jit::TensorConfig::exec_t::prim);
   int32_t primitive_k2 = -1;
+
   if (primitive_k1 != -1)
   {
     primitive_k2 = primitive_k1;
@@ -87,17 +88,42 @@ void mini_jit::TensorOptimization::_primitive_identification(TensorConfig &confi
         primitive_n = std::distance(config.dim_types.begin(), iDim);
       }
     }
+    else if (TensorOperation::isUnary(config.main) && *iDim == TensorConfig::dim_t::c)
+    {
+      int32_t index = std::distance(config.dim_types.begin(), iDim);
+      // m-dim = unit stride of in0
+      if (*iStrideIn0 == 1)
+      {
+        primitive_m = index;
+      }
+
+      // n-dim = unit stride of out or next largest if m-dim == n-dim
+      if (index != primitive_m && (primitive_n == -1 || (config.strides_out[primitive_n] > *iStrideOut)))
+      {
+        primitive_n = index;
+      }
+    }
   }
 
   // m and n are always needed because the output has MxN
   if (primitive_m != -1)
   {
     config.exec_types[primitive_m] = TensorConfig::exec_t::prim;
+
+    if (config.dim_types[primitive_m] == TensorConfig::dim_t::c)
+    {
+      config.dim_types[primitive_m] = TensorConfig::dim_t::m;
+    }
   }
 
   if (primitive_n != -1)
   {
     config.exec_types[primitive_n] = TensorConfig::exec_t::prim;
+
+    if (config.dim_types[primitive_n] == TensorConfig::dim_t::c)
+    {
+      config.dim_types[primitive_n] = TensorConfig::dim_t::n;
+    }
   }
 
   if (TensorOperation::isBrgemm(config.main))
