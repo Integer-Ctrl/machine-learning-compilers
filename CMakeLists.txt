@@ -94,6 +94,8 @@ set(SRC_MAIN_FILES
     TensorOperation.cpp
     TensorOptimization.h
     TensorOptimization.cpp
+    EinsumTree.h
+    EinsumTree.cpp
 )
 
 set(KERNEL_FILES
@@ -183,6 +185,7 @@ set(TEST_FILES
     Brgemm.test.cpp
     TensorOperation.test.cpp
     TensorOptimization.test.cpp
+    EinsumTree.test.cpp
 )
 
 set(TEST_KERNELS

@@ -83,6 +83,7 @@
         "Brgemm",
         "cbnz",
         "einsum",
+        "einsumtree",
         "errneous",
         "Fastor",
         "fmax",
