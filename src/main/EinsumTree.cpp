@@ -186,7 +186,7 @@ std::string mini_jit::EinsumTree::EinsumNode::_to_string(uint depth, std::string
   {
     if (output_dim_ids.size() > 0)
     {
-      output += std::format("{}{}─ {}", depthString, connection, output_dim_ids[0]);
+      output += std::format("{}{}─ {}", depthString.substr(0, depthString.size() - 3), connection, output_dim_ids[0]);
       for (auto iDim = output_dim_ids.begin() + 1; iDim != output_dim_ids.end(); iDim++)
       {
         output += std::format(",{}", *iDim);
@@ -209,7 +209,7 @@ std::string mini_jit::EinsumTree::EinsumNode::_to_string(uint depth, std::string
 
   if (right != nullptr)
   {
-    output += right->_to_string(depth + 1, "└", depthString + "|  ");
+    output += right->_to_string(depth + 1, "└", depthString + "   ");
   }
 
   return output;
