@@ -130,7 +130,7 @@ To ensure the success of all tensor operations, the methods return an ``ErrorExe
 
 
 4. Benchmark the performance
-^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
     :emphasize-lines: 4, 8
