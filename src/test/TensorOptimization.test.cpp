@@ -549,16 +549,17 @@ TEST_CASE("Test tensor optimization dimension splitting", "[tensor_optimization]
     {mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq,
      mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq,
      mini_jit::TensorConfig::exec_t::seq},   // exec_types
-    {25, 20, 32, 8, 32, 32, 32},             // dim_sizes
-    {8192 * 20, 8192, 0, 1024, 1, 0, 32},    // strides_in0
+    {20, 25, 32, 8, 32, 32, 32},             // dim_sizes
+    {8192 * 25, 8192, 0, 1024, 1, 0, 32},    // strides_in0
     {0, 0, 8192, 1024, 0, 32, 1},            // strides_in1
-    {32768 * 20, 32768, 1024, 0, 1, 32, 0},  // strides_out
+    {32768 * 25, 32768, 1024, 0, 1, 32, 0},  // strides_out
     mini_jit::TensorConfig::dtype_t::fp32,   // dtype_t
   };
 
   mini_jit::TensorOptimization optimization;
   mini_jit::TensorConfig new_config = optimization.optimize_dimension_splitting(config);
 
+  INFO(new_config.to_string());
   REQUIRE_FALSE(mini_jit::TensorConfig::equals(config, new_config));
   REQUIRE(mini_jit::TensorConfig::equals(expected, new_config));
 }
