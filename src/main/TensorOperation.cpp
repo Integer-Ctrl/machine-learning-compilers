@@ -160,7 +160,7 @@ bool mini_jit::TensorOperation::isValidPrimStrides(const std::span<const TensorC
     return false;
   }
 
-  // stride of m = 1 and stride of n = 1 i.e. no transpose
+  // no transpose
   if (isExpectedStride(1, indexM, strides_in0) && isExpectedStride(1, indexM, strides_out))
   {
     return true;

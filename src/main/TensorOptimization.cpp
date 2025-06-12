@@ -473,8 +473,8 @@ void mini_jit::TensorOptimization::_dimension_splitting(TensorConfig &config)
       }
       if (best_dominator != -1)
       {
-        int64_t new_size1 = best_dominator;
-        int64_t new_size2 = size / best_dominator;
+        int64_t new_size2 = best_dominator;
+        int64_t new_size1 = size / best_dominator;
 
         // Insert new dimension after i
         config.dim_types.insert(config.dim_types.begin() + i, config.dim_types[i]);
