@@ -27,12 +27,12 @@ TEST_CASE("Test tensor optimization primitive identification gemm", "[tensor_opt
   };
 
   mini_jit::TensorConfig expected{
-    mini_jit::TensorConfig::prim_t::none,  // first_touch
-    mini_jit::TensorConfig::prim_t::gemm,  // main
-    mini_jit::TensorConfig::prim_t::none,  // last touch
+    mini_jit::TensorConfig::prim_t::none,    // first_touch
+    mini_jit::TensorConfig::prim_t::brgemm,  // main
+    mini_jit::TensorConfig::prim_t::none,    // last touch
     {mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k, mini_jit::TensorConfig::dim_t::m,
      mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k},  // dim_types
-    {mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq,
+    {mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::prim,
      mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim},  // exec_types
     {32, 32, 8, 32, 32, 32},                                                                                             // dim_sizes
     {8192, 0, 1024, 1, 0, 32},                                                                                           // strides_in0
@@ -510,8 +510,8 @@ TEST_CASE("Test tensor optimization reordering shared", "[tensor_optimization][c
   mini_jit::TensorOptimization optimization;
   mini_jit::TensorConfig new_config = optimization.optimize_dimension_reordering_shared(config);
 
+  INFO(new_config.to_string());
   REQUIRE_FALSE(mini_jit::TensorConfig::equals(config, new_config));
-  CAPTURE(config.dim_sizes);
   REQUIRE(mini_jit::TensorConfig::equals(expected, new_config));
 }
 
@@ -935,12 +935,12 @@ TEST_CASE("Test tensor operation with optimization dimension test reordering and
   };
 
   mini_jit::TensorConfig expected{
-    mini_jit::TensorConfig::prim_t::none,  // first_touch
-    mini_jit::TensorConfig::prim_t::gemm,  // main
-    mini_jit::TensorConfig::prim_t::none,  // last touch
+    mini_jit::TensorConfig::prim_t::none,    // first_touch
+    mini_jit::TensorConfig::prim_t::brgemm,  // main
+    mini_jit::TensorConfig::prim_t::none,    // last touch
     {mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k, mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n,
      mini_jit::TensorConfig::dim_t::k},  // dim_types
-    {mini_jit::TensorConfig::exec_t::shared, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::prim,
+    {mini_jit::TensorConfig::exec_t::shared, mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim,
      mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim},  // exec_types
     {5 * 32, 8, 32, 32, 32},                                                       // dim_sizes
     {0, 1024, 1, 0, 32},                                                           // strides_in0
@@ -977,3 +977,94 @@ TEST_CASE("Test tensor operation with optimization dimension test reordering and
 
   test.verify_matmul(test.matrix_c_verify.data(), test.matrix_c.data(), test.matrix_c.size());
 }
+
+// TEST_CASE("Test tensor operation with optimization einsum helper test", "[tensor_optimization][einsum][correctness]")
+// {
+//   using namespace mini_jit;
+//   // TensorConfig: {
+//   //     first_touch: 0,
+//   //     main: 4,
+//   //     last_touch: 0,
+//   //     dtype: 0,
+//   //     dim_types: [ 2 4 2 3 3 ],
+//   //     exec_types: [ 0 0 0 0 0 ],
+//   //     dim_sizes: [ 128 305 32 72 71 ],
+//   //     strides_in0: [ 9760 32 1 0 0 ],
+//   //     strides_in1: [ 0 1 0 21655 305 ],
+//   //     strides_out: [ 2272 0 1 290816 32 ]
+//   // }
+//   mini_jit::TensorConfig config{
+//     mini_jit::TensorConfig::prim_t::none,  // first_touch
+//     mini_jit::TensorConfig::prim_t::gemm,  // main
+//     mini_jit::TensorConfig::prim_t::none,  // last touch
+//     {mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::k, mini_jit::TensorConfig::dim_t::m,
+//     mini_jit::TensorConfig::dim_t::n,
+//      mini_jit::TensorConfig::dim_t::n},  // dim_types
+//     {mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq,
+//      mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq},  // exec_types
+//     {128, 305, 32, 72, 71},                                                      // dim_sizes
+//     {9760, 32, 1, 0, 0},                                                         // strides_in0 1249280
+//     {0, 1, 0, 21655, 305},                                                       // strides_in1 1559160
+//     {2272, 0, 1, 290816, 32},                                                    // strides_out 20938752
+//     mini_jit::TensorConfig::dtype_t::fp32,                                       // dtype_t
+//   };
+
+//   // TensorConfig: {
+//   //     first_touch: 0,
+//   //     main: 4,
+//   //     last_touch: 0,
+//   //     dtype: 0,
+//   //     dim_types: [ 3 2 4 2 3 4 ],
+//   //     exec_types: [ 2 0 0 1 1 1 ],
+//   //     dim_sizes: [ 72 128 61 32 71 5 ],
+//   //     strides_in0: [ 0 9760 160 1 0 32 ],
+//   //     strides_in1: [ 21655 0 5 0 305 1 ],
+//   //     strides_out: [ 290816 2272 0 1 32 0 ]
+//   // }
+//   mini_jit::TensorConfig expected{
+//     mini_jit::TensorConfig::prim_t::none,    // first_touch
+//     mini_jit::TensorConfig::prim_t::brgemm,  // main
+//     mini_jit::TensorConfig::prim_t::none,    // last touch
+//     {mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::k,
+//     mini_jit::TensorConfig::dim_t::m,
+//      mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k},  // dim_types
+//     {mini_jit::TensorConfig::exec_t::shared, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::prim,
+//      mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim},  // exec_types
+//     {72, 128, 61, 32, 71, 5},                                                                                            // dim_sizes
+//     {0, 9760, 160, 1, 0, 32},                                                                                            // strides_in0
+//     {21655, 0, 5, 0, 305, 1},                                                                                            // strides_in1
+//     {290816, 2272, 0, 1, 32, 0},                                                                                         // strides_out
+//     mini_jit::TensorConfig::dtype_t::fp32,                                                                               // dtype_t
+//   };
+
+//   mini_jit::TensorOperation tensor_op;
+//   TensorOperation::error_t err = tensor_op.setup(config);
+
+//   INFO(tensor_op.get_config().to_string());
+
+//   REQUIRE(err == TensorOperation::error_t::success);
+//   REQUIRE_FALSE(mini_jit::TensorConfig::equals(config, tensor_op.get_config()));
+//   REQUIRE(mini_jit::TensorConfig::equals(expected, tensor_op.get_config()));
+//   // 1249280, 1559160, 20938752
+//   GenerationTest test(32, 71, 5, 1, 32 * 5 * 61 * 128, 5 * 71 * 61 * 72, 71 * 32 * 128 * 72);
+//   test.SetUp(TestInfill::Counting);
+
+//   tensor_op.execute(test.matrix_a.data(), test.matrix_b.data(), test.matrix_c.data());
+
+//   for (int64_t i0 = 0; i0 < expected.dim_sizes[0]; i0++)
+//   {
+//     for (int64_t i1 = 0; i1 < expected.dim_sizes[1]; i1++)
+//     {
+//       for (int64_t i2 = 0; i2 < expected.dim_sizes[2]; i2++)
+//       {
+//         uint64_t offset_a = i0 * expected.strides_in0[0] + i1 * expected.strides_in0[1] + i2 * expected.strides_in0[2];
+//         uint64_t offset_b = i0 * expected.strides_in1[0] + i1 * expected.strides_in1[1] + i2 * expected.strides_in1[2];
+//         uint64_t offset_c = i0 * expected.strides_out[0] + i1 * expected.strides_out[1] + i2 * expected.strides_out[2];
+//         test.naive_matmul_M_N_K_Batch(test.matrix_a.data() + offset_a, test.matrix_b.data() + offset_b,
+//                                       test.matrix_c_verify.data() + offset_c, 32, 5, 32, 160, 5);
+//       }
+//     }
+//   }
+
+//   test.verify_matmul(test.matrix_c_verify.data(), test.matrix_c.data(), test.matrix_c.size());
+// }

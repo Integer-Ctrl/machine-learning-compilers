@@ -27,6 +27,19 @@ namespace mini_jit
     const uint32_t fuse_split_dimension_size = 256;
 
     /**
+     * @brief Adjusts the primitive index based on the new index.
+     *
+     * @param new_index The index to adjust.
+     * @param adjust_index The index set for adjustment.
+     * @param primitive_m The m primitive index.
+     * @param primitive_n The n primitive index.
+     * @param primitive_k1 The k1 primitive index.
+     * @param primitive_k2 The k2 primitive index.
+     */
+    void _reorder_helper_adjust_index(int32_t index, int32_t adjust_index, int32_t &primitive_m, int32_t &primitive_n, int32_t &primitive_k1,
+                                      int32_t &primitive_k2);
+
+    /**
      * @brief Runs the optimization primitive identification.
      *
      * @param config The configuration object to use.
@@ -65,7 +78,7 @@ namespace mini_jit
 
     /**
      * @brief Moves an element from the old index to the new index position.
-     * 
+     *
      * @param config The configuration object to use.
      * @param old_index The index on the current postion.
      * @param new_index The index that should be the new position.
