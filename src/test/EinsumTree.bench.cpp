@@ -28,7 +28,7 @@
 
 //   EinsumTree tree(tree_str, dim_sizes);
 
-//   mini_jit::EinsumTree::ErrorParse err_parse = tree.parse_tree();
+//   mini_jit::EinsumTree::ErrorParse err_parse = tree.parse_tree_no_optimization();
 //   REQUIRE(err_parse == mini_jit::EinsumTree::ErrorParse::None);
 //   REQUIRE(tree.get_root() != nullptr);
 //   INFO(tree.get_root()->to_string());
@@ -174,7 +174,7 @@ public:
 BENCHMARK_DEFINE_F(EinsumFixture, BM_tensor_optimization)(benchmark::State &state)
 {
   mini_jit::EinsumTree tree(einsum_tree, dim_sizes);
-  mini_jit::EinsumTree::ErrorParse err_parse = tree.parse_tree();
+  mini_jit::EinsumTree::ErrorParse err_parse = tree.parse_tree_no_optimization();
 
   release_assert(err_parse == mini_jit::EinsumTree::ErrorParse::None, "Failed to generate the setup");
 

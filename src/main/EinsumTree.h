@@ -23,6 +23,7 @@ namespace mini_jit
       ExpectedComma = 4,
       ExpectedDimensionList = 5,
       NotAllowedToParseAgain = 6,
+      UndefinedNode = 7,
     };
 
     enum class ErrorExecute
@@ -31,7 +32,7 @@ namespace mini_jit
       InvalidRoot = 1,
       NotEnoughInputTensors = 2,
       TooManyInputTensors = 3,
-      UndefinedNode = 4,
+      NullPtrAsInputTensor = 5,
 
       err_wrong_dtype = 101,
       err_wrong_dimension = 102,
@@ -60,7 +61,8 @@ namespace mini_jit
     struct EinsumNode
     {
       NodeType type;
-      float *tensor;
+      int32_t input_tensor_index = -1;
+      float *tensor = nullptr;
 
       // Always filled — dims of the output tensor
       std::vector<int64_t> output_dim_ids;
@@ -98,7 +100,6 @@ namespace mini_jit
     EinsumNode *root = nullptr;
     const std::string tree_str;
     ErrorParse error_parse;
-    ErrorExecute error_execute;
     std::vector<int64_t> dim_sizes;
 
     // Parser
@@ -146,18 +147,42 @@ namespace mini_jit
     /**
      * Executes the tensor operation for the given EinsumNode.
      *
+     * @param input_tensors The tensors provided by the user.
      * @param node The EinsumNode to execute.
      * @return An ErrorExecute enum indicating the result of the execution.
      */
-    ErrorExecute execute_node(EinsumNode *node);
+    ErrorExecute execute_node(const std::vector<void *> &input_tensors, EinsumNode *node);
 
     /**
      * Assigns intermediate tensors to the given EinsumNode.
      *
-     * @param tensors A vector of pointers to the intermediate tensors.
      * @param node The EinsumNode to which the tensors will be assigned.
      */
-    void assign_tensor(std::vector<void *> tensors, EinsumNode *node);
+    void assign_tensor_indices(EinsumNode *node);
+
+    /**
+     * Checks if the given EinsumNode has unit stride in the 'n' dimension.
+     *
+     * @param node The EinsumNode to check.
+     * @return true if the node has unit stride in the 'n' dimension, false otherwise.
+     */
+    bool is_unit_stride_n(EinsumNode *node);
+
+    /**
+     * Reorders left node of a contraction to ensure the 'km' dimensions are at the right.
+     * The 'm' dimension has unit-stride.
+     *
+     * @param node The EinsumNode representing the parent child of the contraction.
+     */
+    void reorder_left_node(EinsumNode *node);
+
+    /**
+     * Reorders right node of a contraction to ensure the 'nk' dimensions are at the right.
+     * The 'k' dimension has unit-stride.
+     *
+     * @param node The EinsumNode representing the parent of the contraction.
+     */
+    void reorder_right_node(EinsumNode *node);
 
     // Helpers
     /**
@@ -200,9 +225,41 @@ namespace mini_jit
      */
     void delete_tree(EinsumNode *node);
 
+    /**
+     * Finds the k-dimension of the left or right child of the given node.
+     *
+     * @param Node The node to check.
+     * @param getLeftIndex If true, finds the k-dimension in the left child; otherwise, in the right child.
+     * @return int k-dim index if found, otherwise -1.
+     */
+    int findKDim(EinsumNode *Node, bool getLeftIndex);
+
+    /**
+     * Finds the n-dimension of the right child of the given node.
+     *
+     * @param Node The node to check.
+     * @return int n-dim index if found, otherwise -1.
+     */
+    int findNDim(EinsumNode *Node);
+
+    /**
+     * Finds the n-dimension of the left child of the given node.
+     *
+     * @param Node The node to check.
+     * @return int m-dim index if found, otherwise -1.
+     */
+    int findMDim(EinsumNode *Node);
+
   public:
     EinsumTree(const std::string &tree_str, const std::vector<int64_t> &sorted_dim_sizes);
     ~EinsumTree();
+
+    /**
+     * Parses the einsum tree string and builds the tree structure.
+     *
+     * @return ErrorParse indicating the result of the parsing operation.
+     */
+    ErrorParse parse_tree_no_optimization();
 
     /**
      * Parses the einsum tree string and builds the tree structure.
@@ -219,12 +276,17 @@ namespace mini_jit
     EinsumNode *get_root() const;
 
     /**
+     * @brief Optimizes the einsum tree structure.
+     */
+    void optimize(EinsumNode *node);
+
+    /**
      * Executes the einsum operation defined by the tree.
      *
      * @param tensors A vector of pointers to the input tensors of the leaves.
      * @return ErrorExecute indicating the result of the execution operation.
      */
-    ErrorExecute execute(std::vector<void *> tensors);
+    ErrorExecute execute(const std::vector<void *> &tensors);
   };
 };  // namespace mini_jit
 

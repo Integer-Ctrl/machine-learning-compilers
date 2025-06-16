@@ -11,7 +11,7 @@ mini_jit::EinsumTree::EinsumTree(const std::string &tree_str, const std::vector<
   EinsumTree::error_parse = EinsumTree::ErrorParse::None;
 }
 
-mini_jit::EinsumTree::ErrorParse mini_jit::EinsumTree::parse_tree()
+mini_jit::EinsumTree::ErrorParse mini_jit::EinsumTree::parse_tree_no_optimization()
 {
   if (root != nullptr)
   {
@@ -20,6 +20,10 @@ mini_jit::EinsumTree::ErrorParse mini_jit::EinsumTree::parse_tree()
 
   size_t pos = 0;
   root = parse_node(pos, tree_str);
+
+  tensorIndex = 0;
+  assign_tensor_indices(root);
+
   return error_parse;
 }
 
@@ -369,33 +373,27 @@ std::vector<int64_t> mini_jit::EinsumTree::get_config_strides(const EinsumNode *
   return stridesConfig;
 }
 
-void mini_jit::EinsumTree::assign_tensor(std::vector<void *> tensors, EinsumNode *node)
+void mini_jit::EinsumTree::assign_tensor_indices(EinsumNode *node)
 {
   if (node == nullptr)
   {
-    error_execute = EinsumTree::ErrorExecute::UndefinedNode;
+    error_parse = EinsumTree::ErrorParse::UndefinedNode;
     return;
   }
 
   if (node->type == NodeType::Leaf)
   {
-    if (tensorIndex >= (tensors.size() - 1))  // Last is reserved for output tensor
-    {
-      error_execute = EinsumTree::ErrorExecute::NotEnoughInputTensors;
-      return;
-    }
-
     // user input tensor
-    node->tensor = static_cast<float *>(tensors[tensorIndex++]);
+    node->input_tensor_index = tensorIndex++;
   }
   else if (node->type == NodeType::Transposition)
   {
-    assign_tensor(tensors, node->left);
+    assign_tensor_indices(node->left);
   }
   else if (node->type == NodeType::Contraction)
   {
-    assign_tensor(tensors, node->left);
-    assign_tensor(tensors, node->right);
+    assign_tensor_indices(node->left);
+    assign_tensor_indices(node->right);
   }
   else
   {
@@ -403,62 +401,62 @@ void mini_jit::EinsumTree::assign_tensor(std::vector<void *> tensors, EinsumNode
   }
 }
 
-mini_jit::EinsumTree::ErrorExecute mini_jit::EinsumTree::execute(const std::vector<void *> tensors)
+mini_jit::EinsumTree::ErrorExecute mini_jit::EinsumTree::execute(const std::vector<void *> &tensors)
 {
-  error_execute = ErrorExecute::None;
-
   if (root == nullptr)
   {
     std::cerr << "EinsumTree: Cannot execute, root is null." << std::endl;
     return ErrorExecute::InvalidRoot;
   }
 
-  tensorIndex = 0;
-  assign_tensor(tensors, root);
-  root->tensor = static_cast<float *>(tensors[tensors.size() - 1]);
+  if (tensorIndex >= tensors.size())  // Last is reserved for output tensor
+  {
+    return EinsumTree::ErrorExecute::NotEnoughInputTensors;
+  }
 
   if (tensorIndex < (tensors.size() - 1))  // Last is reserved for output tensor
   {
     return ErrorExecute::TooManyInputTensors;
   }
 
-  if (error_execute != ErrorExecute::None)
-  {
-    return error_execute;
-  }
+  root->tensor = static_cast<float *>(tensors[tensors.size() - 1]);
 
   // Recursive execution of the tree
-  error_execute = execute_node(root);
+  ErrorExecute error_execute = execute_node(tensors, root);
 
   if (error_execute != ErrorExecute::None)
   {
     return error_execute;
   }
 
+  // Do not delete user memory attached to the root node
   root->tensor = nullptr;
 
   return ErrorExecute::None;
 }
 
-mini_jit::EinsumTree::ErrorExecute mini_jit::EinsumTree::execute_node(EinsumNode *node)
+mini_jit::EinsumTree::ErrorExecute mini_jit::EinsumTree::execute_node(const std::vector<void *> &input_tensors, EinsumNode *node)
 {
   if (node->type == NodeType::Leaf)
   {
-    release_assert(node->tensor != nullptr, "Expected a pointer to be a valid pointer.");
+    release_assert(node->input_tensor_index != -1, "Expected a input_tensor_index to be a valid index.");
+    node->tensor = static_cast<float *>(input_tensors[node->input_tensor_index]);
+
+    if (node->tensor == nullptr)
+    {
+      return ErrorExecute::NullPtrAsInputTensor;
+    }
   }
   else if (node->type == NodeType::Transposition)
   {
     release_assert(node->left != nullptr, "Expected the left child of contraction to be a valid pointer.");
     release_assert(node->right == nullptr, "Expected the right child of contraction to be a nullptr.");
 
-    if (node->left->type != NodeType::Leaf)
-    {
-      ErrorExecute error = execute_node(node->left);
+    ErrorExecute error = execute_node(input_tensors, node->left);
 
-      if (error != ErrorExecute::None)
-      {
-        return error;
-      }
+    if (error != ErrorExecute::None)
+    {
+      return error;
     }
 
     release_assert(node->left->tensor != nullptr, "Expected the left child tensor of the transposition to be a valid pointer.");
@@ -472,7 +470,7 @@ mini_jit::EinsumTree::ErrorExecute mini_jit::EinsumTree::execute_node(EinsumNode
     mini_jit::TensorOperation tensor_op;
     TensorConfig config = lower_node(node);
     TensorOperation::error_t error_setup = tensor_op.setup(config);
-    ErrorExecute error = parse_setup_error(error_setup);
+    error = parse_setup_error(error_setup);
 
     if (error != ErrorExecute::None)
     {
@@ -486,24 +484,18 @@ mini_jit::EinsumTree::ErrorExecute mini_jit::EinsumTree::execute_node(EinsumNode
     release_assert(node->left != nullptr, "Expected the left child of contraction to be a valid pointer.");
     release_assert(node->right != nullptr, "Expected the right child of contraction to be a valid pointer.");
 
-    if (node->left->type != NodeType::Leaf)
-    {
-      ErrorExecute error = execute_node(node->left);
+    ErrorExecute error = execute_node(input_tensors, node->left);
 
-      if (error != ErrorExecute::None)
-      {
-        return error;
-      }
+    if (error != ErrorExecute::None)
+    {
+      return error;
     }
 
-    if (node->right->type != NodeType::Leaf)
-    {
-      ErrorExecute error = execute_node(node->right);
+    error = execute_node(input_tensors, node->right);
 
-      if (error != ErrorExecute::None)
-      {
-        return error;
-      }
+    if (error != ErrorExecute::None)
+    {
+      return error;
     }
 
     release_assert(node->left->tensor != nullptr, "Expected the left child tensor of contraction to be a valid pointer.");
@@ -518,7 +510,7 @@ mini_jit::EinsumTree::ErrorExecute mini_jit::EinsumTree::execute_node(EinsumNode
     mini_jit::TensorOperation tensor_op;
     TensorConfig config = lower_node(node);
     TensorOperation::error_t error_setup = tensor_op.setup(config);
-    ErrorExecute error = parse_setup_error(error_setup);
+    error = parse_setup_error(error_setup);
 
     if (error != ErrorExecute::None)
     {
@@ -584,4 +576,210 @@ mini_jit::EinsumTree::ErrorExecute mini_jit::EinsumTree::parse_setup_error(Tenso
   release_assert(error_num <= 115, "Expected error_num to be less equal than 115.");
 
   return static_cast<ErrorExecute>(error_num);
+}
+
+bool mini_jit::EinsumTree::is_unit_stride_n(EinsumNode *node)
+{
+  release_assert(node->left != nullptr, "Expected a valid pointer.");
+
+  int64_t last_dim_id = node->output_dim_ids[node->output_dim_ids.back()];
+  bool isMDim = false;
+
+  for (int64_t dim_id : node->left->output_dim_ids)
+  {
+    if (dim_id == last_dim_id)
+    {
+      // Found same dimension in left child and parent
+      isMDim = true;
+      break;
+    }
+  }
+
+  // Conclusion that 'n' dimension is unit stride
+  if (isMDim == false)
+  {
+    return true;
+  }
+
+  // Check that last dimension is not a batch dimension 'c'
+  for (int64_t dim_id : node->right->output_dim_ids)
+  {
+    release_assert(dim_id == last_dim_id, "Found a C dimension as unit stride.");
+  }
+
+  // unit stride is 'm' dimension
+  return false;
+}
+
+void mini_jit::EinsumTree::optimize(EinsumNode *node)
+{
+  if (node->type != NodeType::Contraction)
+  {
+    return;
+  }
+
+  // Ensure that 'm' dimension has unit stride
+  if (is_unit_stride_n(node))
+  {
+    std::swap(node->left, node->right);
+  }
+
+  reorder_left_node(node);
+  reorder_right_node(node);
+
+  optimize(node->left);
+  optimize(node->right);
+}
+
+mini_jit::EinsumTree::ErrorParse mini_jit::EinsumTree::parse_tree()
+{
+  ErrorParse error = parse_tree_no_optimization();
+
+  if (error != ErrorParse::None)
+  {
+    return error;
+  }
+
+  optimize(root);
+
+  return ErrorParse::None;
+}
+
+void mini_jit::EinsumTree::reorder_left_node(EinsumNode *node)
+{
+  release_assert(node->left != nullptr, "Expected a valid pointer.");
+
+  int32_t indexLeftMDim = findMDim(node);
+  int32_t indexLeftKDim = findKDim(node, true);
+
+  release_assert(indexLeftKDim != -1, "Did not find a 'k' dimension in left child.");
+  release_assert(indexLeftMDim != -1, "Did not find a 'm' dimension in left child.");
+
+  std::vector<int64_t> reorderDimIds = node->left->output_dim_ids;  // copy
+  // iter_swap -> swap values between two indices
+  std::iter_swap(reorderDimIds.begin() + indexLeftMDim, reorderDimIds.begin() + node->left->output_dim_ids.size() - 1);
+  if (indexLeftKDim != node->left->output_dim_ids.size() - 1)
+  {
+    std::iter_swap(reorderDimIds.begin() + indexLeftKDim, reorderDimIds.begin() + node->left->output_dim_ids.size() - 2);
+  }
+  else  // Swapped mDim with kDim -> kDim was placed at indexLeftMDim
+  {
+    std::iter_swap(reorderDimIds.begin() + indexLeftMDim, reorderDimIds.begin() + node->left->output_dim_ids.size() - 2);
+  }
+
+  EinsumNode *reorderNode = new EinsumNode();
+  reorderNode->type = NodeType::Transposition;
+  reorderNode->output_dim_ids = std::move(reorderDimIds);
+
+  reorderNode->left = node->left;
+  node->left = reorderNode;
+}
+
+void mini_jit::EinsumTree::reorder_right_node(EinsumNode *node)
+{
+  int32_t indexRightNDim = findNDim(node);
+  int32_t indexRightKDim = findKDim(node, false);
+
+  release_assert(indexRightKDim != -1, "Did not find a 'k' dimension in right child.");
+  release_assert(indexRightNDim != -1, "Did not find a 'm' dimension in right child.");
+
+  std::vector<int64_t> reorderDimIds = node->right->output_dim_ids;  // copy
+  // iter_swap -> swap values between two indices
+  std::iter_swap(reorderDimIds.begin() + indexRightKDim, reorderDimIds.begin() + node->right->output_dim_ids.size() - 1);
+  if (indexRightNDim != node->left->output_dim_ids.size() - 1)
+  {
+    std::iter_swap(reorderDimIds.begin() + indexRightNDim, reorderDimIds.begin() + node->right->output_dim_ids.size() - 2);
+  }
+  else  // Swapped kDim with nDim -> nDim was placed at indexRightKDim
+  {
+    std::iter_swap(reorderDimIds.begin() + indexRightKDim, reorderDimIds.begin() + node->right->output_dim_ids.size() - 2);
+  }
+
+  EinsumNode *reorderNode = new EinsumNode();
+  reorderNode->type = NodeType::Transposition;
+  reorderNode->output_dim_ids = std::move(reorderDimIds);
+
+  reorderNode->right = node->right;
+  node->right = reorderNode;
+}
+
+int mini_jit::EinsumTree::findMDim(EinsumNode *node)
+{
+  int64_t mDim = node->output_dim_ids.back();
+  for (int32_t i = node->left->output_dim_ids.size() - 1; i >= 0; i--)
+  {
+    if (node->left->output_dim_ids[i] == mDim)
+    {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+int mini_jit::EinsumTree::findNDim(EinsumNode *node)
+{
+  release_assert(node != nullptr, "Expected a valid pointer");
+  release_assert(node->left != nullptr, "Expected a valid left child pointer");
+  release_assert(node->right != nullptr, "Expected a valid right child pointer");
+
+  for (int iParent = node->output_dim_ids.size() - 1; iParent >= 0; iParent--)
+  {
+    for (int iLeft = node->left->output_dim_ids.size() - 1; iLeft >= 0; iLeft--)
+    {
+      // M or C dimension found
+      if (node->output_dim_ids[iParent] == node->left->output_dim_ids[iLeft])
+      {
+        break;
+      }
+
+      for (int iRight = node->right->output_dim_ids.size() - 1; iRight >= 0; iRight--)
+      {
+        // N dimension found
+        if (node->right->output_dim_ids[iRight] == node->output_dim_ids[iParent])
+        {
+          return iRight;
+        }
+      }
+    }
+  }
+
+  return -1;
+}
+
+int mini_jit::EinsumTree::findKDim(EinsumNode *node, bool getLeftIndex)
+{
+  release_assert(node != nullptr, "Expected a valid pointer");
+  release_assert(node->left != nullptr, "Expected a valid left child pointer");
+  release_assert(node->right != nullptr, "Expected a valid right child pointer");
+
+  for (int iParent = node->output_dim_ids.size() - 1; iParent >= 0; iParent--)
+  {
+    for (int iLeft = node->left->output_dim_ids.size() - 1; iLeft >= 0; iLeft--)
+    {
+      // M or C dimension found
+      if (node->output_dim_ids[iParent] == node->left->output_dim_ids[iLeft])
+      {
+        break;
+      }
+
+      for (int iRight = node->right->output_dim_ids.size() - 1; iRight >= 0; iRight--)
+      {
+        // K dimension found
+        if (node->right->output_dim_ids[iRight] == node->left->output_dim_ids[iLeft])
+        {
+          if (getLeftIndex)
+          {
+            return iLeft;
+          }
+          else
+          {
+            return iRight;
+          }
+        }
+      }
+    }
+  }
+
+  return -1;
 }

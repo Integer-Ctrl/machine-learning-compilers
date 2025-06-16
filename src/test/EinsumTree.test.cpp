@@ -23,7 +23,7 @@ TEST_CASE("Test einsum tree parser simple example", "[einsumtree][parse][correct
 
   EinsumTree tree(tree_str, sorted_dim_sizes);
 
-  mini_jit::EinsumTree::ErrorParse err = tree.parse_tree();
+  mini_jit::EinsumTree::ErrorParse err = tree.parse_tree_no_optimization();
   REQUIRE(err == mini_jit::EinsumTree::ErrorParse::None);
   REQUIRE(tree.get_root() != nullptr);
   INFO(tree.get_root()->to_string());
@@ -46,7 +46,7 @@ TEST_CASE("Test einsum tree parser first example", "[einsumtree][parse][correctn
 
   EinsumTree tree(tree_str, sorted_dim_sizes);
 
-  mini_jit::EinsumTree::ErrorParse err = tree.parse_tree();
+  mini_jit::EinsumTree::ErrorParse err = tree.parse_tree_no_optimization();
   REQUIRE(err == mini_jit::EinsumTree::ErrorParse::None);
   REQUIRE(tree.get_root() != nullptr);
   INFO(tree.get_root()->to_string());
@@ -69,7 +69,7 @@ TEST_CASE("Test einsum tree parser second example", "[einsumtree][parse][correct
 
   EinsumTree tree(tree_str, sorted_dim_sizes);
 
-  mini_jit::EinsumTree::ErrorParse err_parse = tree.parse_tree();
+  mini_jit::EinsumTree::ErrorParse err_parse = tree.parse_tree_no_optimization();
   REQUIRE(err_parse == mini_jit::EinsumTree::ErrorParse::None);
   REQUIRE(tree.get_root() != nullptr);
   INFO(tree.get_root()->to_string());
@@ -96,7 +96,7 @@ TEST_CASE("Test einsum tree execute simple example", "[einsumtree][execute][corr
 
   EinsumTree tree(tree_str, dim_sizes);
 
-  mini_jit::EinsumTree::ErrorParse err = tree.parse_tree();
+  mini_jit::EinsumTree::ErrorParse err = tree.parse_tree_no_optimization();
   REQUIRE(err == mini_jit::EinsumTree::ErrorParse::None);
   REQUIRE(tree.get_root() != nullptr);
   INFO(tree.get_root()->to_string());
@@ -151,7 +151,7 @@ TEST_CASE("Test einsum tree execute first example", "[einsumtree][execute][corre
 
   EinsumTree tree(tree_str, dim_sizes);
 
-  mini_jit::EinsumTree::ErrorParse err = tree.parse_tree();
+  mini_jit::EinsumTree::ErrorParse err = tree.parse_tree_no_optimization();
   REQUIRE(err == mini_jit::EinsumTree::ErrorParse::None);
   REQUIRE(tree.get_root() != nullptr);
   INFO(tree.get_root()->to_string());
@@ -197,7 +197,7 @@ TEST_CASE("Test einsum tree execute second example", "[einsumtree][execute][corr
 
   EinsumTree tree(tree_str, dim_sizes);
 
-  mini_jit::EinsumTree::ErrorParse err_parse = tree.parse_tree();
+  mini_jit::EinsumTree::ErrorParse err_parse = tree.parse_tree_no_optimization();
   REQUIRE(err_parse == mini_jit::EinsumTree::ErrorParse::None);
   REQUIRE(tree.get_root() != nullptr);
   INFO(tree.get_root()->to_string());
