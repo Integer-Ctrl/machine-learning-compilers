@@ -311,6 +311,20 @@ if(OpenMP_CXX_FOUND)
     target_link_libraries(tests PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
+# tests sanitized
+add_executable(tests_sanitized "${SOURCE_FILEPATHS}" "${TEST_FILEPATHS}")
+if(SAVE_JITS_TO_FILE)
+    target_compile_definitions(tests_sanitized PUBLIC SAVE_JITS_TO_FILE)
+endif(SAVE_JITS_TO_FILE)
+
+target_compile_options(tests_sanitized PRIVATE -g -fsanitize=float-divide-by-zero -fsanitize=bounds -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer)
+target_link_options(tests_sanitized PRIVATE -g -fsanitize=address -fsanitize=undefined)
+target_link_libraries(tests_sanitized PRIVATE Catch2::Catch2WithMain)
+
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(tests_sanitized PRIVATE OpenMP::OpenMP_CXX)
+endif()
+
 # benchmarks
 add_executable(benchmarks "${SOURCE_FILEPATHS}" "${BENCH_FILEPATHS}")
 

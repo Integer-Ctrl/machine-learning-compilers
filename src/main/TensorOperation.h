@@ -242,6 +242,13 @@ namespace mini_jit
      * @return TensorConfig used by the Tensor operation.
      */
     TensorConfig get_config();
+
+    /**
+     * @brief Writes the current kernel into a file.
+     *
+     * @param path The file to write the kernel to without extension.
+     */
+    void write_kernel_to_file(std::string path_no_extension) const;
   };
 };  // namespace mini_jit
 

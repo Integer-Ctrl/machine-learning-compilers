@@ -105,3 +105,8 @@ void mini_jit::Unary::relu_unary_fp32(uint32_t m, uint32_t n, uint32_t trans_b)
   }
   return;
 }
+
+void mini_jit::Unary::write_kernel_to_file(const char *path) const
+{
+  native_kernel.write(path);
+}

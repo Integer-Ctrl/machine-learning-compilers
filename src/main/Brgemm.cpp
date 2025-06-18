@@ -47,6 +47,11 @@ mini_jit::Brgemm::kernel_t mini_jit::Brgemm::get_kernel() const
   return kernel;
 }
 
+void mini_jit::Brgemm::write_kernel_to_file(const char *path) const
+{
+  native_kernel.write(path);
+}
+
 void mini_jit::Brgemm::fill_with_matmuls_no_batch_dim_column_major_fp32(uint32_t m, uint32_t n, uint32_t k)
 {
   // Always sort from the specific to the more general case

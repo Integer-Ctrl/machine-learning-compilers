@@ -92,6 +92,13 @@ public:
    * @return pointer to the generated kernel.
    **/
   kernel_t get_kernel() const;
+
+  /**
+   * @brief Writes the current kernel into a file.
+   *
+   * @param path The file to write the kernel to.
+   */
+  void write_kernel_to_file(const char *path) const;
 };
 
 #endif

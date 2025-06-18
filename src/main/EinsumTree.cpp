@@ -159,10 +159,16 @@ mini_jit::EinsumTree::~EinsumTree()
 
 void mini_jit::EinsumTree::delete_tree(EinsumNode *node)
 {
-  if (!node)
+  if (node == nullptr)
+  {
     return;
+  }
+
   delete_tree(node->left);
   delete_tree(node->right);
+  node->left = nullptr;
+  node->right = nullptr;
+
   if (node->type != NodeType::Leaf && node->tensor != nullptr && node != get_root())
   {
     delete[] node->tensor;
@@ -222,6 +228,16 @@ std::string mini_jit::EinsumTree::EinsumNode::_to_string(uint depth, std::string
 std::string mini_jit::EinsumTree::EinsumNode::to_string() const
 {
   return mini_jit::EinsumTree::EinsumNode::_to_string(0, "", "");
+}
+
+std::string mini_jit::EinsumTree::EinsumNode::name() const
+{
+  std::string output = std::format("{}", output_dim_ids[0]);
+  for (auto iDim = output_dim_ids.begin() + 1; iDim != output_dim_ids.end(); iDim++)
+  {
+    output += std::format("_{}", *iDim);
+  }
+  return output;
 }
 
 mini_jit::TensorConfig mini_jit::EinsumTree::lower_node(const EinsumNode *node)
@@ -477,6 +493,9 @@ mini_jit::EinsumTree::ErrorExecute mini_jit::EinsumTree::execute_node(const std:
       return error;
     }
 
+#ifdef SAVE_JITS_TO_FILE
+    tensor_op.write_kernel_to_file(node->name());
+#endif  // SAVE_JITS_TO_FILE
     tensor_op.execute(node->left->tensor, nullptr, node->tensor);
   }
   else if (node->type == NodeType::Contraction)
@@ -517,6 +536,9 @@ mini_jit::EinsumTree::ErrorExecute mini_jit::EinsumTree::execute_node(const std:
       return error;
     }
 
+#ifdef SAVE_JITS_TO_FILE
+    tensor_op.write_kernel_to_file(node->name());
+#endif  // SAVE_JITS_TO_FILE
     tensor_op.execute(node->left->tensor, node->right->tensor, node->tensor);
   }
   else

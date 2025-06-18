@@ -77,6 +77,11 @@ namespace mini_jit
       std::string to_string() const;
 
       /**
+       * @brief Gets the string representation of the dim ids of the node.
+       */
+      std::string name() const;
+
+      /**
        * Get the size of the tensor represented by this node.
        *
        * @param dim_sizes A vector of dimension sizes corresponding to the output dimensions.

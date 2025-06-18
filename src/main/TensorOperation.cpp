@@ -1,6 +1,7 @@
 #include "TensorOperation.h"
 #include "TensorOptimization.h"
 #include "release_assert.h"
+#include <format>
 #include <iostream>
 #include <omp.h>
 #include <ranges>
@@ -809,4 +810,29 @@ void mini_jit::TensorOperation::execute_dimension(int64_t index_dim, char const 
 mini_jit::TensorConfig mini_jit::TensorOperation::get_config()
 {
   return config;
+}
+
+void mini_jit::TensorOperation::write_kernel_to_file(std::string path_no_extension) const
+{
+  if (prim_first != TensorConfig::prim_t::none && std::holds_alternative<Unary>(first_touch))
+  {
+    std::get<Unary>(first_touch).write_kernel_to_file(std::format("{}_first_touch.bin", path_no_extension).c_str());
+  }
+
+  if (prim_main != TensorConfig::prim_t::none)
+  {
+    if (std::holds_alternative<Brgemm>(main_kernel))
+    {
+      std::get<Brgemm>(main_kernel).write_kernel_to_file(std::format("{}_main.bin", path_no_extension).c_str());
+    }
+    else if (std::holds_alternative<Unary>(main_kernel))
+    {
+      std::get<Unary>(main_kernel).write_kernel_to_file(std::format("{}_main.bin", path_no_extension).c_str());
+    }
+  }
+
+  if (prim_last != TensorConfig::prim_t::none && std::holds_alternative<Unary>(last_touch))
+  {
+    std::get<Unary>(last_touch).write_kernel_to_file(std::format("{}_first_touch.bin", path_no_extension).c_str());
+  }
 }
