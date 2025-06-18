@@ -292,7 +292,7 @@ namespace mini_jit
     /**
      * Executes the einsum operation defined by the tree.
      *
-     * @param tensors A vector of pointers to the input tensors of the leaves.
+     * @param tensors A vector of pointers to the input tensors of the leafs.
      * @return ErrorExecute indicating the result of the execution operation.
      */
     ErrorExecute execute(const std::vector<void *> &tensors);

@@ -282,7 +282,7 @@ TEST_CASE("Test einsum tree optimize reorder left", "[einsumtree][optimize][corr
   REQUIRE(tree.get_root()->left->output_dim_ids[0] == 0);
   REQUIRE(tree.get_root()->left->output_dim_ids[1] == 1);
   REQUIRE(tree.get_root()->left->type == mini_jit::EinsumTree::NodeType::Transposition);
-  // Original leave node
+  // Original leaf node
   REQUIRE(tree.get_root()->left->left != nullptr);
   REQUIRE(tree.get_root()->left->left->output_dim_ids[0] == 1);
   REQUIRE(tree.get_root()->left->left->output_dim_ids[1] == 0);
@@ -319,7 +319,7 @@ TEST_CASE("Test einsum tree optimize reorder right", "[einsumtree][optimize][cor
   REQUIRE(tree.get_root()->right->output_dim_ids[1] == 3);
   REQUIRE(tree.get_root()->right->output_dim_ids[2] == 0);
   REQUIRE(tree.get_root()->right->type == mini_jit::EinsumTree::NodeType::Transposition);
-  // Original leave node
+  // Original leaf node
   REQUIRE(tree.get_root()->right->left != nullptr);
   REQUIRE(tree.get_root()->right->left->output_dim_ids[0] == 0);
   REQUIRE(tree.get_root()->right->left->output_dim_ids[1] == 3);
@@ -357,7 +357,7 @@ TEST_CASE("Test einsum tree optimize", "[einsumtree][optimize][correctness]")
   REQUIRE(tree.get_root()->left->output_dim_ids[0] == 0);
   REQUIRE(tree.get_root()->left->output_dim_ids[1] == 1);
   REQUIRE(tree.get_root()->left->type == mini_jit::EinsumTree::NodeType::Transposition);
-  // Original leave node
+  // Original leaf node
   REQUIRE(tree.get_root()->left->left != nullptr);
   REQUIRE(tree.get_root()->left->left->output_dim_ids[0] == 1);
   REQUIRE(tree.get_root()->left->left->output_dim_ids[1] == 0);
@@ -367,7 +367,7 @@ TEST_CASE("Test einsum tree optimize", "[einsumtree][optimize][correctness]")
   REQUIRE(tree.get_root()->right->output_dim_ids[1] == 3);
   REQUIRE(tree.get_root()->right->output_dim_ids[2] == 0);
   REQUIRE(tree.get_root()->right->type == mini_jit::EinsumTree::NodeType::Transposition);
-  // Original leave node
+  // Original leaf node
   REQUIRE(tree.get_root()->right->left != nullptr);
   REQUIRE(tree.get_root()->right->left->output_dim_ids[0] == 0);
   REQUIRE(tree.get_root()->right->left->output_dim_ids[1] == 3);
