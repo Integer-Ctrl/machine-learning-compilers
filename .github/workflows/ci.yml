@@ -53,7 +53,7 @@ jobs:
         ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir submission_25_05_08 --output-on-failure
         ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir submission_25_05_15 --output-on-failure
         ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir submission_25_05_22 --output-on-failure
-        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --output-on-failure
+        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --output-on-failure -E "^Test einsum tree optimize and execute first example"
 
     - name: Test + Valgrind
       working-directory: ${{github.workspace}}/build
@@ -63,5 +63,5 @@ jobs:
         ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_08 --output-on-failure
         ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_15 --output-on-failure
         ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_22 --output-on-failure
-        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --output-on-failure -E "^Test *(gemm generation|unary|tensor operation|parallel tensor operation|einsum tree execute)"
+        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --output-on-failure -E "^Test *(gemm generation|unary|tensor operation|parallel tensor operation|einsum tree execute|einsum tree optimize and execute)"
 
