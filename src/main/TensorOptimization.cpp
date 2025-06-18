@@ -169,7 +169,7 @@ void mini_jit::TensorOptimization::_primitive_identification(TensorConfig &confi
       config.main = TensorConfig::prim_t::gemm;
     }
 
-    if (primitive_k2 != -1 & primitive_k1 != -1)
+    if (primitive_k2 != -1 && primitive_k1 != -1)
     {
       config.exec_types[primitive_k2] = TensorConfig::exec_t::prim;
       config.main = TensorConfig::prim_t::brgemm;
