@@ -168,22 +168,6 @@ namespace mini_jit
      */
     bool is_unit_stride_n(EinsumNode *node);
 
-    /**
-     * Reorders left node of a contraction to ensure the 'km' dimensions are at the right.
-     * The 'm' dimension has unit-stride.
-     *
-     * @param node The EinsumNode representing the parent child of the contraction.
-     */
-    void reorder_left_node(EinsumNode *node);
-
-    /**
-     * Reorders right node of a contraction to ensure the 'nk' dimensions are at the right.
-     * The 'k' dimension has unit-stride.
-     *
-     * @param node The EinsumNode representing the parent of the contraction.
-     */
-    void reorder_right_node(EinsumNode *node);
-
     // Helpers
     /**
      * Parses a dimension list from the string starting at the given position.
@@ -232,7 +216,7 @@ namespace mini_jit
      * @param getLeftIndex If true, finds the k-dimension in the left child; otherwise, in the right child.
      * @return int k-dim index if found, otherwise -1.
      */
-    int findKDim(EinsumNode *Node, bool getLeftIndex);
+    int32_t findKDim(EinsumNode *Node, bool getLeftIndex);
 
     /**
      * Finds the n-dimension of the right child of the given node.
@@ -240,7 +224,7 @@ namespace mini_jit
      * @param Node The node to check.
      * @return int n-dim index if found, otherwise -1.
      */
-    int findNDim(EinsumNode *Node);
+    int32_t findNDim(EinsumNode *Node);
 
     /**
      * Finds the n-dimension of the left child of the given node.
@@ -248,7 +232,7 @@ namespace mini_jit
      * @param Node The node to check.
      * @return int m-dim index if found, otherwise -1.
      */
-    int findMDim(EinsumNode *Node);
+    int32_t findMDim(EinsumNode *Node);
 
   public:
     EinsumTree(const std::string &tree_str, const std::vector<int64_t> &sorted_dim_sizes);
@@ -262,7 +246,7 @@ namespace mini_jit
     ErrorParse parse_tree_no_optimization();
 
     /**
-     * Parses the einsum tree string and builds the tree structure.
+     * Parses the einsum tree string, builds the tree structure and optimizes the tree.
      *
      * @return ErrorParse indicating the result of the parsing operation.
      */
@@ -277,8 +261,33 @@ namespace mini_jit
 
     /**
      * @brief Optimizes the einsum tree structure.
+     *
+     * @param The node and its children to optimize.
      */
     void optimize(EinsumNode *node);
+
+    /**
+     * @brief Ensures that the 'm' dimension is unit stride, by swapping if 'n' dimension is unit stride.
+     *
+     * @param node The node of type tensor contraction.
+     */
+    void conditional_swap(mini_jit::EinsumTree::EinsumNode *node);
+
+    /**
+     * Reorders left node of a contraction to ensure the 'km' dimensions are at the right.
+     * The 'm' dimension has unit-stride.
+     *
+     * @param node The EinsumNode representing the parent child of the contraction.
+     */
+    void reorder_left_node(EinsumNode *node);
+
+    /**
+     * Reorders right node of a contraction to ensure the 'nk' dimensions are at the right.
+     * The 'k' dimension has unit-stride.
+     *
+     * @param node The EinsumNode representing the parent of the contraction.
+     */
+    void reorder_right_node(EinsumNode *node);
 
     /**
      * Executes the einsum operation defined by the tree.

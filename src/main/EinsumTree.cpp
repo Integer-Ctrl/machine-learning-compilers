@@ -165,7 +165,7 @@ void mini_jit::EinsumTree::delete_tree(EinsumNode *node)
   delete_tree(node->right);
   if (node->type != NodeType::Leaf && node->tensor != nullptr && node != get_root())
   {
-    delete node->tensor;
+    delete[] node->tensor;
   }
   delete node;
 }
@@ -582,7 +582,7 @@ bool mini_jit::EinsumTree::is_unit_stride_n(EinsumNode *node)
 {
   release_assert(node->left != nullptr, "Expected a valid pointer.");
 
-  int64_t last_dim_id = node->output_dim_ids[node->output_dim_ids.back()];
+  int64_t last_dim_id = node->output_dim_ids.back();
   bool isMDim = false;
 
   for (int64_t dim_id : node->left->output_dim_ids)
@@ -604,7 +604,7 @@ bool mini_jit::EinsumTree::is_unit_stride_n(EinsumNode *node)
   // Check that last dimension is not a batch dimension 'c'
   for (int64_t dim_id : node->right->output_dim_ids)
   {
-    release_assert(dim_id == last_dim_id, "Found a C dimension as unit stride.");
+    release_assert(dim_id != last_dim_id, "Found a C dimension as unit stride.");
   }
 
   // unit stride is 'm' dimension
@@ -618,17 +618,22 @@ void mini_jit::EinsumTree::optimize(EinsumNode *node)
     return;
   }
 
-  // Ensure that 'm' dimension has unit stride
-  if (is_unit_stride_n(node))
-  {
-    std::swap(node->left, node->right);
-  }
+  conditional_swap(node);
 
   reorder_left_node(node);
   reorder_right_node(node);
 
   optimize(node->left);
   optimize(node->right);
+}
+
+void mini_jit::EinsumTree::conditional_swap(mini_jit::EinsumTree::EinsumNode *node)
+{
+  // Ensure that 'm' dimension has unit stride
+  if (is_unit_stride_n(node))
+  {
+    std::swap(node->left, node->right);
+  }
 }
 
 mini_jit::EinsumTree::ErrorParse mini_jit::EinsumTree::parse_tree()
@@ -655,10 +660,17 @@ void mini_jit::EinsumTree::reorder_left_node(EinsumNode *node)
   release_assert(indexLeftKDim != -1, "Did not find a 'k' dimension in left child.");
   release_assert(indexLeftMDim != -1, "Did not find a 'm' dimension in left child.");
 
+  if (indexLeftKDim == static_cast<int32_t>(node->left->output_dim_ids.size()) - 2 &&
+      indexLeftMDim == static_cast<int32_t>(node->left->output_dim_ids.size()) - 1)
+  {
+    // Already ordered
+    return;
+  }
+
   std::vector<int64_t> reorderDimIds = node->left->output_dim_ids;  // copy
   // iter_swap -> swap values between two indices
   std::iter_swap(reorderDimIds.begin() + indexLeftMDim, reorderDimIds.begin() + node->left->output_dim_ids.size() - 1);
-  if (indexLeftKDim != node->left->output_dim_ids.size() - 1)
+  if (indexLeftKDim != static_cast<int32_t>(node->left->output_dim_ids.size()) - 1)
   {
     std::iter_swap(reorderDimIds.begin() + indexLeftKDim, reorderDimIds.begin() + node->left->output_dim_ids.size() - 2);
   }
@@ -667,26 +679,44 @@ void mini_jit::EinsumTree::reorder_left_node(EinsumNode *node)
     std::iter_swap(reorderDimIds.begin() + indexLeftMDim, reorderDimIds.begin() + node->left->output_dim_ids.size() - 2);
   }
 
-  EinsumNode *reorderNode = new EinsumNode();
-  reorderNode->type = NodeType::Transposition;
-  reorderNode->output_dim_ids = std::move(reorderDimIds);
+  if (node->left->type == NodeType::Leaf)
+  {
+    // Add additional Permutation Node
+    EinsumNode *reorderNode = new EinsumNode();
+    reorderNode->type = NodeType::Transposition;
+    reorderNode->output_dim_ids = std::move(reorderDimIds);
 
-  reorderNode->left = node->left;
-  node->left = reorderNode;
+    reorderNode->left = node->left;
+    node->left = reorderNode;
+  }
+  else
+  {
+    // Only reorder the output of the left operation
+    node->left->output_dim_ids = std::move(reorderDimIds);
+  }
 }
 
 void mini_jit::EinsumTree::reorder_right_node(EinsumNode *node)
 {
+  release_assert(node->right != nullptr, "Expected a valid pointer.");
+
   int32_t indexRightNDim = findNDim(node);
   int32_t indexRightKDim = findKDim(node, false);
 
   release_assert(indexRightKDim != -1, "Did not find a 'k' dimension in right child.");
   release_assert(indexRightNDim != -1, "Did not find a 'm' dimension in right child.");
 
+  if (indexRightNDim == static_cast<int32_t>(node->right->output_dim_ids.size()) - 2 &&
+      indexRightKDim == static_cast<int32_t>(node->right->output_dim_ids.size()) - 1)
+  {
+    // Already ordered
+    return;
+  }
+
   std::vector<int64_t> reorderDimIds = node->right->output_dim_ids;  // copy
   // iter_swap -> swap values between two indices
   std::iter_swap(reorderDimIds.begin() + indexRightKDim, reorderDimIds.begin() + node->right->output_dim_ids.size() - 1);
-  if (indexRightNDim != node->left->output_dim_ids.size() - 1)
+  if (indexRightNDim != static_cast<int32_t>(node->right->output_dim_ids.size()) - 1)
   {
     std::iter_swap(reorderDimIds.begin() + indexRightNDim, reorderDimIds.begin() + node->right->output_dim_ids.size() - 2);
   }
@@ -695,15 +725,24 @@ void mini_jit::EinsumTree::reorder_right_node(EinsumNode *node)
     std::iter_swap(reorderDimIds.begin() + indexRightKDim, reorderDimIds.begin() + node->right->output_dim_ids.size() - 2);
   }
 
-  EinsumNode *reorderNode = new EinsumNode();
-  reorderNode->type = NodeType::Transposition;
-  reorderNode->output_dim_ids = std::move(reorderDimIds);
+  if (node->right->type == NodeType::Leaf)
+  {
+    // Add additional Permutation Node
+    EinsumNode *reorderNode = new EinsumNode();
+    reorderNode->type = NodeType::Transposition;
+    reorderNode->output_dim_ids = std::move(reorderDimIds);
 
-  reorderNode->right = node->right;
-  node->right = reorderNode;
+    reorderNode->left = node->right;
+    node->right = reorderNode;
+  }
+  else
+  {
+    // Only reorder the output of the right operation
+    node->right->output_dim_ids = std::move(reorderDimIds);
+  }
 }
 
-int mini_jit::EinsumTree::findMDim(EinsumNode *node)
+int32_t mini_jit::EinsumTree::findMDim(EinsumNode *node)
 {
   int64_t mDim = node->output_dim_ids.back();
   for (int32_t i = node->left->output_dim_ids.size() - 1; i >= 0; i--)
@@ -717,15 +756,15 @@ int mini_jit::EinsumTree::findMDim(EinsumNode *node)
   return -1;
 }
 
-int mini_jit::EinsumTree::findNDim(EinsumNode *node)
+int32_t mini_jit::EinsumTree::findNDim(EinsumNode *node)
 {
   release_assert(node != nullptr, "Expected a valid pointer");
   release_assert(node->left != nullptr, "Expected a valid left child pointer");
   release_assert(node->right != nullptr, "Expected a valid right child pointer");
 
-  for (int iParent = node->output_dim_ids.size() - 1; iParent >= 0; iParent--)
+  for (int32_t iParent = node->output_dim_ids.size() - 1; iParent >= 0; iParent--)
   {
-    for (int iLeft = node->left->output_dim_ids.size() - 1; iLeft >= 0; iLeft--)
+    for (int32_t iLeft = node->left->output_dim_ids.size() - 1; iLeft >= 0; iLeft--)
     {
       // M or C dimension found
       if (node->output_dim_ids[iParent] == node->left->output_dim_ids[iLeft])
@@ -733,7 +772,7 @@ int mini_jit::EinsumTree::findNDim(EinsumNode *node)
         break;
       }
 
-      for (int iRight = node->right->output_dim_ids.size() - 1; iRight >= 0; iRight--)
+      for (int32_t iRight = node->right->output_dim_ids.size() - 1; iRight >= 0; iRight--)
       {
         // N dimension found
         if (node->right->output_dim_ids[iRight] == node->output_dim_ids[iParent])
@@ -747,15 +786,15 @@ int mini_jit::EinsumTree::findNDim(EinsumNode *node)
   return -1;
 }
 
-int mini_jit::EinsumTree::findKDim(EinsumNode *node, bool getLeftIndex)
+int32_t mini_jit::EinsumTree::findKDim(EinsumNode *node, bool getLeftIndex)
 {
   release_assert(node != nullptr, "Expected a valid pointer");
   release_assert(node->left != nullptr, "Expected a valid left child pointer");
   release_assert(node->right != nullptr, "Expected a valid right child pointer");
 
-  for (int iParent = node->output_dim_ids.size() - 1; iParent >= 0; iParent--)
+  for (int32_t iParent = node->output_dim_ids.size() - 1; iParent >= 0; iParent--)
   {
-    for (int iLeft = node->left->output_dim_ids.size() - 1; iLeft >= 0; iLeft--)
+    for (int32_t iLeft = node->left->output_dim_ids.size() - 1; iLeft >= 0; iLeft--)
     {
       // M or C dimension found
       if (node->output_dim_ids[iParent] == node->left->output_dim_ids[iLeft])
@@ -763,7 +802,7 @@ int mini_jit::EinsumTree::findKDim(EinsumNode *node, bool getLeftIndex)
         break;
       }
 
-      for (int iRight = node->right->output_dim_ids.size() - 1; iRight >= 0; iRight--)
+      for (int32_t iRight = node->right->output_dim_ids.size() - 1; iRight >= 0; iRight--)
       {
         // K dimension found
         if (node->right->output_dim_ids[iRight] == node->left->output_dim_ids[iLeft])

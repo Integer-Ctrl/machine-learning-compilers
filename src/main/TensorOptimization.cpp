@@ -169,7 +169,7 @@ void mini_jit::TensorOptimization::_primitive_identification(TensorConfig &confi
       config.main = TensorConfig::prim_t::gemm;
     }
 
-    if (primitive_k2 != -1)
+    if (primitive_k2 != -1 & primitive_k1 != -1)
     {
       config.exec_types[primitive_k2] = TensorConfig::exec_t::prim;
       config.main = TensorConfig::prim_t::brgemm;
@@ -424,8 +424,8 @@ void mini_jit::TensorOptimization::_swap_elements(TensorConfig &config, size_t i
   release_assert(config.dim_types.size() == config.strides_in0.size(), "Expected the dimension types size to match the strides_in0 size.");
   release_assert(config.dim_types.size() == config.strides_in1.size(), "Expected the dimension types size to match the strides_in1 size.");
   release_assert(config.dim_types.size() == config.strides_out.size(), "Expected the dimension types size to match the strides_out size.");
-  release_assert(index1 <= config.dim_types.size(), "Expected the index1 to be less than the dimension types size.");
-  release_assert(index2 <= config.dim_types.size(), "Expected the index2 to be less than the dimension types size.");
+  release_assert(index1 < config.dim_types.size(), "Expected the index1 to be less than the dimension types size.");
+  release_assert(index2 < config.dim_types.size(), "Expected the index2 to be less than the dimension types size.");
 
   std::iter_swap(config.dim_types.begin() + index1, config.dim_types.begin() + index2);
   std::iter_swap(config.dim_sizes.begin() + index1, config.dim_sizes.begin() + index2);
@@ -444,8 +444,8 @@ void mini_jit::TensorOptimization::_move_elements(TensorConfig &config, size_t o
   release_assert(config.dim_types.size() == config.strides_in0.size(), "Expected the dimension types size to match the strides_in0 size.");
   release_assert(config.dim_types.size() == config.strides_in1.size(), "Expected the dimension types size to match the strides_in1 size.");
   release_assert(config.dim_types.size() == config.strides_out.size(), "Expected the dimension types size to match the strides_out size.");
-  release_assert(old_index <= config.dim_types.size(), "Expected the index1 to be less than the dimension types size.");
-  release_assert(new_index <= config.dim_types.size(), "Expected the index2 to be less than the dimension types size.");
+  release_assert(old_index < config.dim_types.size(), "Expected the index1 to be less than the dimension types size.");
+  release_assert(new_index < config.dim_types.size(), "Expected the index2 to be less than the dimension types size.");
 
   std::rotate(config.dim_types.begin() + new_index, config.dim_types.begin() + old_index, config.dim_types.begin() + old_index + 1);
   std::rotate(config.dim_sizes.begin() + new_index, config.dim_sizes.begin() + old_index, config.dim_sizes.begin() + old_index + 1);

@@ -46,8 +46,8 @@ endif()
 # ==============================================================
 # Setup compile Flags
 # ==============================================================
-add_compile_options(-Wall -Wextra -Wpedantic)
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Werror -O2")
+add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
 
 set(CMAKE_CXX_STANDARD 20)

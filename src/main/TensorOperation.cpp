@@ -490,8 +490,9 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup_no_optimizat
   if (!isValidKDim(dim_types, exec_types, strides_in1, prim_main))
   {
     hasSetupError = true;
+    std::cerr << (int)prim_main << std::endl;
     std::cerr << "Error: Invalid primitive configuration detected. Expected to find zero primitive k dimension for unary, one primitive k "
-                 "dimension for gemm, two primitive k dimension."
+                 "dimension for gemm, two primitive k dimension for brgemm."
               << std::endl;
     return error_t::err_invalid_primitive_configuration;
   }
