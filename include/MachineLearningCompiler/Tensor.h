@@ -1,0 +1,36 @@
+#ifndef MLC_TENSOR_H
+#define MLC_TENSOR_H
+
+#include <cstdint>
+#include <string>
+#include <vector>
+
+namespace mlc
+{
+  struct Tensor
+  {
+    float *data;
+    std::vector<uint64_t> dim_sizes;
+
+    inline Tensor(float *data, const std::vector<uint64_t> &dim_sizes) : data(data), dim_sizes(dim_sizes) {};
+  };
+
+  /**
+   * @brief Fills the tensor with random float data.
+   *
+   * @param tensor The tensor to fill.
+   */
+  void fill_random(Tensor &tensor);
+
+  /**
+   * @brief Executes contractions based on the given tree.
+   *
+   * @param inputs The input tensors.
+   * @param output The output tensor.
+   * @param tree The einsum tree to contract in the format [in0],[in1]->[out].
+   */
+  void einsum(const std::vector<Tensor> &inputs, Tensor &output, const std::string &tree);
+
+}  // namespace mlc
+
+#endif  // MLC_TENSOR

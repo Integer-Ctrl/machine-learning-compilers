@@ -5,10 +5,13 @@
 #include <iostream>
 #include <utility>
 
+mini_jit::EinsumTree::EinsumTree(const std::string &tree_str) : tree_str(tree_str)
+{
+}
+
 mini_jit::EinsumTree::EinsumTree(const std::string &tree_str, const std::vector<int64_t> &sorted_dim_sizes)
     : tree_str(tree_str), dim_sizes(sorted_dim_sizes)
 {
-  EinsumTree::error_parse = EinsumTree::ErrorParse::None;
 }
 
 mini_jit::EinsumTree::ErrorParse mini_jit::EinsumTree::parse_tree_no_optimization()
@@ -155,6 +158,11 @@ mini_jit::EinsumTree::EinsumNode *mini_jit::EinsumTree::get_root() const
 mini_jit::EinsumTree::~EinsumTree()
 {
   delete_tree(root);
+}
+
+void mini_jit::EinsumTree::set_sorted_dim_sizes(const std::vector<int64_t> &sorted_dim_sizes)
+{
+  EinsumTree::dim_sizes = sorted_dim_sizes;
 }
 
 void mini_jit::EinsumTree::delete_tree(EinsumNode *node)

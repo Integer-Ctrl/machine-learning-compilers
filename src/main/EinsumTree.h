@@ -104,7 +104,7 @@ namespace mini_jit
     uint32_t tensorIndex = 0;
     EinsumNode *root = nullptr;
     const std::string tree_str;
-    ErrorParse error_parse;
+    ErrorParse error_parse = ErrorParse::None;
     std::vector<int64_t> dim_sizes;
 
     // Parser
@@ -240,8 +240,16 @@ namespace mini_jit
     int32_t findMDim(EinsumNode *Node);
 
   public:
+    EinsumTree(const std::string &tree_str);
     EinsumTree(const std::string &tree_str, const std::vector<int64_t> &sorted_dim_sizes);
     ~EinsumTree();
+
+    /**
+     * @brief Set the sorted dime sizes of the input tensors.
+     *
+     * @param sorted_dim_sizes The sorted dim sizes
+     */
+    void set_sorted_dim_sizes(const std::vector<int64_t> &sorted_dim_sizes);
 
     /**
      * Parses the einsum tree string and builds the tree structure.

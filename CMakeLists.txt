@@ -273,6 +273,16 @@ set(BENCH_KERNLES_FILES
     unary/unary_relu.bench.cpp
 )
 
+set(SRC_INTERFACE_FILES
+    TensorUtils.h
+    Tensor.cpp
+)
+
+set(TEST_INTERFACE_FILES
+    TensorUtils.test.cpp
+    Tensor.test.cpp
+)
+
 foreach(file ${SRC_MAIN_FILES})
     list(APPEND SOURCE_FILEPATHS src/main/${file})
 endforeach()
@@ -293,6 +303,10 @@ foreach(file ${TEST_KERNELS})
     list(APPEND TEST_FILEPATHS src/test/kernels/${file})
 endforeach()
 
+foreach(file ${TEST_INTERFACE_FILES})
+    list(APPEND TEST_FILEPATHS src/test/interface/${file})
+endforeach()
+
 foreach(file ${TEST_ARM_INSTRUCTION_FILES})
     list(APPEND TEST_FILEPATHS src/test/arm_instructions/${file})
 endforeach()
@@ -304,6 +318,17 @@ endforeach()
 foreach(file ${BENCH_KERNELS_FILES})
     list(APPEND BENCH_FILEPATHS src/test/kernels/${file})
 endforeach()
+
+foreach(file ${SRC_INTERFACE_FILES})
+    list(APPEND INTERFACE_FILEPATHS src/interface/${file})
+endforeach()
+
+# ==== Public headers of the installed library ====
+set(public_headers
+    include/${PROJECT_NAME}/Tensor.h
+)
+
+list(APPEND TEST_FILEPATHS "${INTERFACE_FILEPATHS}" "${public_headers}")
 
 # =============================================================
 # TARGETS
@@ -381,9 +406,14 @@ endif()
 
 add_library(${PROJECT_NAME})
 
+# without it public headers won't get installed
+set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER ${public_headers})
+
 target_sources(${PROJECT_NAME}
     PRIVATE
         "${SOURCE_FILEPATHS}"
+        "${INTERFACE_FILEPATHS}"
+        "${public_headers}"
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -415,11 +445,6 @@ if(MLC_USE_OPENMP AND OpenMP_CXX_FOUND)
     target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
-# without it public headers won't get installed
-set(public_headers
-    include/${PROJECT_NAME}/tensor.h
-)
-set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER ${public_headers})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
 
