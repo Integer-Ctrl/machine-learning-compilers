@@ -1,6 +1,10 @@
-
-cmake_minimum_required(VERSION 3.10.0)
+cmake_minimum_required(VERSION 3.28.0)
 project(MachineLearningCompiler VERSION 0.1.0 LANGUAGES C CXX ASM)
+
+if(NOT (UNIX AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm)"))
+   message(FATAL_ERROR "Only arm on Linux is supported.") 
+endif()
+
 
 # Set default build type to Release if not specified
 if(NOT CMAKE_BUILD_TYPE)
@@ -31,17 +35,18 @@ if(SAVE_JITS_TO_FILE)
     # set per target
 endif()
 
-option(USE_OPENMP "Use OpenMP for parallelization of the TensorOperation" ON)
+option(MLC_USE_OPENMP "Use OpenMP for parallelization of the Tensor Operation" ON)
 
-if(USE_OPENMP)
+if(MLC_USE_OPENMP)
     find_package(OpenMP REQUIRED)
 
     if(OpenMP_CXX_FOUND)
         add_compile_options(-fopenmp)
-        add_compile_definitions(USE_OPENMP)
+        add_compile_definitions(MLC_USE_OPENMP)
     endif()
 endif()
 
+option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 
 # ==============================================================
 # Setup compile Flags
@@ -57,25 +62,29 @@ set(CMAKE_VERBOSE_MAKEFILE off)
 # ==============================================================
 # Fetch external libs
 # ==============================================================
-Include(FetchContent)
+if(PROJECT_IS_TOP_LEVEL)
+    Include(FetchContent)
 
-FetchContent_Declare(
-    Catch2
-    GIT_REPOSITORY https://github.com/catchorg/Catch2
-    GIT_TAG        v3.8.1
-)
-FetchContent_MakeAvailable(Catch2)
+    FetchContent_Declare(
+        Catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2
+        GIT_TAG        v3.8.1
+        EXCLUDE_FROM_ALL
+    )
+    FetchContent_MakeAvailable(Catch2)
 
-# set(BENCHMARK_DOWNLOAD_DEPENDENCIES on)
-set(BENCHMARK_ENABLE_GTEST_TESTS off)
-set(BENCHMARK_ENABLE_TESTING off)
+    # set(BENCHMARK_DOWNLOAD_DEPENDENCIES on)
+    set(BENCHMARK_ENABLE_GTEST_TESTS off)
+    set(BENCHMARK_ENABLE_TESTING off)
 
-FetchContent_Declare(
-    google_benchmark
-    GIT_REPOSITORY https://github.com/google/benchmark
-    GIT_TAG        v1.9.2
-)
-FetchContent_MakeAvailable(google_benchmark)
+    FetchContent_Declare(
+        google_benchmark
+        GIT_REPOSITORY https://github.com/google/benchmark
+        GIT_TAG        v1.9.2
+        EXCLUDE_FROM_ALL
+    )
+    FetchContent_MakeAvailable(google_benchmark)
+endif()
 
 # ==============================================================
 # Source files
@@ -299,44 +308,161 @@ endforeach()
 # =============================================================
 # TARGETS
 # =============================================================
-# tests
-add_executable(tests "${SOURCE_FILEPATHS}" "${TEST_FILEPATHS}")
-if(SAVE_JITS_TO_FILE)
-    target_compile_definitions(tests PUBLIC SAVE_JITS_TO_FILE)
-endif(SAVE_JITS_TO_FILE)
+if(PROJECT_IS_TOP_LEVEL)
+    # tests
+    add_executable(tests "${SOURCE_FILEPATHS}" "${TEST_FILEPATHS}")
+    if(SAVE_JITS_TO_FILE)
+        target_compile_definitions(tests PUBLIC SAVE_JITS_TO_FILE)
+    endif(SAVE_JITS_TO_FILE)
 
-target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
+    target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
 
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(tests PRIVATE OpenMP::OpenMP_CXX)
-endif()
+    if(OpenMP_CXX_FOUND)
+        target_link_libraries(tests PRIVATE OpenMP::OpenMP_CXX)
+    endif()
 
-# tests sanitized
-add_executable(tests_sanitized "${SOURCE_FILEPATHS}" "${TEST_FILEPATHS}")
-if(SAVE_JITS_TO_FILE)
-    target_compile_definitions(tests_sanitized PUBLIC SAVE_JITS_TO_FILE)
-endif(SAVE_JITS_TO_FILE)
+    # tests sanitized
+    add_executable(tests_sanitized "${SOURCE_FILEPATHS}" "${TEST_FILEPATHS}")
+    if(SAVE_JITS_TO_FILE)
+        target_compile_definitions(tests_sanitized PUBLIC SAVE_JITS_TO_FILE)
+    endif(SAVE_JITS_TO_FILE)
 
-target_compile_options(tests_sanitized PRIVATE -g -fsanitize=float-divide-by-zero -fsanitize=bounds -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer)
-target_link_options(tests_sanitized PRIVATE -g -fsanitize=address -fsanitize=undefined)
-target_link_libraries(tests_sanitized PRIVATE Catch2::Catch2WithMain)
+    target_compile_options(tests_sanitized PRIVATE -g -fsanitize=float-divide-by-zero -fsanitize=bounds -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer)
+    target_link_options(tests_sanitized PRIVATE -g -fsanitize=address -fsanitize=undefined)
+    target_link_libraries(tests_sanitized PRIVATE Catch2::Catch2WithMain)
 
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(tests_sanitized PRIVATE OpenMP::OpenMP_CXX)
-endif()
+    if(MLC_USE_OPENMP AND OpenMP_CXX_FOUND)
+        target_link_libraries(tests_sanitized PRIVATE OpenMP::OpenMP_CXX)
+    endif()
 
-# benchmarks
-add_executable(benchmarks "${SOURCE_FILEPATHS}" "${BENCH_FILEPATHS}")
+    # benchmarks
+    add_executable(benchmarks "${SOURCE_FILEPATHS}" "${BENCH_FILEPATHS}")
 
-target_link_libraries(benchmarks PRIVATE benchmark::benchmark_main)
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(benchmarks PRIVATE OpenMP::OpenMP_CXX)
+    target_link_libraries(benchmarks PRIVATE benchmark::benchmark_main)
+    if(MLC_USE_OPENMP AND OpenMP_CXX_FOUND)
+        target_link_libraries(benchmarks PRIVATE OpenMP::OpenMP_CXX)
+    endif()
 endif()
 
 # ==============================================================
 # Ctest setup
 # ==============================================================
-list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
-include(CTest)
-include(Catch)
-catch_discover_tests(tests)
+if(PROJECT_IS_TOP_LEVEL)
+    list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
+    include(CTest)
+    include(Catch)
+    catch_discover_tests(tests)
+endif()
+
+# ==============================================================
+# Library Setup
+# ==============================================================
+
+if(PROJECT_IS_TOP_LEVEL)
+    if(DEFINED CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+        message(
+            STATUS
+            "CMAKE_INSTALL_PREFIX is not set\n"
+            "   ├ Default value: ${CMAKE_INSTALL_PREFIX}\n"
+            "   └ Will set it to ${CMAKE_SOURCE_DIR}/install"
+        )
+        set(CMAKE_INSTALL_PREFIX
+            "${CMAKE_SOURCE_DIR}/install"
+            CACHE PATH "Where the library will be installed to" FORCE
+        )
+    else()
+        message(
+            STATUS
+            "CMAKE_INSTALL_PREFIX was already set\n"
+            "   └ Current value: ${CMAKE_INSTALL_PREFIX}"
+        )
+    endif()
+endif()
+
+add_library(${PROJECT_NAME})
+
+target_sources(${PROJECT_NAME}
+    PRIVATE
+        "${SOURCE_FILEPATHS}"
+)
+
+target_include_directories(${PROJECT_NAME}
+    PRIVATE   
+        # where the library itself will look for its internal headers
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/interface
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/main
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/main/kernels
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/main/kernels/unary
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/main/arm_instructions
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/main/arm_instructions/base
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/main/arm_instructions/register
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/main/arm_instructions/simd_fp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/test
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/test/kernels
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/test/kernels/unary
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/test/arm_instructions
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/test/arm_instructions/base
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/test/arm_instructions/simd_fp
+    PUBLIC
+        # using the project name as additional directory to include <project_name>/header.h instead of header.h if it is included as internal library
+        # where top-level project will look for the library's public headers
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}>
+        # where external projects will look for the library's public headers
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
+if(MLC_USE_OPENMP AND OpenMP_CXX_FOUND)
+    target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_CXX)
+endif()
+
+# without it public headers won't get installed
+set(public_headers
+    include/${PROJECT_NAME}/tensor.h
+)
+set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER ${public_headers})
+
+set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
+
+# definitions of CMAKE_INSTALL_LIBDIR, CMAKE_INSTALL_INCLUDEDIR and others
+include(GNUInstallDirs)
+
+# install the target and create export-set
+install(TARGETS ${PROJECT_NAME}
+    EXPORT "${PROJECT_NAME}Targets"
+    # these get default values from GNUInstallDirs, no need to set them
+    #RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # bin
+    #LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} # lib
+    #ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} # lib
+    # except for public headers, as we want them to be inside a library folder
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME} # include/SomeLibrary
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
+)
+
+set(namespace mlc)
+
+# generate and install export file
+install(EXPORT "${PROJECT_NAME}Targets"
+    FILE "${PROJECT_NAME}Targets.cmake"
+    NAMESPACE ${namespace}::
+    DESTINATION cmake
+)
+
+include(CMakePackageConfigHelpers)
+
+# generate the version file for the config file
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+    VERSION "${version}"
+    COMPATIBILITY AnyNewerVersion
+)
+# create config file
+configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+    INSTALL_DESTINATION cmake
+)
+# install config files
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+    DESTINATION cmake
+)

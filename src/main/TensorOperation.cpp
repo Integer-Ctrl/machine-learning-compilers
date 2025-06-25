@@ -703,7 +703,7 @@ void mini_jit::TensorOperation::execute_dimension(int64_t index_dim, char const 
     bool is_first = first_access;
     bool is_last = last_access;
 
-#ifdef USE_OPENMP
+#ifdef MLC_USE_OPENMP
 #pragma omp parallel for if (dim_size > 1)
 #endif
     for (int64_t iDim = 0; iDim < dim_size; iDim++)

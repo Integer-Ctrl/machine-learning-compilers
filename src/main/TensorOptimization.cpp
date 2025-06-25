@@ -179,7 +179,7 @@ void mini_jit::TensorOptimization::_primitive_identification(TensorConfig &confi
 
 void mini_jit::TensorOptimization::_shared_identification(TensorConfig &config)
 {
-#ifdef USE_OPENMP
+#ifdef MLC_USE_OPENMP
   release_assert(config.dim_types.size() == config.dim_sizes.size(),
                  "Expected the dimension types size to match the dimension sizes size.");
 
@@ -210,7 +210,7 @@ void mini_jit::TensorOptimization::_shared_identification(TensorConfig &config)
   }
 #else
   (void)config;
-#endif  // USE_OPENMP
+#endif  // MLC_USE_OPENMP
 }
 
 void mini_jit::TensorOptimization::_dimension_reordering_shared(TensorConfig &config)

@@ -2,23 +2,23 @@
 #define MINI_JIT_TENSOROPTIMIZATION_H
 
 #include "TensorConfig.h"
-#ifdef USE_OPENMP
+#ifdef MLC_USE_OPENMP
 #include <omp.h>
-#endif  // USE_OPENMP
+#endif  // MLC_USE_OPENMP
 
 namespace mini_jit
 {
   class TensorOptimization
   {
   private:
-#ifdef USE_OPENMP
+#ifdef MLC_USE_OPENMP
     /// @brief The number of processors to use for parallel work
     const int thread_count = omp_get_max_threads();
 
 #else
     /// @brief The number of processors to use for parallel work
     const int thread_count = 1;
-#endif  // USE_OPENMP
+#endif  // MLC_USE_OPENMP
 
     /// @brief The inbalanced percentage of parallelism that can be achieved.
     const double maximum_inbalanced_parallel_precentage = 1.0 / 100;  // 1%
@@ -36,8 +36,8 @@ namespace mini_jit
      * @param primitive_k1 The k1 primitive index.
      * @param primitive_k2 The k2 primitive index.
      */
-    void _reorder_helper_adjust_index(int32_t index, int32_t adjust_index, int32_t &primitive_m, int32_t &primitive_n, int32_t &primitive_k1,
-                                      int32_t &primitive_k2);
+    void _reorder_helper_adjust_index(int32_t index, int32_t adjust_index, int32_t &primitive_m, int32_t &primitive_n,
+                                      int32_t &primitive_k1, int32_t &primitive_k2);
 
     /**
      * @brief Runs the optimization primitive identification.
