@@ -34,7 +34,7 @@ void mlc::fill_random(Tensor &tensor)
   }
 }
 
-void mlc::einsum(const std::vector<Tensor> &inputs, Tensor &output, const std::string &tree)
+void mlc::einsum(const std::vector<std::reference_wrapper<Tensor>> &inputs, Tensor &output, const std::string &tree)
 {
   mini_jit::EinsumTree einsumTree(tree);
   mini_jit::EinsumTree::ErrorParse errorParse = einsumTree.parse_tree();
@@ -47,7 +47,7 @@ void mlc::einsum(const std::vector<Tensor> &inputs, Tensor &output, const std::s
   std::vector<void *> tensors(inputs.size() + 1);
   for (size_t i = 0; i < inputs.size(); i++)
   {
-    tensors[i] = inputs[i].data;
+    tensors[i] = inputs[i].get().data;
   }
   tensors[inputs.size()] = output.data;
 

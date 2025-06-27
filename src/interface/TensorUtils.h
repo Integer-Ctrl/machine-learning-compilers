@@ -2,14 +2,15 @@
 #include "../main/EinsumTree.h"
 #include <iostream>
 
-constexpr void get_sorted_dimensions_sizes(const mini_jit::EinsumTree::EinsumNode *root, const std::vector<mlc::Tensor> &inputs,
+constexpr void get_sorted_dimensions_sizes(const mini_jit::EinsumTree::EinsumNode *root,
+                                           const std::vector<std::reference_wrapper<mlc::Tensor>> &inputs,
                                            std::vector<int64_t> &sorted_dim_sizes)
 {
   if (root->left != nullptr)
   {
     if (root->left->type == mini_jit::EinsumTree::NodeType::Leaf)
     {
-      const auto &dim_sizes = inputs[root->left->input_tensor_index].dim_sizes;
+      const auto &dim_sizes = inputs[root->left->input_tensor_index].get().dim_sizes;
       uint i = 0;
       for (int64_t id : root->left->output_dim_ids)
       {
@@ -27,7 +28,7 @@ constexpr void get_sorted_dimensions_sizes(const mini_jit::EinsumTree::EinsumNod
   {
     if (root->right->type == mini_jit::EinsumTree::NodeType::Leaf)
     {
-      const auto &dim_sizes = inputs[root->right->input_tensor_index].dim_sizes;
+      const auto &dim_sizes = inputs[root->right->input_tensor_index].get().dim_sizes;
       uint i = 0;
       for (int64_t id : root->right->output_dim_ids)
       {
