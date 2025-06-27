@@ -16,6 +16,13 @@ Machine Learning Compilers
 
 .. toctree::
    :maxdepth: 4
+   :caption: CHAPTERS
+   :glob:
+
+   chapters/assembly.rst
+
+.. toctree::
+   :maxdepth: 4
    :caption: SUBMISSIONS
    :glob:
 
