@@ -2,6 +2,7 @@
 #define MLC_TENSOR_H
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -10,7 +11,7 @@ namespace mlc
   struct Tensor
   {
     bool ownsData = false;
-    float *data;
+    float *data = nullptr;
     std::vector<uint64_t> dim_sizes;
 
     /**
@@ -42,6 +43,7 @@ namespace mlc
       if (ownsData && data != nullptr)
       {
         delete[] data;
+        data = nullptr;
       }
     }
   };
@@ -60,7 +62,7 @@ namespace mlc
    * @param output The output tensor.
    * @param tree The einsum tree to contract in the format [in0],[in1]->[out].
    */
-  void einsum(const std::vector<Tensor> &inputs, Tensor &output, const std::string &tree);
+  void einsum(const std::vector<std::reference_wrapper<Tensor>> &inputs, Tensor &output, const std::string &tree);
 
 }  // namespace mlc
 
