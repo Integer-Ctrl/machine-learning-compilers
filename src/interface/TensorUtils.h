@@ -2,15 +2,14 @@
 #include "../main/EinsumTree.h"
 #include <iostream>
 
-constexpr void get_sorted_dimensions_sizes(const mini_jit::EinsumTree::EinsumNode *root,
-                                           const std::vector<std::reference_wrapper<mlc::Tensor>> &inputs,
+constexpr void get_sorted_dimensions_sizes(const mini_jit::EinsumTree::EinsumNode *root, const std::vector<mlc::Tensor *> &inputs,
                                            std::vector<int64_t> &sorted_dim_sizes)
 {
   if (root->left != nullptr)
   {
     if (root->left->type == mini_jit::EinsumTree::NodeType::Leaf)
     {
-      const auto &dim_sizes = inputs[root->left->input_tensor_index].get().dim_sizes;
+      const auto &dim_sizes = inputs[root->left->input_tensor_index]->dim_sizes;
       uint i = 0;
       for (int64_t id : root->left->output_dim_ids)
       {
@@ -28,7 +27,7 @@ constexpr void get_sorted_dimensions_sizes(const mini_jit::EinsumTree::EinsumNod
   {
     if (root->right->type == mini_jit::EinsumTree::NodeType::Leaf)
     {
-      const auto &dim_sizes = inputs[root->right->input_tensor_index].get().dim_sizes;
+      const auto &dim_sizes = inputs[root->right->input_tensor_index]->dim_sizes;
       uint i = 0;
       for (int64_t id : root->right->output_dim_ids)
       {
@@ -40,6 +39,55 @@ constexpr void get_sorted_dimensions_sizes(const mini_jit::EinsumTree::EinsumNod
     {
       get_sorted_dimensions_sizes(root->right, inputs, sorted_dim_sizes);
     }
+  }
+}
+
+constexpr mlc::ErrorType convertParseError(mini_jit::EinsumTree::ErrorParse error)
+{
+  switch (error)
+  {
+  case mini_jit::EinsumTree::ErrorParse::None:
+    return mlc::ErrorType::None;
+  case mini_jit::EinsumTree::ErrorParse::ExpectedLeftBracket:
+    return mlc::ErrorType::ParseExpectedLeftBracket;
+  case mini_jit::EinsumTree::ErrorParse::ExpectedRightBracket:
+    return mlc::ErrorType::ParseExpectedRightBracket;
+  case mini_jit::EinsumTree::ErrorParse::ExpectedArrow:
+    return mlc::ErrorType::ParseExpectedArrow;
+  case mini_jit::EinsumTree::ErrorParse::ExpectedComma:
+    return mlc::ErrorType::ParseExpectedComma;
+  case mini_jit::EinsumTree::ErrorParse::ExpectedDimensionList:
+    return mlc::ErrorType::ParseExpectedDimensionList;
+  case mini_jit::EinsumTree::ErrorParse::NotAllowedToParseAgain:
+    return mlc::ErrorType::ParseNotAllowedToParseAgain;
+  case mini_jit::EinsumTree::ErrorParse::UndefinedNode:
+    return mlc::ErrorType::ParseUndefinedNode;
+  default:
+    return mlc::ErrorType::Undefined;
+  }
+}
+
+constexpr mlc::ErrorType convertErrorExecute(mini_jit::EinsumTree::ErrorExecute error)
+{
+  if (static_cast<int64_t>(error) > 100)
+  {
+    return static_cast<mlc::ErrorType>(static_cast<int64_t>(error));
+  }
+
+  switch (error)
+  {
+  case mini_jit::EinsumTree::ErrorExecute::None:
+    return mlc::ErrorType::None;
+  case mini_jit::EinsumTree::ErrorExecute::InvalidRoot:
+    return mlc::ErrorType::EinsumInvalidRoot;
+  case mini_jit::EinsumTree::ErrorExecute::NotEnoughInputTensors:
+    return mlc::ErrorType::EinsumNotEnoughInputTensors;
+  case mini_jit::EinsumTree::ErrorExecute::TooManyInputTensors:
+    return mlc::ErrorType::EinsumTooManyInputTensors;
+  case mini_jit::EinsumTree::ErrorExecute::NullPtrAsInputTensor:
+    return mlc::ErrorType::EinsumNullPtrAsInputTensor;
+  default:
+    return mlc::ErrorType::Undefined;
   }
 }
 

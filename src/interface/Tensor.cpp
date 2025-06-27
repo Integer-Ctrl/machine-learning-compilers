@@ -34,11 +34,25 @@ void mlc::fill_random(Tensor &tensor)
   }
 }
 
-void mlc::einsum(const std::vector<std::reference_wrapper<Tensor>> &inputs, Tensor &output, const std::string &tree)
+mlc::Error mlc::einsum(const std::vector<std::reference_wrapper<Tensor>> &inputs, Tensor &output, const std::string &tree)
+{
+  std::vector<Tensor *> tensors(inputs.size());
+  for (size_t i = 0; i < inputs.size(); ++i)
+  {
+    tensors[i] = &(inputs[i].get());
+  }
+  einsum(tensors, output, tree);
+}
+
+mlc::Error mlc::einsum(const std::vector<Tensor *> &inputs, Tensor &output, const std::string &tree)
 {
   mini_jit::EinsumTree einsumTree(tree);
   mini_jit::EinsumTree::ErrorParse errorParse = einsumTree.parse_tree();
-  (void)(errorParse);
+  if (errorParse != mini_jit::EinsumTree::ErrorParse::None)
+  {
+    mlc::ErrorType type = ::convertParseError(errorParse);
+    return {type, ""};  // TODO add error message
+  }
 
   std::vector<int64_t> sorted_dim_sizes;
   ::get_sorted_dimensions_sizes(einsumTree.get_root(), inputs, sorted_dim_sizes);
@@ -47,9 +61,16 @@ void mlc::einsum(const std::vector<std::reference_wrapper<Tensor>> &inputs, Tens
   std::vector<void *> tensors(inputs.size() + 1);
   for (size_t i = 0; i < inputs.size(); i++)
   {
-    tensors[i] = inputs[i].get().data;
+    tensors[i] = inputs[i]->data;
   }
   tensors[inputs.size()] = output.data;
 
-  einsumTree.execute(tensors);
+  mini_jit::EinsumTree::ErrorExecute errorExecute = einsumTree.execute(tensors);
+  if (errorExecute != mini_jit::EinsumTree::ErrorExecute::None)
+  {
+    mlc::ErrorType type = ::convertErrorExecute(errorExecute);
+    return {type, ""};  // TODO add error message
+  }
+
+  return {mlc::ErrorType::None, "Success"};
 }

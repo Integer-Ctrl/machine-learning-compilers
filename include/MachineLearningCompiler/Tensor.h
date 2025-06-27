@@ -1,6 +1,7 @@
 #ifndef MLC_TENSOR_H
 #define MLC_TENSOR_H
 
+#include "Error.h"
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -38,6 +39,9 @@ namespace mlc
       ownsData = true;
     };
 
+    /**
+     * @brief Destroys the tensor.
+     */
     ~Tensor()
     {
       if (ownsData && data != nullptr)
@@ -56,14 +60,22 @@ namespace mlc
   void fill_random(Tensor &tensor);
 
   /**
+   * @brief
+   *
+   * @param inputs The input tensors.
+   * @param output The output tensor.
+   * @param tree The einsum tree to contract in the format [in0],[in1]->[out].
+   */
+  Error einsum(const std::vector<std::reference_wrapper<Tensor>> &inputs, Tensor &output, const std::string &tree);
+
+  /**
    * @brief Executes contractions based on the given tree.
    *
    * @param inputs The input tensors.
    * @param output The output tensor.
    * @param tree The einsum tree to contract in the format [in0],[in1]->[out].
    */
-  void einsum(const std::vector<std::reference_wrapper<Tensor>> &inputs, Tensor &output, const std::string &tree);
-
+  Error einsum(const std::vector<Tensor *> &inputs, Tensor &output, const std::string &tree);
 }  // namespace mlc
 
 #endif  // MLC_TENSOR
