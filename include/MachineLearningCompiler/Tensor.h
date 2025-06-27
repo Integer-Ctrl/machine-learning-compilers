@@ -12,6 +12,12 @@ namespace mlc
     float *data;
     std::vector<uint64_t> dim_sizes;
 
+    /**
+     * @brief Construct a new Tensor with with a pointer to memory and the dimension sizes sorted in by stride in descending order.
+     *
+     * @param data The pointer to the data array.
+     * @param dim_sizes The dimension sizes sorted by stride in descending order.
+     */
     inline Tensor(float *data, const std::vector<uint64_t> &dim_sizes) : data(data), dim_sizes(dim_sizes) {};
   };
 

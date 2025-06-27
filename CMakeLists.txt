@@ -436,7 +436,7 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC
         # using the project name as additional directory to include <project_name>/header.h instead of header.h if it is included as internal library
         # where top-level project will look for the library's public headers
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         # where external projects will look for the library's public headers
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
@@ -471,6 +471,7 @@ install(EXPORT "${PROJECT_NAME}Targets"
     NAMESPACE ${namespace}::
     DESTINATION cmake
 )
+add_library(mlc::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 include(CMakePackageConfigHelpers)
 
