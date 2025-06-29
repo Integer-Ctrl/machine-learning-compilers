@@ -20,6 +20,7 @@ Machine Learning Compilers
    :glob:
 
    chapters/assembly.rst
+   chapters/base.rst
 
 .. toctree::
    :maxdepth: 4
