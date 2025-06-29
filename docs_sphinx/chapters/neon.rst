@@ -1,0 +1,1108 @@
+Neon
+====
+
+Execution Throughput and Latency
+--------------------------------
+
+This section microbenchmarks the execution throughput and latency of FP32 Neon instructions.
+
+1. Execution Throughput
+^^^^^^^^^^^^^^^^^^^^^^^
+
+**Task**: Microbenchmark the execution throughput of the following instructions:
+
+.. image:: ../_static/images/report_25_05_01/neon_1_1.png
+    :align: center
+
+**Subtask**: ``FMLA`` (vector) with arrangement specifier ``4S``.
+
+- File: ``submissions/submission_25_05_01/neon_1_1.s``
+- Driver: ``submissions/submission_25_05_01/neon_1_1_driver.cpp``
+- Compilation: ``g++ -o neon_1_1.exe neon_1_1_driver.cpp neon_1_1.s``
+- We have :math:`13.2304 \cdot 10^{10}` instructions per second.
+  That are :math:`13.2304 \cdot 10^{10} / 8 = 16.538 \cdot 10^9` instructions per ALU per second.
+  This aligns with a **throughput of** :math:`\approx 4` **instruction per cycle**, as it is known from benchmarks that the performance cores of the M4 chip have a clock speed of 4.4 GHz.
+
+
+**Subtask**: ``FMLA`` (vector) with arrangement specifier ``2S``.
+
+- File: ``submissions/submission_25_05_01/neon_1_1.s``
+- Driver: ``submissions/submission_25_05_01/neon_1_1_driver.cpp``
+- Compilation: ``g++ -o neon_1_1.exe neon_1_1_driver.cpp neon_1_1.s``
+- We have :math:`6.65221 \cdot 10^{10}` instructions per second.
+  That are :math:`6.65221 \cdot 10^{10} / 8 = 8.31526 \cdot 10^9` instructions per ALU per second.
+  This aligns with a **throughput of** :math:`\approx 2` **instruction per cycle**, as it is known from benchmarks that the performance cores of the M4 chip have a clock speed of 4.4 GHz.
+
+
+**Subtask**: ``FMADD`` (scalar), single-precision variant.
+
+- File: ``submissions/submission_25_05_01/neon_1_1.s``
+- Driver: ``submissions/submission_25_05_01/neon_1_1_driver.cpp``
+- Compilation: ``g++ -o neon_1_1.exe neon_1_1_driver.cpp neon_1_1.s``
+- We have :math:`1.12728 \cdot 10^{10}` instructions per second.
+  That are :math:`1.12728 \cdot 10^{10} / 8 = 1.4091 \cdot 10^9` instructions per ALU per second.
+  This aligns with a **throughput of** :math:`\approx 1/3` **instruction per cycle**, as it is known from benchmarks that the performance cores of the M4 chip have a clock speed of 4.4 GHz.
+
+2. Execution Latency
+^^^^^^^^^^^^^^^^^^^^
+
+**Task**: Microbenchmark the execution latency of ``FMLA`` (vector) with arrangement specifier ``4s``. Consider the following two cases:
+
+.. image:: ../_static/images/report_25_05_01/neon_1_2.png
+    :align: center
+
+**Subtask**: Dependency on one of the source registers.
+
+- File: ``submissions/submission_25_05_01/neon_1_2.s``
+- Driver: ``submissions/submission_25_05_01/neon_1_2_driver.cpp``
+- Compilation: ``g++ -o neon_1_2.exe neon_1_2_driver.cpp neon_1_2.s``
+- We have :math:`11.4961 \cdot 10^9` instruction per seconds in a single ALU.
+  Resulting in a **latency of** :math:`\approx 1/3` **cycle** for the known clock speed of 4.4 GHz.
+
+**Subtask**: Dependency on the destination register only.
+
+- File: ``submissions/submission_25_05_01/neon_1_2.s``
+- Driver: ``submissions/submission_25_05_01/neon_1_2_driver.cpp``
+- Compilation: ``g++ -o neon_1_2.exe neon_1_2_driver.cpp neon_1_2.s``
+- We have :math:`11.7019 \cdot 10^9` instruction per seconds in a single ALU.
+  Resulting in a **latency of** :math:`\approx 1/3` **cycle** for the known clock speed of 4.4 GHz.
+
+
+Microkernel
+-----------
+
+1. matmul_16_6_1
+^^^^^^^^^^^^^^^^
+
+**Task**: Implement a Neon microkernel that computes C+=AB for M=16, N=6, and K=1. Wrap your microkernel in the ``matmul_16_6_1`` function.
+
+- File: ``submissions/submission_25_05_01/neon_2_simple.s``
+- Driver: ``submissions/submission_25_05_01/neon_2_driver.cpp``
+
+Implementation loops over each column over the matrix c to be calculated.
+
+.. code-block:: asm
+    :linenos:
+    
+        ...
+        // Offset the used leading dimension by the size of floats (4byte == 2 lshifts)
+        lsl x3, x3, #2 // x3 * 4 = x3 * sizeof(float)
+        lsl x4, x4, #2 // x4 * 4 = x4 * sizeof(float)
+        lsl x5, x5, #2 // x5 * 4 = x5 * sizeof(float)
+
+        // Load all data from the 16x1 matrix a
+        ld1 {v0.4s, v1.4s, v2.4s, v3.4s}, [x0]
+
+        // Init the loop counter
+        mov x6, #6
+    process_next_column:
+        // Iteration -= 1
+        subs x6, x6, #1
+
+        // Load next element from the 1x6 matrix 
+        // ldr s4, [x1], #4 // one-liner but not using the argument offset
+        ldr s4, [x1]
+        add x1, x1, x4
+
+        // Load next column from the 16x6 matrix c
+        ld1 {v17.4s, v18.4s, v19.4s, v20.4s}, [x2]
+        
+        // Calculate the next row of c
+        fmla v17.4s, v0.4s, v4.s[0]
+        fmla v18.4s, v1.4s, v4.s[0]
+        fmla v19.4s, v2.4s, v4.s[0]
+        fmla v20.4s, v3.4s, v4.s[0]
+
+        // Store the result back to memory
+        st1 {v17.4s, v18.4s, v19.4s, v20.4s}, [x2], x5
+
+        // Compare and branch on not-zero
+        cbnz x6, process_next_column
+        ...
+
+2. Performance
+^^^^^^^^^^^^^^
+
+**Task**: Test and optimize your microkernel. Report its performance in GFLOPS.
+
+- Files:
+    - ``submissions/submission_25_05_01/neon_2.h``
+    - ``submissions/submission_25_05_01/neon_2_unrolled.s``
+- Tests: ``submissions/submission_25_05_01/neon_2.test.cpp``
+- Benchmarks: ``submissions/submission_25_05_01/neon_2.bench.cpp``
+
+**Subtask**: Optimization
+
+To optimize the kernel we unrolled the loop into 3 different register ranges (v15-v28, v17-v20, v21-v24),
+to allow for less dependency between the calculation of columns.
+These 3 different ``fmla`` blocks gets repeated with ``.rept 2`` to achieve the total of 6 column of calculation.
+
+.. code-block:: asm
+    :linenos:
+
+    ...
+    .rept 2
+    // Load first element from the 1x6 matrix b
+    ldr s4, [x1]
+    add x1, x1, x4
+    // Load first column from the 16x6 matrix c
+    ld1 {v25.4s, v26.4s, v27.4s, v28.4s}, [x2]
+
+    // Calculate first column of c
+    fmla v25.4s, v0.4s, v4.s[0]
+    fmla v26.4s, v1.4s, v4.s[0]
+    fmla v27.4s, v2.4s, v4.s[0]
+    fmla v28.4s, v3.4s, v4.s[0]
+
+    // Store first column back to memory
+    st1 {v25.4s, v26.4s, v27.4s, v28.4s}, [x2], x5 
+
+    // Load second element from the 1x6 matrix b
+    ldr s4, [x1]
+    add x1, x1, x4
+    // Load second column from the 16x6 matrix c
+    ld1 {v17.4s, v18.4s, v19.4s, v20.4s}, [x2]
+
+    // Calculate second column of c
+    fmla v17.4s, v0.4s, v4.s[0]
+    fmla v18.4s, v1.4s, v4.s[0]
+    fmla v19.4s, v2.4s, v4.s[0]
+    fmla v20.4s, v3.4s, v4.s[0]
+
+    // Store second column back to memory
+    st1 {v17.4s, v18.4s, v19.4s, v20.4s}, [x2], x5
+    
+    // Load third element from the 1x6 matrix b
+    ldr s4, [x1]
+    add x1, x1, x4
+    // Load third column from the 16x6 matrix c
+    ld1 {v21.4s, v22.4s, v23.4s, v24.4s}, [x2]
+
+    // Calculated third column of c
+    fmla v21.4s, v0.4s, v4.s[0]
+    fmla v22.4s, v1.4s, v4.s[0]
+    fmla v23.4s, v2.4s, v4.s[0]
+    fmla v24.4s, v3.4s, v4.s[0]
+
+    // Store third column back to memory
+    st1 {v21.4s, v22.4s, v23.4s, v24.4s}, [x2], x5
+    .endr
+    ...
+
+**Subtask**: Benchmarks
+
+We run the benchmark with the following command:
+
+.. code-block::
+ 
+  ./benchmarks --benchmark_counters_tabular=true --benchmark_repetitions=10 --benchmark_report_aggregates_only=true
+
+Therefore we do 10 repetitions of the benchmark which do about ``120 000 000`` iterations each on our matmul kernels.
+
+.. code-block::
+  :emphasize-lines: 4, 8
+     
+  ----------------------------------------------------------------------------------------------------------------------------------
+  Benchmark                                                                             Time             CPU   Iterations      FLOPS
+  ----------------------------------------------------------------------------------------------------------------------------------
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_simple/min_warmup_time:1.000_mean               5.84 ns         5.82 ns           10 33.0036G/s
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_simple/min_warmup_time:1.000_median             5.83 ns         5.81 ns           10 33.0317G/s
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_simple/min_warmup_time:1.000_stddev            0.025 ns        0.025 ns           10 143.339M/s
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_simple/min_warmup_time:1.000_cv                 0.43 %          0.44 %            10      0.43%
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_unrolled/min_warmup_time:1.000_mean             5.71 ns         5.69 ns           10 33.7234G/s
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_unrolled/min_warmup_time:1.000_median           5.70 ns         5.68 ns           10 33.7732G/s
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_unrolled/min_warmup_time:1.000_stddev          0.038 ns        0.038 ns           10 224.892M/s
+  Gemm16x6x1Fixture/BM_matmul_16_6_1_unrolled/min_warmup_time:1.000_cv               0.67 %          0.67 %            10      0.67
+
+We see that the simple first implementation of our matmul kernel gets about **33.0 GFLOPS**.
+The optimized unrolled version gets about 0.7 GFLOPS more resulting in **33.7 GFLOPS**.
+
+
+Loops
+-----
+
+1. Loop over K
+^^^^^^^^^^^^^^
+
+**Task**: Loop over K: Implement a kernel that computes C+=AB for M=16, N=6 and K=64. Wrap your kernel in the ``matmul_16_6_64`` function.
+
+- File ``submissions/submission_25_05_01/neon_3_1.s``
+
+.. code-block:: asm
+  :linenos:
+
+    ...
+    // Offset the used leading dimension by the size of floats
+    lsl x3, x3, #2 // x3 * 4 = x3 * sizeof(float)
+    lsl x4, x4, #2 // x4 * 4 = x4 * sizeof(float)
+    lsl x5, x5, #2 // x5 * 4 = x5 * sizeof(float)
+
+    mov x6, x1 // Store the initial value of x1, to be restored in the next loop iteration
+    mov x7, x2 // Store the initial value of x2, to be restored after the loop
+
+    // Load first column from the 16x6 matrix c
+    ld1 {v25.4s, v26.4s, v27.4s, v28.4s}, [x2], x5
+    // Load second column from the 16x6 matrix c
+    ld1 {v17.4s, v18.4s, v19.4s, v20.4s}, [x2], x5
+    // Load third column from the 16x6 matrix c
+    ld1 {v21.4s, v22.4s, v23.4s, v24.4s}, [x2], x5
+    // Load fourth column from the 16x6 matrix c
+    ld1 {v5.4s, v6.4s, v7.4s, v8.4s}, [x2], x5
+    // Load fifth column from the 16x6 matrix c
+    ld1 {v9.4s, v10.4s, v11.4s, v12.4s}, [x2], x5
+    // Load sixth column from the 16x6 matrix c
+    ld1 {v13.4s, v14.4s, v15.4s, v16.4s}, [x2], x5
+
+    mov x9, #64 // x9 iterator for K loop
+  matmul_loop_over_K:
+    sub x9, x9, #1
+
+    // Load first column data from the 16x1 matrix a
+    ld1 {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], x3
+
+    // run the known matmul_16_6_1_unrolled kernel
+    // Load first element from the 1x6 matrix b
+    ldr s4, [x1]
+    add x1, x1, x4
+
+    // Calculate first column of c
+    fmla v25.4s, v0.4s, v4.s[0]
+    fmla v26.4s, v1.4s, v4.s[0]
+    fmla v27.4s, v2.4s, v4.s[0]
+    fmla v28.4s, v3.4s, v4.s[0]
+
+
+    // Load second element from the 1x6 matrix b
+    ldr s4, [x1]
+    add x1, x1, x4
+
+    // Calculate second column of c
+    fmla v17.4s, v0.4s, v4.s[0]
+    fmla v18.4s, v1.4s, v4.s[0]
+    fmla v19.4s, v2.4s, v4.s[0]
+    fmla v20.4s, v3.4s, v4.s[0]
+
+    
+    // Load third element from the 1x6 matrix b
+    ldr s4, [x1]
+    add x1, x1, x4
+
+    // Calculated third column of c
+    fmla v21.4s, v0.4s, v4.s[0]
+    fmla v22.4s, v1.4s, v4.s[0]
+    fmla v23.4s, v2.4s, v4.s[0]
+    fmla v24.4s, v3.4s, v4.s[0]
+
+
+    // Load fourth element from the 1x6 matrix b
+    ldr s4, [x1]
+    add x1, x1, x4
+
+    // Calculate fourth column of c
+    fmla v5.4s, v0.4s, v4.s[0]
+    fmla v6.4s, v1.4s, v4.s[0]
+    fmla v7.4s, v2.4s, v4.s[0]
+    fmla v8.4s, v3.4s, v4.s[0]
+
+
+    // Load fifth element from the 1x6 matrix b
+    ldr s4, [x1]
+    add x1, x1, x4
+
+    // Calculate fifth column of c
+    fmla v9.4s, v0.4s, v4.s[0]
+    fmla v10.4s, v1.4s, v4.s[0]
+    fmla v11.4s, v2.4s, v4.s[0]
+    fmla v12.4s, v3.4s, v4.s[0]
+
+    
+    // Load sixth element from the 1x6 matrix b
+    ldr s4, [x1]
+    add x1, x1, x4
+
+    // Calculated sixth column of c
+    fmla v13.4s, v0.4s, v4.s[0]
+    fmla v14.4s, v1.4s, v4.s[0]
+    fmla v15.4s, v2.4s, v4.s[0]
+    fmla v16.4s, v3.4s, v4.s[0]
+
+
+    // offset x6 to the next element in the column
+    add x6, x6, #4 // #4 = sizeof(float)
+
+    // Restore x1 to be incremented again
+    mov x1, x6
+
+    // Loop back
+    cbnz x9, matmul_loop_over_K
+
+    // Restore initial value of x2 that was changed by the loads
+    mov x2, x7
+
+    // Store first column back to memory
+    st1 {v25.4s, v26.4s, v27.4s, v28.4s}, [x2], x5 
+    // Store second column back to memory
+    st1 {v17.4s, v18.4s, v19.4s, v20.4s}, [x2], x5
+    // Store third column back to memory
+    st1 {v21.4s, v22.4s, v23.4s, v24.4s}, [x2], x5
+    // Store fourth column back to memory
+    st1 {v5.4s, v6.4s, v7.4s, v8.4s}, [x2], x5 
+    // Store fifth column back to memory
+    st1 {v9.4s, v10.4s, v11.4s, v12.4s}, [x2], x5
+    // Store sixth column back to memory
+    st1 {v13.4s, v14.4s, v15.4s, v16.4s}, [x2], x5
+
+
+2. Loop over M
+^^^^^^^^^^^^^^
+
+**Task**: Loop over M: Implement a kernel that computes C+=AB for M=64, N=6 and K=64. Wrap your kernel in the ``matmul_64_6_64`` function.
+
+- File ``submissions/submission_25_05_01/neon_3_2.s``
+
+.. code-block:: asm
+  :linenos:
+
+      // Offset the used leading dimension by the size of floats
+      lsl x3, x3, #2 // x3 * 4 = x3 * sizeof(float)
+      lsl x4, x4, #2 // x4 * 4 = x4 * sizeof(float)
+      lsl x5, x5, #2 // x5 * 4 = x5 * sizeof(float)
+
+      mov x6, x1 // Store the initial value of x1, to be restored in the K loop iteration
+      mov x7, x2 // Store the initial value of x2, to be restored in the K loop iteration
+
+      mov x8, x0 // Store the initial value of x0, to be restored in the M loop iteration
+      mov x9, x1 // Store the initial value of x1, to be restored in the M loop iteration
+
+      mov x16, #4 // x16 iterator for M loop
+  matmul_loop_over_M:
+      sub x16, x16, #1
+
+      // ... <logic of loop over K - neon_3_1>
+
+      // next M iteration on the matrix c and matrix a, both need offset about 16 values
+      // also matrix b needs to start at the initial location again
+      // Updates for the matrix c
+      add x7, x7, #16*4 // column height * sizeof(float)
+      mov x2, x7 // also apply offset to x2
+
+      // Updates for the matrix a
+      add x8, x8, #16*4 // column height * sizeof(float)
+      mov x0, x8 // also apply offset to x0
+
+      // Updates for the matrix b
+      mov x6, x9 // Update the restore register for x1 for the K loop
+      mov x1, x9 // Update the x1 register itself
+
+      // Loop back to M
+      cbnz x16, matmul_loop_over_M
+
+
+3. Loop over N
+^^^^^^^^^^^^^^
+
+**Task**: Loop over N: Implement a kernel that computes C+=AB for M=64, N=48 and K=64. Wrap your kernel in the ``matmul_64_48_64`` function.
+
+- File ``submissions/submission_25_05_01/neon_3_3.s``
+
+.. code-block:: asm
+  :linenos:
+  
+      // Offset the used leading dimension by the size of floats
+      lsl x3, x3, #2 // x3 * 4 = x3 * sizeof(float)
+      lsl x4, x4, #2 // x4 * 4 = x4 * sizeof(float)
+      lsl x5, x5, #2 // x5 * 4 = x5 * sizeof(float)
+
+      mov x6, x1 // Store the initial value of x1, to be restored in the K loop iteration
+      mov x7, x2 // Store the initial value of x2, to be restored in the K loop iteration
+
+      mov x8, x0 // Store the initial value of x0, to be restored in the M loop iteration
+      mov x9, x1 // Store the initial value of x1, to be restored in the M loop iteration
+
+      mov x10, x0 // Store the initial value of x0, to be restored in the N loop iteration
+      mov x11, x2 // Store the initial value of x2, to bes restored in the N loop iteration
+      mov x12, #6 // hold the size of N that are processed in one loop, needed for offset calculation 
+
+      mov x17, #8 // x17 iterator for N loop
+  matmul_loop_over_N:
+      sub x17, x17, #1
+
+    // ... <logic of loop over M - neon_3_2>
+
+      // next M iteration on the matrix b and matrix c, both need offset about 6*ldb/ldc values
+      // also matrix a needs to start at the initial location again
+      // Update for the matrix a
+      mov x8, x10 // Update the restore register for x0 for the M loop
+      mov x0, x10 // Update the x0 register itself
+
+      // Updates for the matrix b
+      madd x9, x4, x12, x9 // ldb * 6 + initial position
+      mov x6, x9 // Update the restore register of x1 for the K loop
+      mov x1, x9 // Update the x1 register itself
+
+      // Updates for the matrix c
+      madd x11, x5, x12, x11 // ldc * 6 + initial position
+      mov x7, x11 // Update the restore register of x2 for the K loop
+      mov x2, x11 // Update the x2 register itself
+
+      // Loop back to N
+      cbnz x17, matmul_loop_over_N
+
+4. Performance
+^^^^^^^^^^^^^^
+
+**Task**: Test and optimize the kernels. Report your performance in GFLOPS.
+
+- File ``submissions/submission_25_05_01/neon_3.h``
+- Tests ``submissions/submission_25_05_01/neon_3.test.cpp``
+- Benchmarks ``submissions/submission_25_05_01/neon_3.bench.cpp``
+
+**Subtask**: Optimization
+
+Usage of already optimized `matmul_16_6_1` from task 2.
+
+**Subtask**: Benchmarks
+
+We run the benchmark with the following command: 
+
+.. code-block:: 
+  
+  ./benchmarks --benchmark_counters_tabular=true --benchmark_repetitions=10 --benchmark_report_aggregates_only=true
+
+
+.. code-block::
+  :emphasize-lines: 4, 8, 12
+     
+  ----------------------------------------------------------------------------------------------------------------------------------
+  Benchmark                                                                             Time             CPU   Iterations      FLOPS
+  ----------------------------------------------------------------------------------------------------------------------------------
+  GemmMxNxKFixture<16, 6, 64>/BM_matmul_16_6_64/min_warmup_time:1.000_mean           97.8 ns         97.4 ns           10  126.12G/s
+  GemmMxNxKFixture<16, 6, 64>/BM_matmul_16_6_64/min_warmup_time:1.000_median         97.7 ns         97.3 ns           10 126.245G/s
+  GemmMxNxKFixture<16, 6, 64>/BM_matmul_16_6_64/min_warmup_time:1.000_stddev        0.581 ns        0.563 ns           10 720.109M/s
+  GemmMxNxKFixture<16, 6, 64>/BM_matmul_16_6_64/min_warmup_time:1.000_cv             0.59 %          0.58 %            10      0.57%
+  GemmMxNxKFixture<64, 6, 64>/BM_matmul_64_6_64/min_warmup_time:1.000_mean            386 ns          385 ns           10 127.812G/s
+  GemmMxNxKFixture<64, 6, 64>/BM_matmul_64_6_64/min_warmup_time:1.000_median          385 ns          384 ns           10  127.95G/s
+  GemmMxNxKFixture<64, 6, 64>/BM_matmul_64_6_64/min_warmup_time:1.000_stddev         2.16 ns         2.11 ns           10 693.069M/s
+  GemmMxNxKFixture<64, 6, 64>/BM_matmul_64_6_64/min_warmup_time:1.000_cv             0.56 %          0.55 %            10      0.54%
+  GemmMxNxKFixture<64, 48, 64>/BM_matmul_64_48_64/min_warmup_time:1.000_mean         3103 ns         3092 ns           10 95.3736G/s
+  GemmMxNxKFixture<64, 48, 64>/BM_matmul_64_48_64/min_warmup_time:1.000_median       3097 ns         3087 ns           10 95.5363G/s
+  GemmMxNxKFixture<64, 48, 64>/BM_matmul_64_48_64/min_warmup_time:1.000_stddev       16.0 ns         15.6 ns           10 475.851M/s
+  GemmMxNxKFixture<64, 48, 64>/BM_matmul_64_48_64/min_warmup_time:1.000_cv           0.52 %          0.50 %            10      0.50%
+
+
+- Mean FLOPS for loop over K: **126.1 GFLOPS**.
+- Mean FLOPS for loop over M: **127.8 GFLOPS**.
+- Mean FLOPS for loop over N: **95.4 GFLOPS**.
+
+SIMD Lanes
+----------
+
+This section considers matrix-matrix multiplications, that require instructions where only a subset of SIMD lanes are active.
+
+1. matmul_14_6_64
+^^^^^^^^^^^^^^^^^
+
+**Task**: Implement a kernel that computes C+=AB for M=14, N=6 and K=64. Wrap your kernel in the ``matmul_14_6_64`` function.
+
+File: ``neon_4_1.s``
+
+For this kernel ``matmul_14_6_64`` we adapt the already implemented kernel ``matmul_16_6_64``. The only change is that we now use 3 ``fmla`` instructions that operate on 4 scalars, and one ``fmla`` instruction that only uses 2 scalars: :math:`4 \cdot 3 + 1 \cdot 2 = 14`.
+
+We load the full 16 floats and ignore the last 2:
+
+.. code-block:: asm
+    :linenos:
+
+    ...
+    // Load first column from the 14x6 matrix c - load full 16 entries - ignore last 2
+    ld1 {v25.4s, v26.4s, v27.4s, v28.4s}, [x2], x5
+    // Load second column from the 14x6 matrix c
+    ld1 {v17.4s, v18.4s, v19.4s, v20.4s}, [x2], x5
+    // Load third column from the 14x6 matrix c
+    ld1 {v21.4s, v22.4s, v23.4s, v24.4s}, [x2], x5
+    // Load fourth column from the 14x6 matrix c
+    ld1 {v5.4s, v6.4s, v7.4s, v8.4s}, [x2], x5
+    // Load fifth column from the 14x6 matrix c
+    ld1 {v9.4s, v10.4s, v11.4s, v12.4s}, [x2], x5
+    // Load sixth column from the 14x6 matrix c
+    ld1 {v13.4s, v14.4s, v15.4s, v16.4s}, [x2], x5
+    ...
+
+Next the loop over K:
+
+.. code-block:: asm
+    :linenos:
+
+    ...
+        mov x9, #64 // x9 iterator for K loop
+    matmul_loop_over_K:
+        sub x9, x9, #1
+
+        // Load first column data from the 14x1 matrix a (again 16 but we'll only using two from v3)
+        ld1 {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], x3
+
+        // run the known matmul_16_6_1_unrolled kernel with modification to matmult_14_6_1
+        // Load first element from the 1x6 matrix b
+        ldr s4, [x1]
+        add x1, x1, x4
+
+        // Calculate first column of c
+        fmla v25.4s, v0.4s, v4.s[0] // 4 floats
+        fmla v26.4s, v1.4s, v4.s[0] // 4 floats
+        fmla v27.4s, v2.4s, v4.s[0] // 4 floats
+        fmla v28.2s, v3.2s, v4.s[0] // 2 floats
+
+        // Load second element from the 1x6 matrix b
+        ldr s4, [x1]
+        add x1, x1, x4
+
+        // Calculate second column of c
+        fmla v17.4s, v0.4s, v4.s[0]
+        fmla v18.4s, v1.4s, v4.s[0]
+        fmla v19.4s, v2.4s, v4.s[0]
+        fmla v20.2s, v3.2s, v4.s[0]
+    ...
+
+We store the full 16 computed floats back to memory but only add an offset of 14 floats because the last two floats aren't used. The last 14 values are exactly stored (8+4+2).
+
+.. code-block:: asm
+    :linenos:
+
+    ...
+    // Store first column back to memory
+    st1 {v25.4s, v26.4s, v27.4s, v28.4s}, [x2], x5 // offset of 14 floats
+    // Store second column back to memory
+    st1 {v17.4s, v18.4s, v19.4s, v20.4s}, [x2], x5 // offset of 14 floats
+    // Store third column back to memory
+    st1 {v21.4s, v22.4s, v23.4s, v24.4s}, [x2], x5 // offset of 14 floats
+    // Store fourth column back to memory
+    st1 {v5.4s, v6.4s, v7.4s, v8.4s}, [x2], x5 // offset of 14 floats
+    // Store fifth column back to memory
+    st1 {v9.4s, v10.4s, v11.4s, v12.4s}, [x2], x5 // offset of 14 floats
+    // Store sixth column back to memory (exactly last 14 elements)
+    stp q13, q14, [x2] // 8 floats
+    str q15, [x2, #32] // 4 floats
+    str d16, [x2, #48] // 2 floats
+    ...
+
+2. matmul_15_6_64
+^^^^^^^^^^^^^^^^^
+
+**Task**: Implement a kernel that computes C+=AB for M=15, N=6 and K=64. Wrap your kernel in the ``matmul_15_6_64`` function.
+
+File: ``neon_4_2.s``
+
+For this kernel ``matmul_15_6_64`` we adapt the already implemented kernel ``matmul_16_6_64``. The only change is that we ignore the last computed float value from the 4 ``fmla`` instructions when saving back to memory.
+
+We load the full 16 floats and ignore the last one:
+
+.. code-block:: asm
+    :linenos:
+
+    ...
+    // Load first column from the 15x6 matrix c - load full 16 entries - ignore last
+    ld1 {v25.4s, v26.4s, v27.4s, v28.4s}, [x2], x5
+    // Load second column from the 15x6 matrix c
+    ld1 {v17.4s, v18.4s, v19.4s, v20.4s}, [x2], x5
+    // Load third column from the 15x6 matrix c
+    ld1 {v21.4s, v22.4s, v23.4s, v24.4s}, [x2], x5
+    // Load fourth column from the 15x6 matrix c
+    ld1 {v5.4s, v6.4s, v7.4s, v8.4s}, [x2], x5
+    // Load fifth column from the 15x6 matrix c
+    ld1 {v9.4s, v10.4s, v11.4s, v12.4s}, [x2], x5
+    // Load sixth column from the 15x6 matrix c
+    ld1 {v13.4s, v14.4s, v15.4s, v16.4s}, [x2], x5
+    ...
+
+Next the loop over K:
+
+.. code-block:: asm
+    :linenos:
+
+    ...
+        mov x9, #64 // x9 iterator for K loop
+    matmul_loop_over_K:
+        sub x9, x9, #1
+
+        // Load first column data from the 15x1 matrix a
+        ld1 {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], x3
+        // ldp q0, q1, [x0] // 4 + 4 values
+        // ldr q2, [x0, #32] // 4 values
+        // ldr d3, [x0, #48] // 2 values
+
+        // run the known matmul_16_6_1_unrolled kernel with modification to matmult_15_6_1
+        // Load first element from the 1x6 matrix b
+        ldr s4, [x1]
+        add x1, x1, x4
+
+        // Calculate first column of c
+        fmla v25.4s, v0.4s, v4.s[0]
+        fmla v26.4s, v1.4s, v4.s[0]
+        fmla v27.4s, v2.4s, v4.s[0]
+        fmla v28.4s, v3.4s, v4.s[0]
+
+        // Load second element from the 1x6 matrix b
+        ldr s4, [x1]
+        add x1, x1, x4
+
+        // Calculate second column of c
+        fmla v17.4s, v0.4s, v4.s[0]
+        fmla v18.4s, v1.4s, v4.s[0]
+        fmla v19.4s, v2.4s, v4.s[0]
+        fmla v20.4s, v3.4s, v4.s[0]
+    ...
+
+We store the full 16 computed floats back to memory but only add an offset of 15 floats because the last float isn't used. The last 15 values are exactly stored (8+4+2+1).
+
+.. code-block:: asm
+    :linenos:
+
+    ...
+    // Store first column back to memory
+    st1 {v25.4s, v26.4s, v27.4s, v28.4s}, [x2], x5 // offset of 15 floats
+    // Store second column back to memory
+    st1 {v17.4s, v18.4s, v19.4s, v20.4s}, [x2], x5 // offset of 15 floats
+    // Store third column back to memory
+    st1 {v21.4s, v22.4s, v23.4s, v24.4s}, [x2], x5 // offset of 15 floats
+    // Store fourth column back to memory
+    st1 {v5.4s, v6.4s, v7.4s, v8.4s}, [x2], x5 // offset of 15 floats
+    // Store fifth column back to memory
+    st1 {v9.4s, v10.4s, v11.4s, v12.4s}, [x2], x5 // offset of 15 floats
+    // Store sixth column back to memory (exactly last 15 elements)
+    stp q13, q14, [x2] // 8 floats
+    str q15, [x2, #32] // 4 floats
+    str d16, [x2, #48] // 2 floats
+    mov w9, v16.s[2]
+    str w9, [x2, #56] // 1 floats
+    ...
+
+3. Performance
+^^^^^^^^^^^^^^
+
+**Task**: Test and optimize the kernels. Report your performance in GFLOP
+
+Optimized benchmark results:
+
+.. code-block:: 
+    :emphasize-lines: 4, 8
+
+    --------------------------------------------------------------------------------------------------------------------------------------------
+    Benchmark                                                                                       Time             CPU   Iterations      FLOPS
+    --------------------------------------------------------------------------------------------------------------------------------------------
+    GemmMxNxKFixture<14, 6, 64>/BM_matmul_14_6_64/min_warmup_time:1.000_mean                     94.8 ns         94.5 ns           10 113.789G/s
+    GemmMxNxKFixture<14, 6, 64>/BM_matmul_14_6_64/min_warmup_time:1.000_median                   94.8 ns         94.5 ns           10 113.775G/s
+    GemmMxNxKFixture<14, 6, 64>/BM_matmul_14_6_64/min_warmup_time:1.000_stddev                  0.671 ns        0.659 ns           10 790.609M/s
+    GemmMxNxKFixture<14, 6, 64>/BM_matmul_14_6_64/min_warmup_time:1.000_cv                       0.71 %          0.70 %            10      0.69%
+    GemmMxNxKFixture<15, 6, 64>/BM_matmul_15_6_64/min_warmup_time:1.000_mean                     95.5 ns         95.1 ns           10 121.074G/s
+    GemmMxNxKFixture<15, 6, 64>/BM_matmul_15_6_64/min_warmup_time:1.000_median                   95.4 ns         95.1 ns           10  121.09G/s
+    GemmMxNxKFixture<15, 6, 64>/BM_matmul_15_6_64/min_warmup_time:1.000_stddev                  0.295 ns        0.293 ns           10 373.529M/s
+    GemmMxNxKFixture<15, 6, 64>/BM_matmul_15_6_64/min_warmup_time:1.000_cv                       0.31 %          0.31 %            10      0.31%
+
+
+- **matmul_14_6_64** kernel: :math:`113.8` GFLOPS
+- **matmul_15_6_64** kernel: :math:`121.1` GFLOPS
+
+Accumulator Block Shapes
+------------------------
+
+This section considers a matrix-matrix multiplication where a high-performance implementation may require accumulator blocks with different shapes.
+
+1. matmul_64_64_64
+^^^^^^^^^^^^^^^^^^
+
+**Task**: Implement a kernel that computes C+=AB for M=64, N=64 and K=64. Wrap your kernel in the ``matmul_64_64_64`` function.
+
+File: ``neon_5_1.s``
+
+For this kernel ``matmul_64_64_64`` we adapt the already implemented kernel ``matmul_64_48_64``. The only changes is that we removed two ``fmla`` blocks from the inner loop:
+
+.. code-block:: asm
+    :linenos:
+    
+    ...
+        mov x15, #64 // x15 iterator for K loop
+    matmul_loop_over_K:
+        sub x15, x15, #1
+
+        // Load first column data from the 16x1 matrix a
+        ld1 {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], x3
+
+        // run the matmul_16_4_1_unrolled kernel
+        // Load first element from the 1x4 matrix b
+        ldr s4, [x1]
+        add x1, x1, x4
+
+        // Calculate first column of c
+        fmla v25.4s, v0.4s, v4.s[0]
+        fmla v26.4s, v1.4s, v4.s[0]
+        fmla v27.4s, v2.4s, v4.s[0]
+        fmla v28.4s, v3.4s, v4.s[0]
+
+
+        // Load second element from the 1x4 matrix b
+        ldr s4, [x1]
+        add x1, x1, x4
+
+        // Calculate second column of c
+        fmla v17.4s, v0.4s, v4.s[0]
+        fmla v18.4s, v1.4s, v4.s[0]
+        fmla v19.4s, v2.4s, v4.s[0]
+        fmla v20.4s, v3.4s, v4.s[0]
+
+        
+        // Load third element from the 1x4 matrix b
+        ldr s4, [x1]
+        add x1, x1, x4
+
+        // Calculated third column of c
+        fmla v21.4s, v0.4s, v4.s[0]
+        fmla v22.4s, v1.4s, v4.s[0]
+        fmla v23.4s, v2.4s, v4.s[0]
+        fmla v24.4s, v3.4s, v4.s[0]
+
+
+        // Load fourth element from the 1x4 matrix b
+        ldr s4, [x1]
+        add x1, x1, x4
+
+        // Calculate fourth column of c
+        fmla v5.4s, v0.4s, v4.s[0]
+        fmla v6.4s, v1.4s, v4.s[0]
+        fmla v7.4s, v2.4s, v4.s[0]
+        fmla v8.4s, v3.4s, v4.s[0]
+
+
+        // offset x6 to the next element in the column
+        add x6, x6, #4 // #4 = sizeof(float)
+
+        // Restore x1 to be incremented again
+        mov x1, x6
+
+        // Loop back to K
+        cbnz x15, matmul_loop_over_K
+    ...
+
+Then changed the number of loops over M to four :math:`4 \cdot 16 = 64`:
+
+.. code-block:: asm
+    :linenos:
+    
+    ...
+        mov x16, #4 // x16 iterator for M loop
+    matmul_loop_over_M:
+        sub x16, x16, #1
+
+        // Load first column from the 16x6 matrix c
+        ld1 {v25.4s, v26.4s, v27.4s, v28.4s}, [x2], x5
+        // Load second column from the 16x6 matrix c
+        ld1 {v17.4s, v18.4s, v19.4s, v20.4s}, [x2], x5
+        // Load third column from the 16x6 matrix c
+        ld1 {v21.4s, v22.4s, v23.4s, v24.4s}, [x2], x5
+        // Load fourth column from the 16x6 matrix c
+        ld1 {v5.4s, v6.4s, v7.4s, v8.4s}, [x2], x5
+
+        mov x15, #64 // x15 iterator for K loop
+    matmul_loop_over_K:
+        sub x15, x15, #1
+    ...
+
+And finaly changed the number of loops over N to 16 :math:`16 \cdot 4 = 64`:
+
+.. code-block:: asm
+    :linenos:
+    
+    ...
+        mov x17, #16 // x17 iterator for N loop
+    matmul_loop_over_N:
+        sub x17, x17, #1
+
+        mov x16, #4 // x16 iterator for M loop
+    matmul_loop_over_M:
+        sub x16, x16, #1
+    ...
+
+2. Performance
+^^^^^^^^^^^^^^
+
+**Task**: Test and optimize the kernel. Report your performance in GFLOPS.
+
+Optimized benchmark result:
+
+.. code-block:: 
+
+    --------------------------------------------------------------------------------------------------------------------------------------------
+    Benchmark                                                                                       Time             CPU   Iterations      FLOPS
+    --------------------------------------------------------------------------------------------------------------------------------------------
+    GemmMxNxKFixture<64, 64, 64>/BM_matmul_64_64_64/min_warmup_time:1.000_mean                   4111 ns         4097 ns           10 127.964G/s
+    GemmMxNxKFixture<64, 64, 64>/BM_matmul_64_64_64/min_warmup_time:1.000_median                 4110 ns         4096 ns           10 127.988G/s
+    GemmMxNxKFixture<64, 64, 64>/BM_matmul_64_64_64/min_warmup_time:1.000_stddev                 13.7 ns         13.8 ns           10 431.794M/s
+    GemmMxNxKFixture<64, 64, 64>/BM_matmul_64_64_64/min_warmup_time:1.000_cv                     0.33 %          0.34 %            10      0.34%
+
+
+- **matmul_64_64_64** kernel: :math:`128.0` GFLOPS
+
+Batch-Reduce GEMM
+-----------------
+
+This section considers a batch-reduce matrix-matrix multiplication that has a fourth dimension in addition to the known M, N, and K dimensions.
+
+1. matmul_64_48_64_16
+^^^^^^^^^^^^^^^^^^^^^
+
+**Task**: mplement a kernel that computes C+=∑AᵢBᵢ for M=64, N=48 and K=64 and a batch-reduce dimension size of 16. Wrap your kernel in the ``matmul_64_48_64_16`` function.
+
+File: ``neon_6_1.s``
+
+We started by implementing a kernel ``matmul_64_48_64`` with a batch dimension of one which is in the file ``neon_6_1_batch1.s``.
+
+.. code-block:: asm
+    :linenos:
+    :emphasize-lines: 18
+
+    ...
+        mov x17, #12 // x17 iterator for N loop
+    matmul_loop_over_N:
+        sub x17, x17, #1
+
+        ...
+
+        mov x16, #4 // x16 iterator for M loop
+    matmul_loop_over_M:
+        sub x16, x16, #1
+
+        ...
+
+        mov x15, #64 // x15 iterator for K loop
+    matmul_loop_over_K:
+        sub x15, x15, #1
+
+        ... matmul_16_4_1 kernel ...
+
+        // Loop back to K
+        cbnz x15, matmul_loop_over_K
+
+        ...
+
+        // Loop back to M
+        cbnz x16, matmul_loop_over_M
+        
+        ...
+
+        // Loop back to N
+        cbnz x17, matmul_loop_over_N
+
+Then we wrapped the ``matmul_64_48_64`` kernel inside another batch loop of size 16:
+
+.. code-block:: asm
+    :linenos:
+    :emphasize-lines: 3, 41
+  
+    ...
+        mov x19, #16 // x19 iterator for the batch dimension
+    matmul_loop_batch_dimension:
+        sub x19, x19, #1
+
+        ...
+
+        mov x17, #12 // x17 iterator for N loop
+    matmul_loop_over_N:
+        sub x17, x17, #1
+
+        ...
+
+        mov x16, #4 // x16 iterator for M loop
+    matmul_loop_over_M:
+        sub x16, x16, #1
+
+        ...
+
+        mov x15, #64 // x15 iterator for K loop
+    matmul_loop_over_K:
+        sub x15, x15, #1
+
+        ...
+
+        // Loop back to K
+        cbnz x15, matmul_loop_over_K
+
+        ... matmul_16_4_1 kernel ...
+
+        // Loop back to M
+        cbnz x16, matmul_loop_over_M
+        
+        ...
+
+        // Loop back to N
+        cbnz x17, matmul_loop_over_N
+
+        ...
+
+        // Loop back to batch dimension
+        cbnz x19, matmul_loop_batch_dimension
+
+
+2. Performance
+^^^^^^^^^^^^^^
+
+**Task**: Test and optimize the kernel. Report your performance in GFLOPS.
+
+We tested a variation in which the batch loop was positioned between the M and K loops. This approach achieved around :math:`73` GFLOPS. 
+We suspect that the reason for this was that the matrices did not fit into the cache.
+We do not follow this approach due to the poor performance, and we lost the file due to a false ``rm`` statement.
+
+However, this leads us to assume that our result of putting the batch loop outside is satisfactory.
+
+.. code-block::
+    :emphasize-lines: 4, 8
+
+    -----------------------------------------------------------------------------------------------------------------------------------------------
+    Benchmark                                                                                          Time             CPU   Iterations      FLOPS
+    -----------------------------------------------------------------------------------------------------------------------------------------------
+    GemmMxNxKxBatchFixture<64, 48, 64, 1>/BM_matmul_64_48_64/min_warmup_time:1.000_mean             3104 ns         3093 ns           10 127.138G/s
+    GemmMxNxKxBatchFixture<64, 48, 64, 1>/BM_matmul_64_48_64/min_warmup_time:1.000_median           3102 ns         3092 ns           10  127.19G/s
+    GemmMxNxKxBatchFixture<64, 48, 64, 1>/BM_matmul_64_48_64/min_warmup_time:1.000_stddev           10.1 ns         8.08 ns           10 331.319M/s
+    GemmMxNxKxBatchFixture<64, 48, 64, 1>/BM_matmul_64_48_64/min_warmup_time:1.000_cv               0.33 %          0.26 %            10      0.26%
+    GemmMxNxKxBatchFixture<64, 48, 64, 16>/BM_matmul_64_48_64_16/min_warmup_time:1.000_mean        51072 ns        50890 ns           10 123.628G/s
+    GemmMxNxKxBatchFixture<64, 48, 64, 16>/BM_matmul_64_48_64_16/min_warmup_time:1.000_median      51027 ns        50840 ns           10 123.749G/s
+    GemmMxNxKxBatchFixture<64, 48, 64, 16>/BM_matmul_64_48_64_16/min_warmup_time:1.000_stddev        120 ns          119 ns           10 287.993M/s
+    GemmMxNxKxBatchFixture<64, 48, 64, 16>/BM_matmul_64_48_64_16/min_warmup_time:1.000_cv           0.24 %          0.23 %            10      0.23%
+
+
+- **matmul_64_48_64** kernel: :math:`127.1` GFLOPS
+- **matmul_64_48_64_16** kernel: :math:`123.6` GFLOPS
+
+Transposition
+-------------
+
+This section develops a kernel that performs the identity operation on the elements of an 8x8 column-major matrix A and stores the
+result in row-major format in matrix B.
+
+1. Transpose
+^^^^^^^^^^^^
+
+**Task**: Implement a Neon kernel that transposes an 8x8 matrix: B:=Aᵀ.
+
+File: ``neon_7_1.s``
+
+From the lecture, we already know the 4x4 transpose kernel. Therefore, we have the following idea:
+
+1. Divide the 8x8 matrix A into four 4x4 sub-matrices
+2. Transpose each 4x4 sub-matrix
+3. Save T(A) and T(D) sub-matrix to matrix B
+4. Swap B and C: Save T(B) to bottom-left sub-matrix of B and T(C) to top-right sub-matrix of B
+
+.. image:: ../_static/images/report_25_05_22/trans_8_8.png
+    :align: left
+
+Code:
+
+.. code-block:: asm
+    :linenos:
+
+    ...
+    /*
+    * Part 1:
+    * Load 4x4 sub-matrix A.
+    * Transpose 4x4 block.
+    * Store 4x4 block of A into B.
+    */
+    // Load
+    ldr q0, [x4]
+    add x4, x4, x2
+    ldr q1, [x4]
+    add x4, x4, x2
+    ldr q2, [x4]
+    add x4, x4, x2
+    ldr q3, [x4]
+
+    // Transpose
+    trn1 v4.4s, v0.4s, v1.4s
+    trn2 v5.4s, v0.4s, v1.4s
+    trn1 v6.4s, v2.4s, v3.4s
+    trn2 v7.4s, v2.4s, v3.4s
+
+    zip1  v8.2d, v4.2d, v6.2d
+    zip1  v9.2d, v5.2d, v7.2d
+    zip2 v10.2d, v4.2d, v6.2d
+    zip2 v11.2d, v5.2d, v7.2d
+
+    // Store
+    str q8, [x5]
+    add x5, x5, x3
+    str q9, [x5]
+    add x5, x5, x3
+    str q10, [x5]
+    add x5, x5, x3
+    str q11, [x5]
+
+    /*
+    * Part 2:
+    * Load 4x4 sub-matrix B and C.
+    * Transpose both 4x4 blocks.
+    * Store both 4x4 blocks of C and B into B.
+    */
+    // Load right-top
+    mov x4, x0       // A
+    add x4, x4, #128 // Offset to top-left corner of right half of A (32th element)
+    ...
+
+    // Transpose right-top
+    ...
+
+    // Load left-bottom
+    mov x4, x0      // A
+    add x4, x4, #16 // Offset to next 4 elements of column in A (4th element)
+    ...
+
+    // Transpose left-bottom
+    ...
+
+    // Store after transpose to avoid conflicts when input matrix A = B
+    // Store B to C (right-top of A to left-bottom of B)
+    mov x5, x1
+    add x5, x5, #16
+    ...
+
+    // Store C to B (left-bottom of A to right-top of B)
+    mov x5, x1
+    add x5, x5, #128
+    ...
+
+    /*
+    * Part 3:
+    * Load 4x4 sub-matrix D.
+    * Transpose 4x4 block.
+    * Store 4x4 block of A into B.
+    */
+    // Load
+    mov x4, x0       // A
+    add x4, x4, #144 // 128 + 16 -> left-top corner of right-bottom 4x4 sub-matrix of A
+    ...
+
+    // Transpose
+    ...
+
+    // Store
+    mov x5, x1       // A
+    add x5, x5, #144 // 128 + 16 -> left-top corner of right-bottom 4x4 sub-matrix of B
+    ...
+
+2. Performance
+^^^^^^^^^^^^^^
+
+**Task**: Test and optimize your kernel. Report its performance in GiB/s.
+
+.. code-block::
+    :emphasize-lines: 4
+
+    --------------------------------------------------------------------------------------------------------------
+    Benchmark                                                         Time             CPU   Iterations       Byte
+    --------------------------------------------------------------------------------------------------------------
+    Trans8x8Fixture/BT_tran_8_8/min_warmup_time:1.000_mean         5.08 ns         5.06 ns           10 101.188G/s
+    Trans8x8Fixture/BT_tran_8_8/min_warmup_time:1.000_median       5.07 ns         5.06 ns           10 101.277G/s
+    Trans8x8Fixture/BT_tran_8_8/min_warmup_time:1.000_stddev      0.030 ns        0.030 ns           10 590.962M/s
+    Trans8x8Fixture/BT_tran_8_8/min_warmup_time:1.000_cv           0.59 %          0.59 %            10      0.58%
+
+
+- **tran_8_8** kernel: :math:`50.5` GiB/s
+

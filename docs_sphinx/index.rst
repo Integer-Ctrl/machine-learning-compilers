@@ -21,6 +21,7 @@ Machine Learning Compilers
 
    chapters/assembly.rst
    chapters/base.rst
+   chapters/neon.rst
 
 .. toctree::
    :maxdepth: 4
