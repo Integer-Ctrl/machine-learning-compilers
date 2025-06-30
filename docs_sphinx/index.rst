@@ -24,6 +24,8 @@ Machine Learning Compilers
    chapters/neon.rst
    chapters/code_generation.rst
    chapters/tensor_operations.rst
+   chapters/einsum_trees.rst
+   chapters/report_individual.rst
 
 .. toctree::
    :maxdepth: 4
@@ -40,7 +42,6 @@ Machine Learning Compilers
    submissions/report_25_06_05.rst
    submissions/report_25_06_12.rst
    submissions/report_25_06_19.rst
-   submissions/report_individual.rst
 
 .. toctree::
    :maxdepth: 4
