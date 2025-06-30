@@ -527,6 +527,7 @@ br_size=16, br_stride_a=M*K, br_stride_b=K*N, lda=M, ldb=K, and ldc=M. Report th
 
 The benchmark took approximately eight hours in total to run. The following results were produced: :download:`GEMM_benchmarks.csv <../_static/resources/report_25_05_15/BR_GEMM_benchmarks.csv>`
 
+.. _unary_primitives:
 
 Unary Primitives
 ----------------
