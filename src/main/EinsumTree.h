@@ -251,6 +251,8 @@ namespace mini_jit
      */
     void set_sorted_dim_sizes(const std::vector<int64_t> &sorted_dim_sizes);
 
+    const std::vector<int64_t> &get_sorted_dim_sizes();
+
     /**
      * Parses the einsum tree string and builds the tree structure.
      *

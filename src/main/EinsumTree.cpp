@@ -165,6 +165,11 @@ void mini_jit::EinsumTree::set_sorted_dim_sizes(const std::vector<int64_t> &sort
   EinsumTree::dim_sizes = sorted_dim_sizes;
 }
 
+const std::vector<int64_t> &mini_jit::EinsumTree::get_sorted_dim_sizes()
+{
+  return dim_sizes;
+}
+
 void mini_jit::EinsumTree::delete_tree(EinsumNode *node)
 {
   if (node == nullptr)
