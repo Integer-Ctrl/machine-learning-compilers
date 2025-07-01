@@ -40,7 +40,7 @@ TEST_CASE("Test tensor utils get_sorted_dimensions_sizes", "[tensor][correctness
   tree.parse_tree();
 
   std::vector<int64_t> sorted_dimensions_sizes;
-  mlc::get_sorted_dimensions_sizes(tree.get_root(), {tensor1, tensor2}, sorted_dimensions_sizes);
+  mlc::internal::get_sorted_dimensions_sizes(tree.get_root(), {tensor1, tensor2}, sorted_dimensions_sizes);
 
   std::vector<int64_t> expected = {3, 4, 5};
 

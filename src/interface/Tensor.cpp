@@ -10,7 +10,7 @@ void mlc::fill_random(Tensor &tensor)
     return;
   }
 
-  uint64_t size = getTensorSize(&tensor);
+  uint64_t size = internal::getTensorSize(&tensor);
 
 #ifdef MLC_USE_OPENMP
 #pragma omp parallel for simd
@@ -40,7 +40,7 @@ void mlc::fill_number(Tensor &tensor, float number)
     return;
   }
 
-  uint64_t size = getTensorSize(&tensor);
+  uint64_t size = internal::getTensorSize(&tensor);
 
 #ifdef MLC_USE_OPENMP
 #pragma omp parallel for simd
@@ -58,7 +58,7 @@ void mlc::fill_lambda(Tensor &tensor, std::function<float(const Tensor &, size_t
     return;
   }
 
-  uint64_t size = getTensorSize(&tensor);
+  uint64_t size = internal::getTensorSize(&tensor);
 
 #ifdef MLC_USE_OPENMP
 #pragma omp parallel for simd
@@ -71,17 +71,17 @@ void mlc::fill_lambda(Tensor &tensor, std::function<float(const Tensor &, size_t
 
 mlc::Error mlc::einsum(const std::vector<std::reference_wrapper<const Tensor>> &inputs, Tensor &output, const std::string &tree)
 {
-  return einsum<std::reference_wrapper<const Tensor>>(inputs, output, tree);
+  return internal::einsum<std::reference_wrapper<const Tensor>>(inputs, output, tree);
 }
 
-mlc::Error mlc::einsum(const std::vector<const Tensor *> &inputs, Tensor &output, const std::string &tree)
+mlc::Error mlc::einsum(const std::vector<Tensor *> &inputs, Tensor &output, const std::string &tree)
 {
-  return einsum<const Tensor *>(inputs, output, tree);
+  return internal::einsum<Tensor *>(inputs, output, tree);
 }
 
 mlc::Error mlc::contraction(const Tensor &input0, const Tensor &input1, Tensor &output, const std::string &contraction)
 {
-  return einsum<const Tensor *>({&input0, &input1}, output, contraction);
+  return internal::einsum<std::reference_wrapper<const Tensor>>({input0, input1}, output, contraction);
 }
 
 mlc::Error mlc::unary_zero(const Tensor &input, Tensor &output)

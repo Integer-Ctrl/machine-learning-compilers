@@ -99,7 +99,7 @@ namespace mlc
    * @param tree The (nested) einsum tree to contract in the format [in0],[in1]->[out].
    * @return Error The error code or ErrorType::None on success.
    */
-  Error einsum(const std::vector<const Tensor *> &inputs, Tensor &output, const std::string &tree);
+  Error einsum(const std::vector<Tensor *> &inputs, Tensor &output, const std::string &tree);
 
   /**
    * @brief Perform a binary contraction and adds it to the output.
