@@ -1,7 +1,7 @@
 #ifndef MLC_ERROR_H
 #define MLC_ERROR_H
-#include <string>
 #include <cstdint>
+#include <string>
 
 namespace mlc
 {

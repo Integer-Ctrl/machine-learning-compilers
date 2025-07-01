@@ -10,12 +10,11 @@ void mlc::fill_random(Tensor &tensor)
     return;
   }
 
-  uint64_t size = 1;
-  for (auto dim : tensor.dim_sizes)
-  {
-    size *= dim;
-  }
+  uint64_t size = getTensorSize(&tensor);
 
+#ifdef MLC_USE_OPENMP
+#pragma omp parallel for simd
+#endif
   for (size_t i = 0; i < size; ++i)
   {
     float denominator = 1;
@@ -34,12 +33,74 @@ void mlc::fill_random(Tensor &tensor)
   }
 }
 
-mlc::Error mlc::einsum(const std::vector<std::reference_wrapper<Tensor>> &inputs, Tensor &output, const std::string &tree)
+void mlc::fill_number(Tensor &tensor, float number)
 {
-  return ::einsum<std::reference_wrapper<Tensor>>(inputs, output, tree);
+  if (tensor.dim_sizes.size() == 0)
+  {
+    return;
+  }
+
+  uint64_t size = getTensorSize(&tensor);
+
+#ifdef MLC_USE_OPENMP
+#pragma omp parallel for simd
+#endif
+  for (size_t i = 0; i < size; i++)
+  {
+    tensor.data[i] = number;
+  }
 }
 
-mlc::Error mlc::einsum(const std::vector<Tensor *> &inputs, Tensor &output, const std::string &tree)
+void mlc::fill_lambda(Tensor &tensor, std::function<float(const Tensor &, size_t)> function)
 {
-  return ::einsum<Tensor *>(inputs, output, tree);
+  if (tensor.dim_sizes.size() == 0)
+  {
+    return;
+  }
+
+  uint64_t size = getTensorSize(&tensor);
+
+#ifdef MLC_USE_OPENMP
+#pragma omp parallel for simd
+#endif
+  for (size_t i = 0; i < size; i++)
+  {
+    tensor.data[i] = function(tensor, i);
+  }
+}
+
+mlc::Error mlc::einsum(const std::vector<std::reference_wrapper<const Tensor>> &inputs, Tensor &output, const std::string &tree)
+{
+  return einsum<std::reference_wrapper<const Tensor>>(inputs, output, tree);
+}
+
+mlc::Error mlc::einsum(const std::vector<const Tensor *> &inputs, Tensor &output, const std::string &tree)
+{
+  return einsum<const Tensor *>(inputs, output, tree);
+}
+
+mlc::Error mlc::contraction(const Tensor &input0, const Tensor &input1, Tensor &output, const std::string &contraction)
+{
+  return einsum<const Tensor *>({&input0, &input1}, output, contraction);
+}
+
+mlc::Error mlc::unary_zero(const Tensor &input, Tensor &output)
+{
+  (void)input;
+  (void)output;
+  return {ErrorType::None, ""};
+}
+
+mlc::Error mlc::unary_relu(const Tensor &input, Tensor &output)
+{
+  (void)input;
+  (void)output;
+  return {ErrorType::None, ""};
+}
+
+mlc::Error mlc::unary_identity(const Tensor &input, Tensor output)
+{
+  (void)input;
+  (void)output;
+  return {ErrorType::None, ""};
 }

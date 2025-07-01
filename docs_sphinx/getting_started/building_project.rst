@@ -120,6 +120,8 @@ Building
 6. Now we can build the project. The most desired command might be
 
     .. code-block:: bash
+
+        cmake --build . --target tests
         
     Options for ``--target`` are **benchmarks** and **tests**
 

@@ -1,28 +1,47 @@
+#ifndef MLC_TENSORUTILS_H
+#define MLC_TENSORUTILS_H
 #include "../../include/MachineLearningCompiler/Tensor.h"
 #include "../main/EinsumTree.h"
+#include <cassert>
+#include <cstdint>
 #include <functional>
 #include <iostream>
 #include <string>
 
-namespace
+namespace mlc
 {
-
-  template <typename T> constexpr mlc::Tensor *getTensor(T &)
+  /**
+   * @brief Function definition for converting a generic type to a pointer to a mlc::Tensor.
+   *
+   * @param T The type to convert.
+   * @return mlc::Tensor
+   */
+  template <typename T> constexpr const mlc::Tensor *getTensor(T &)
   {
     static_assert("No generic conversion of tensor possible");
     return nullptr;
   }
 
-  template <> constexpr mlc::Tensor *getTensor<mlc::Tensor *>(mlc::Tensor *&tensor)
+  /**
+   * @brief Gets the pointer to the mlc::Tensor.
+   *
+   * @param tensor The tensor to get the pointer from.
+   * @return Pointer to the mlc::Tensor.
+   */
+  template <> constexpr const mlc::Tensor *getTensor<const mlc::Tensor *>(const mlc::Tensor *&tensor)
   {
     return tensor;
   }
 
-  template <> constexpr mlc::Tensor *getTensor<std::reference_wrapper<mlc::Tensor>>(std::reference_wrapper<mlc::Tensor> &tensor)
+  // TODO: doc
+  template <>
+  constexpr const mlc::Tensor *
+  getTensor<const std::reference_wrapper<const mlc::Tensor>>(const std::reference_wrapper<const mlc::Tensor> &tensor)
   {
     return &(tensor.get());
   }
 
+  // TODO: doc
   template <typename T>
   constexpr void get_sorted_dimensions_sizes(const mini_jit::EinsumTree::EinsumNode *root, const std::vector<T> &inputs,
                                              std::vector<int64_t> &sorted_dim_sizes)
@@ -64,6 +83,7 @@ namespace
     }
   }
 
+  // TODO: doc
   constexpr void get_sorted_dimensions_sizes(const mini_jit::EinsumTree::EinsumNode *root,
                                              const std::vector<std::reference_wrapper<mlc::Tensor>> &inputs,
                                              std::vector<int64_t> &sorted_dim_sizes)
@@ -71,12 +91,14 @@ namespace
     get_sorted_dimensions_sizes<std::reference_wrapper<mlc::Tensor>>(root, inputs, sorted_dim_sizes);
   }
 
+  // TODO: doc
   constexpr void get_sorted_dimensions_sizes(const mini_jit::EinsumTree::EinsumNode *root, const std::vector<mlc::Tensor *> &inputs,
                                              std::vector<int64_t> &sorted_dim_sizes)
   {
     get_sorted_dimensions_sizes<mlc::Tensor *>(root, inputs, sorted_dim_sizes);
   }
 
+  // TODO: doc
   constexpr mlc::ErrorType convertParseError(mini_jit::EinsumTree::ErrorParse error)
   {
     switch (error)
@@ -102,6 +124,7 @@ namespace
     }
   }
 
+  // TODO: doc
   constexpr mlc::ErrorType convertErrorExecute(mini_jit::EinsumTree::ErrorExecute error)
   {
     if (static_cast<int64_t>(error) > 100)
@@ -126,35 +149,48 @@ namespace
     }
   }
 
+  // TODO: doc
   template <typename T> mlc::Error einsum(const std::vector<T> &inputs, mlc::Tensor &output, const std::string &tree)
   {
     mini_jit::EinsumTree einsumTree(tree);
     mini_jit::EinsumTree::ErrorParse errorParse = einsumTree.parse_tree();
     if (errorParse != mini_jit::EinsumTree::ErrorParse::None)
     {
-      mlc::ErrorType type = ::convertParseError(errorParse);
-      return {type, ""};  // TODO add error message
+      mlc::ErrorType type = convertParseError(errorParse);
+      return {type, "Failed during parsing the given einsum tree."};
     }
 
     std::vector<int64_t> sorted_dim_sizes;
-    ::get_sorted_dimensions_sizes(einsumTree.get_root(), inputs, sorted_dim_sizes);
+    get_sorted_dimensions_sizes(einsumTree.get_root(), inputs, sorted_dim_sizes);
     einsumTree.set_sorted_dim_sizes(sorted_dim_sizes);
 
     std::vector<void *> tensors(inputs.size() + 1);
     for (size_t i = 0; i < inputs.size(); i++)
     {
       tensors[i] = getTensor(inputs[i])->data;
+      assert(tensors[i] != nullptr);
     }
     tensors[inputs.size()] = output.data;
 
     mini_jit::EinsumTree::ErrorExecute errorExecute = einsumTree.execute(tensors);
     if (errorExecute != mini_jit::EinsumTree::ErrorExecute::None)
     {
-      mlc::ErrorType type = ::convertErrorExecute(errorExecute);
-      return {type, ""};  // TODO add error message
+      mlc::ErrorType type = convertErrorExecute(errorExecute);
+      return {type, "Failed during calculation of the einsum tree."};
     }
 
     return {mlc::ErrorType::None, "Success"};
   }
 
-}  // namespace
+  // TODO: doc
+  constexpr uint64_t getTensorSize(const mlc::Tensor *tensor)
+  {
+    uint64_t size = 1;
+    for (auto dim : tensor->dim_sizes)
+    {
+      size *= dim;
+    }
+    return size;
+  }
+}  // namespace mlc
+#endif  // MLC_TENSORUTILS_H

@@ -1,6 +1,5 @@
 #ifndef MLC_SETUPEINSUM_H
 #define MLC_SETUPEINSUM_H
-
 #include "../../include/MachineLearningCompiler/Setup.h"
 #include "../main/EinsumTree.h"
 #include <vector>
@@ -36,7 +35,7 @@ namespace mlc
     }
 
     std::vector<int64_t> sorted_dim_sizes;
-    ::get_sorted_dimensions_sizes(einsumTree.get_root(), inputs, sorted_dim_sizes);
+    get_sorted_dimensions_sizes(einsumTree.get_root(), inputs, sorted_dim_sizes);
     einsumTree.set_sorted_dim_sizes(sorted_dim_sizes);
 
     error = {mlc::ErrorType::None, "Success"};
