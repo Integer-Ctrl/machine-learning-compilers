@@ -5,7 +5,7 @@
 #include <cmath>
 #include <vector>
 
-TEST_CASE("Test tensor einsum setup", "[setup][correctness]")
+TEST_CASE("Test interface tensor einsum setup", "[setup][correctness]")
 {
   std::vector<uint64_t> shape1 = {3, 4};
   std::vector<uint64_t> shape2 = {4, 5};

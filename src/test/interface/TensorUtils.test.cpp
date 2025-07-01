@@ -5,7 +5,7 @@
 #include <catch2/generators/catch_generators_range.hpp>
 #include <vector>
 
-TEST_CASE("Test tensor utils get_sorted_dimensions_sizes", "[tensor][correctness]")
+TEST_CASE("Test interface tensor utils get_sorted_dimensions_sizes", "[tensor][correctness]")
 {
   std::vector<uint64_t> shape1 = {3, 4};
   std::vector<uint64_t> shape2 = {4, 5};

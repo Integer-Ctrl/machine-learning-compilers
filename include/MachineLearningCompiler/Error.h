@@ -5,7 +5,7 @@
 
 namespace mlc
 {
-  enum ErrorType : int64_t
+  enum class ErrorType : int64_t
   {
     Undefined = -1,
     None = 0,
@@ -42,6 +42,10 @@ namespace mlc
     ExecuteInvalidStrides = 113,
     ExecuteKDimensionMustNotBeShared = 114,
     ExecuteSharedRequiredForParallelExecution = 115,
+
+    // Tensor Errors
+    TensorExpected2DTensor = 201,
+    ExpectedSingleContraction = 202,
   };
 
   struct Error

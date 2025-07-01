@@ -1,6 +1,7 @@
 #ifndef MLC_TENSOR_H
 #define MLC_TENSOR_H
 #include "Error.h"
+#include "UnaryType.h"
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -113,23 +114,37 @@ namespace mlc
   Error contraction(const Tensor &input0, const Tensor &input1, Tensor &output, const std::string &contraction);
 
   /**
-   * @brief Perform a general matrix-matrix multiplication and adds it to the output.
+   * @brief Performs a contraction on two input tensor and one output tensor. Before and after the contraction, a first touch unary and a
+   * last touch unary are applied to the output tensor.
    *
    * @param input0 The first input tensor.
    * @param input1 The second input tensor.
    * @param output The output to add the result to.
+   * @param contraction The string to show the dimension to be contracted in the format [in0],[in1]->[out].
+   * @param firstTouch The unary that should be execute before the contraction.
+   * @param lastTouch The unary that should be executed after the contraction.
    * @return Error The error code or ErrorType::None on success.
    */
-  Error gemm(const Tensor &input0, const Tensor &input1, Tensor output);
+  Error contraction(const Tensor &input0, const Tensor &input1, Tensor &output, const std::string &contraction, const UnaryType firstTouch,
+                    const UnaryType lastTouch);
+
+  /**
+   * @brief Perform a general matrix-matrix multiplication and adds it to the output.
+   *
+   * @param input0 The first input tensor in the form MxK where M is the leading dimension.
+   * @param input1 The second input tensor in the form KxN where K is the leading dimension.
+   * @param output The output to add the result to in the form MxN where M is the leading dimension.
+   * @return Error The error code or ErrorType::None on success.
+   */
+  Error gemm(const Tensor &input0, const Tensor &input1, Tensor &output);
 
   /**
    * @brief Performs a zero unary that sets the output tensor to zero.
    *
    * @param input The input tensor.
-   * @param output The output tensor.
    * @return Error The error code or ErrorType::None on success.
    */
-  Error unary_zero(const Tensor &input, Tensor &output);
+  Error unary_zero(Tensor &input);
 
   /**
    * @brief Performs a relu unary that applies Rectified Linear Unit on the tensor input.
@@ -147,7 +162,7 @@ namespace mlc
    * @param output The output tensor.
    * @return Error The error code or ErrorType::None on success.
    */
-  Error unary_identity(const Tensor &input, Tensor output);
+  Error unary_identity(const Tensor &input, Tensor &output);
 }  // namespace mlc
 
 #endif  // MLC_TENSOR

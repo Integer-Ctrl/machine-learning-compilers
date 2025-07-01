@@ -32,7 +32,6 @@ namespace mlc
      */
     template <> constexpr const mlc::Tensor *getTensor<mlc::Tensor *>(mlc::Tensor *const &tensor)
     {
-      std::cout << tensor << std::endl;
       return tensor;
     }
 
@@ -152,6 +151,47 @@ namespace mlc
       }
     }
 
+    constexpr mlc::ErrorType convertTensorOperationError(mini_jit::TensorOperation::error_t error)
+    {
+      switch (error)
+      {
+      case mini_jit::TensorOperation::error_t::success:
+        return mlc::ErrorType::None;
+      case mini_jit::TensorOperation::error_t::err_wrong_dtype:
+        return mlc::ErrorType::ExecuteWrongDType;
+      case mini_jit::TensorOperation::error_t::err_wrong_dimension:
+        return mlc::ErrorType::ExecuteWrongDimension;
+      case mini_jit::TensorOperation::error_t::err_wrong_primitive:
+        return mlc::ErrorType::ExecuteWrongPrimitive;
+      case mini_jit::TensorOperation::error_t::err_wrong_first_touch_primitive:
+        return mlc::ErrorType::ExecuteFirstTouchPrimitive;
+      case mini_jit::TensorOperation::error_t::err_wrong_main_primitive:
+        return mlc::ErrorType::ExecuteWrongMainPrimitive;
+      case mini_jit::TensorOperation::error_t::err_wrong_last_touch_primitive:
+        return mlc::ErrorType::ExecuteWrongLastTouchPrimitive;
+      case mini_jit::TensorOperation::error_t::err_execution_type_not_supported:
+        return mlc::ErrorType::ExecuteTypeNotSupported;
+      case mini_jit::TensorOperation::error_t::err_invalid_primitive_configuration:
+        return mlc::ErrorType::ExecuteInvalidPrimitiveConfiguration;
+      case mini_jit::TensorOperation::error_t::err_invalid_first_touch_configuration:
+        return mlc::ErrorType::ExecuteInvalidFirstTouchConfiguration;
+      case mini_jit::TensorOperation::error_t::err_invalid_main_configuration:
+        return mlc::ErrorType::ExecuteInvalidMainConfiguration;
+      case mini_jit::TensorOperation::error_t::err_invalid_last_touch_configuration:
+        return mlc::ErrorType::ExecuteInvalidLastTouchConfiguration;
+      case mini_jit::TensorOperation::error_t::err_invalid_execution_order:
+        return mlc::ErrorType::ExecuteInvalidExecutionOrder;
+      case mini_jit::TensorOperation::error_t::err_invalid_strides:
+        return mlc::ErrorType::ExecuteInvalidStrides;
+      case mini_jit::TensorOperation::error_t::err_k_dimension_must_not_be_shared:
+        return mlc::ErrorType::ExecuteKDimensionMustNotBeShared;
+      case mini_jit::TensorOperation::error_t::err_shared_required_for_parallel_execution:
+        return mlc::ErrorType::ExecuteSharedRequiredForParallelExecution;
+      default:
+        return mlc::ErrorType::Undefined;
+      }
+    }
+
     // TODO: doc
     template <typename T> mlc::Error einsum(const std::vector<T> &inputs, mlc::Tensor &output, const std::string &tree)
     {
@@ -196,6 +236,21 @@ namespace mlc
       return size;
     }
 
+    // TODO: doc
+    constexpr mini_jit::TensorConfig::prim_t convertPrimitiveType(mlc::UnaryType type)
+    {
+      switch (type)
+      {
+      case mlc::UnaryType::None:
+        return mini_jit::TensorConfig::prim_t::none;
+      case mlc::UnaryType::Identity:
+        return mini_jit::TensorConfig::prim_t::copy;
+      case mlc::UnaryType::Zero:
+        return mini_jit::TensorConfig::prim_t::zero;
+      case mlc::UnaryType::ReLu:
+        return mini_jit::TensorConfig::prim_t::relu;
+      }
+    }
   }  // namespace internal
 }  // namespace mlc
 #endif  // MLC_TENSORUTILS_H

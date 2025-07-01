@@ -120,14 +120,6 @@ namespace mini_jit
 
     // Lowering
     /**
-     * Lowers the given EinsumNode to a TensorConfig.
-     *
-     * @param node The EinsumNode to lower.
-     * @return A TensorConfig representing the lowered node.
-     */
-    TensorConfig lower_node(const EinsumNode *node);
-
-    /**
      * Retrieves the dimension types and sizes for the given EinsumNode.
      *
      * @param node The EinsumNode for which to retrieve the dimension types and sizes.
@@ -311,6 +303,14 @@ namespace mini_jit
      * @return ErrorExecute indicating the result of the execution operation.
      */
     ErrorExecute execute(const std::vector<void *> &tensors);
+
+    /**
+     * Lowers the given EinsumNode to a TensorConfig.
+     *
+     * @param node The EinsumNode to lower.
+     * @return A TensorConfig representing the lowered node.
+     */
+    TensorConfig lower_node(const EinsumNode *node);
   };
 };  // namespace mini_jit
 
