@@ -14,6 +14,7 @@ namespace mlc
     bool ownsData = false;
     float *data = nullptr;
     std::vector<uint64_t> dim_sizes;
+    std::vector<uint64_t> strides;
 
     // deletes the default constructor
     Tensor() = delete;
@@ -27,7 +28,18 @@ namespace mlc
      * @param data The pointer to the data array.
      * @param dim_sizes The dimension sizes sorted by stride in descending order.
      */
-    Tensor(float *data, const std::vector<uint64_t> &dim_sizes) : data(data), dim_sizes(dim_sizes) {};
+    Tensor(float *data, const std::vector<uint64_t> &dim_sizes) : data(data), dim_sizes(dim_sizes)
+    {
+      strides.resize(dim_sizes.size());
+      if (!dim_sizes.empty())
+      {
+        strides[dim_sizes.size() - 1] = 1;
+        for (size_t i = dim_sizes.size() - 1; i > 0; --i)
+        {
+          strides[i - 1] = strides[i] * dim_sizes[i];
+        }
+      }
+    };
 
     /**
      * @brief Construct a new Tensor with the dimension sizes sorted by stride in descending order.
@@ -41,8 +53,18 @@ namespace mlc
       {
         size *= dim;
       }
-      data = new float[size];
+      data = new float[size]{0};
       ownsData = true;
+
+      strides.resize(dim_sizes.size());
+      if (!dim_sizes.empty())
+      {
+        strides[dim_sizes.size() - 1] = 1;
+        for (size_t i = dim_sizes.size() - 1; i > 0; --i)
+        {
+          strides[i - 1] = strides[i] * dim_sizes[i];
+        }
+      }
     };
 
     /**
@@ -56,6 +78,21 @@ namespace mlc
         data = nullptr;
       }
     }
+
+    /**
+     * @brief Converts the tensor into its string representation.
+     *
+     * @param name Name of the tensor that is printed
+     * @return std::string The string representation of the tensor.
+     */
+    std::string to_string(std::string name = "tensor");
+
+    /**
+     * @brief Returns the number of elements the tensor has.
+     *
+     * @return uint64_t The number of elements in the tensor.
+     */
+    uint64_t size();
   };
 
   class TensorOperation
@@ -105,6 +142,24 @@ namespace mlc
    * @param number The number used to fill the tensor.
    */
   void fill_number(Tensor &tensor, float number);
+
+  /**
+   * @brief Fills the tensor with counting upwards numbers.
+   *
+   * @param tensor The tensor to fill.
+   * @param start The number to start counting from.
+   * @param step The amount to increase everytime.
+   */
+  void fill_counting_up(Tensor &tensor, float start, float step);
+
+  /**
+   * @brief Fills the tensor with counting downwards numbers.
+   *
+   * @param tensor The tensor to fill.
+   * @param start The number to start counting from.
+   * @param step The amount to decrease everytime.
+   */
+  void fill_counting_down(Tensor &tensor, float start, float step);
 
   /**
    * @brief Fills the tensor based on the given function.

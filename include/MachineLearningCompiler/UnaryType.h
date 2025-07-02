@@ -8,7 +8,7 @@ namespace mlc
   {
     None = 0,
     Zero = 1,
-    ReLu = 2,
+    ReLU = 2,
     Identity = 3,
   };
 }  // namespace mlc

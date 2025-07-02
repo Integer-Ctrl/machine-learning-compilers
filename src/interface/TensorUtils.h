@@ -277,12 +277,23 @@ namespace mlc
         return mini_jit::TensorConfig::prim_t::copy;
       case mlc::UnaryType::Zero:
         return mini_jit::TensorConfig::prim_t::zero;
-      case mlc::UnaryType::ReLu:
+      case mlc::UnaryType::ReLU:
         return mini_jit::TensorConfig::prim_t::relu;
       default:
         return mini_jit::TensorConfig::prim_t::none;
       }
     }
+
+    /**
+     * @brief Recursively converts the given tensor into a string format.
+     *
+     * @param tensor The tensor to convert.
+     * @param str The string to write to.
+     * @param dim The current processed dimension.
+     * @param offset The offset from the data to be processed.
+     * @param indent The indentation of the current dimension.
+     */
+    void tensor_dim_to_string(mlc::Tensor *tensor, std::string &str, size_t dim, size_t offset, std::string indent);
   }  // namespace internal
 }  // namespace mlc
 #endif  // MLC_TENSORUTILS_H

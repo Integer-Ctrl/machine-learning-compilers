@@ -50,6 +50,50 @@ TEST_CASE("Test interface tensor fill_number", "[tensor][correctness]")
   }
 }
 
+TEST_CASE("Test interface tensor fill_counting_up", "[tensor][correctness]")
+{
+  std::vector<uint64_t> shape1 = {3, 4};
+
+  size_t total_size1 = shape1[0] * shape1[1];
+  float *data1 = new float[total_size1];
+
+  for (size_t i = 0; i < total_size1; ++i)
+  {
+    data1[i] = std::nanf("1");
+  }
+
+  mlc::Tensor tensor1(data1, shape1);
+  mlc::fill_counting_up(tensor1, 5, 0.5);
+
+  for (size_t i = 0; i < total_size1; i++)
+  {
+    CAPTURE(i);
+    REQUIRE(tensor1.data[i] == (0.5f * i + 5));
+  }
+}
+
+TEST_CASE("Test interface tensor fill_counting_down", "[tensor][correctness]")
+{
+  std::vector<uint64_t> shape1 = {3, 4};
+
+  size_t total_size1 = shape1[0] * shape1[1];
+  float *data1 = new float[total_size1];
+
+  for (size_t i = 0; i < total_size1; ++i)
+  {
+    data1[i] = std::nanf("1");
+  }
+
+  mlc::Tensor tensor1(data1, shape1);
+  mlc::fill_counting_down(tensor1, 5, 1.0);
+
+  for (int64_t i = 0; i < static_cast<int64_t>(total_size1); i++)
+  {
+    CAPTURE(i);
+    REQUIRE(tensor1.data[i] == (-i + 5));
+  }
+}
+
 TEST_CASE("Test interface tensor fill_lambda", "[tensor][correctness]")
 {
   std::vector<uint64_t> shape1 = {3, 4};
@@ -103,6 +147,16 @@ TEST_CASE("Test interface tensor einsum reference", "[tensor][correctness]")
   mlc::Tensor tensor2(data2, shape2);
   mlc::Tensor tensor3(data2, shape3);
 
+  REQUIRE(tensor1.strides.size() == 2);
+  REQUIRE(tensor1.strides[0] == 4);
+  REQUIRE(tensor1.strides[1] == 1);
+  REQUIRE(tensor2.strides.size() == 2);
+  REQUIRE(tensor2.strides[0] == 5);
+  REQUIRE(tensor2.strides[1] == 1);
+  REQUIRE(tensor3.strides.size() == 2);
+  REQUIRE(tensor3.strides[0] == 5);
+  REQUIRE(tensor3.strides[1] == 1);
+
   mlc::Error err = mlc::einsum({tensor1, tensor2}, tensor3, "[0,1],[1,2]->[0,2]");
   REQUIRE(err.type == mlc::ErrorType::None);
 
@@ -142,6 +196,16 @@ TEST_CASE("Test interface tensor einsum pointer", "[tensor][correctness]")
   mlc::Tensor tensor2(data2, shape2);
   mlc::Tensor tensor3(data2, shape3);
   std::vector<mlc::Tensor *> inputs{&tensor1, &tensor2};
+
+  REQUIRE(tensor1.strides.size() == 2);
+  REQUIRE(tensor1.strides[0] == 4);
+  REQUIRE(tensor1.strides[1] == 1);
+  REQUIRE(tensor2.strides.size() == 2);
+  REQUIRE(tensor2.strides[0] == 5);
+  REQUIRE(tensor2.strides[1] == 1);
+  REQUIRE(tensor3.strides.size() == 2);
+  REQUIRE(tensor3.strides[0] == 5);
+  REQUIRE(tensor3.strides[1] == 1);
 
   CAPTURE(inputs);
   mlc::Error err = mlc::einsum(inputs, tensor3, "[0,1],[1,2]->[0,2]");
@@ -183,6 +247,16 @@ TEST_CASE("Test interface tensor contraction", "[tensor][correctness]")
   mlc::Tensor tensor2(data2, shape2);
   mlc::Tensor tensor3(data2, shape3);
 
+  REQUIRE(tensor1.strides.size() == 2);
+  REQUIRE(tensor1.strides[0] == 4);
+  REQUIRE(tensor1.strides[1] == 1);
+  REQUIRE(tensor2.strides.size() == 2);
+  REQUIRE(tensor2.strides[0] == 5);
+  REQUIRE(tensor2.strides[1] == 1);
+  REQUIRE(tensor3.strides.size() == 2);
+  REQUIRE(tensor3.strides[0] == 5);
+  REQUIRE(tensor3.strides[1] == 1);
+
   mlc::Error err = mlc::contraction(tensor1, tensor2, tensor3, "[0,1],[1,2]->[0,2]");
   REQUIRE(err.type == mlc::ErrorType::None);
 
@@ -221,6 +295,16 @@ TEST_CASE("Test interface tensor gemm", "[tensor][correctness]")
   mlc::Tensor tensor1(data1, shape1);
   mlc::Tensor tensor2(data2, shape2);
   mlc::Tensor tensor3(data2, shape3);
+
+  REQUIRE(tensor1.strides.size() == 2);
+  REQUIRE(tensor1.strides[0] == 3);
+  REQUIRE(tensor1.strides[1] == 1);
+  REQUIRE(tensor2.strides.size() == 2);
+  REQUIRE(tensor2.strides[0] == 4);
+  REQUIRE(tensor2.strides[1] == 1);
+  REQUIRE(tensor3.strides.size() == 2);
+  REQUIRE(tensor3.strides[0] == 3);
+  REQUIRE(tensor3.strides[1] == 1);
 
   mlc::Error err = mlc::gemm(tensor1, tensor2, tensor3);
   REQUIRE(err.type == mlc::ErrorType::None);
@@ -261,6 +345,17 @@ TEST_CASE("Test interface tensor gemm failure", "[tensor][correctness]")
   mlc::Tensor tensor2(data2, shape2);
   mlc::Tensor tensor3(data2, shape3);
 
+  REQUIRE(tensor1.strides.size() == 3);
+  REQUIRE(tensor1.strides[0] == 20);
+  REQUIRE(tensor1.strides[1] == 5);
+  REQUIRE(tensor1.strides[2] == 1);
+  REQUIRE(tensor2.strides.size() == 2);
+  REQUIRE(tensor2.strides[0] == 5);
+  REQUIRE(tensor2.strides[1] == 1);
+  REQUIRE(tensor3.strides.size() == 2);
+  REQUIRE(tensor3.strides[0] == 5);
+  REQUIRE(tensor3.strides[1] == 1);
+
   mlc::Error err = mlc::gemm(tensor1, tensor2, tensor3);
   REQUIRE(err.type == mlc::ErrorType::TensorExpected2DTensor);
 
@@ -283,6 +378,11 @@ TEST_CASE("Test interface tensor unary zero", "[tensor][correctness]")
   }
 
   mlc::Tensor tensor1(data1, shape1);
+
+  REQUIRE(tensor1.strides.size() == 3);
+  REQUIRE(tensor1.strides[0] == 20);
+  REQUIRE(tensor1.strides[1] == 5);
+  REQUIRE(tensor1.strides[2] == 1);
 
   mlc::Error err = mlc::unary_zero(tensor1);
   REQUIRE(err.type == mlc::ErrorType::None);
@@ -319,6 +419,15 @@ TEST_CASE("Test interface tensor unary relu", "[tensor][correctness]")
   mlc::Tensor tensor1(data1, shape1);
   mlc::Tensor tensor2(data2, shape2);
 
+  REQUIRE(tensor1.strides.size() == 3);
+  REQUIRE(tensor1.strides[0] == 20);
+  REQUIRE(tensor1.strides[1] == 5);
+  REQUIRE(tensor1.strides[2] == 1);
+  REQUIRE(tensor2.strides.size() == 3);
+  REQUIRE(tensor2.strides[0] == 20);
+  REQUIRE(tensor2.strides[1] == 5);
+  REQUIRE(tensor2.strides[2] == 1);
+
   mlc::Error err = mlc::unary_relu(tensor1, tensor2);
   REQUIRE(err.type == mlc::ErrorType::None);
 
@@ -354,6 +463,15 @@ TEST_CASE("Test interface tensor unary identity", "[tensor][correctness]")
 
   mlc::Tensor tensor1(data1, shape1);
   mlc::Tensor tensor2(data2, shape2);
+
+  REQUIRE(tensor1.strides.size() == 3);
+  REQUIRE(tensor1.strides[0] == 20);
+  REQUIRE(tensor1.strides[1] == 5);
+  REQUIRE(tensor1.strides[2] == 1);
+  REQUIRE(tensor2.strides.size() == 3);
+  REQUIRE(tensor2.strides[0] == 20);
+  REQUIRE(tensor2.strides[1] == 5);
+  REQUIRE(tensor2.strides[2] == 1);
 
   mlc::Error err = mlc::unary_identity(tensor1, tensor2);
   REQUIRE(err.type == mlc::ErrorType::None);
@@ -398,6 +516,16 @@ TEST_CASE("Test interface tensor contraction first+last", "[tensor][correctness]
   mlc::Tensor tensor1(data1, shape1);
   mlc::Tensor tensor2(data2, shape2);
   mlc::Tensor tensor3(data2, shape3);
+
+  REQUIRE(tensor1.strides.size() == 2);
+  REQUIRE(tensor1.strides[0] == 4);
+  REQUIRE(tensor1.strides[1] == 1);
+  REQUIRE(tensor2.strides.size() == 2);
+  REQUIRE(tensor2.strides[0] == 5);
+  REQUIRE(tensor2.strides[1] == 1);
+  REQUIRE(tensor3.strides.size() == 2);
+  REQUIRE(tensor3.strides[0] == 5);
+  REQUIRE(tensor3.strides[1] == 1);
 
   mlc::Error err = mlc::contraction(tensor1, tensor2, tensor3, "[0,1],[1,2]->[0,2]", mlc::UnaryType::None, mlc::UnaryType::None);
   REQUIRE(err.type == mlc::ErrorType::None);
