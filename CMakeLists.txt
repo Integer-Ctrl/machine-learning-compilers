@@ -274,13 +274,19 @@ set(BENCH_KERNLES_FILES
 )
 
 set(SRC_INTERFACE_FILES
-    TensorUtils.h
+    Contraction.cpp
+    Einsum.cpp
+    Einsum.h
+    Gemm.cpp
     Tensor.cpp
+    TensorUtils.h
+    Unary.cpp
 )
 
 set(TEST_INTERFACE_FILES
     TensorUtils.test.cpp
     Tensor.test.cpp
+    TensorOperation.test.cpp
 )
 
 foreach(file ${SRC_MAIN_FILES})
@@ -326,6 +332,8 @@ endforeach()
 # ==== Public headers of the installed library ====
 set(public_headers
     include/${PROJECT_NAME}/Tensor.h
+    include/${PROJECT_NAME}/Error.h
+    include/${PROJECT_NAME}/UnaryType.h
 )
 
 list(APPEND TEST_FILEPATHS "${INTERFACE_FILEPATHS}" "${public_headers}")

@@ -58,6 +58,39 @@ namespace mlc
     }
   };
 
+  class TensorOperation
+  {
+  public:
+    virtual ~TensorOperation()
+    {
+    }
+
+    /**
+     * @brief Executes the setup einsum expression with input tensor of the same size.
+     *
+     * @param inputs The inputs to be einsum calculation.
+     * @param output The output of the einsum calculation.
+     * @return Error The error code or ErrorType::None on success.
+     */
+    virtual Error execute(const std::vector<std::reference_wrapper<const Tensor>> &inputs, Tensor &output) = 0;
+
+    /**
+     * @brief Executes the setup einsum expression with input tensor of the same size.
+     *
+     * @param inputs The inputs to be einsum calculation.
+     * @param output The output of the einsum calculation.
+     * @return Error The error code or ErrorType::None on success.
+     */
+    virtual Error execute(const std::vector<const Tensor *> &inputs, Tensor &output) = 0;
+
+    /**
+     * @brief Gets the error that was produces during the setup of the tree.
+     *
+     * @return Error The error code or ErrorType::None on success.
+     */
+    virtual Error getSetupError() const = 0;
+  };
+
   /**
    * @brief Fills the tensor with random float data.
    *
@@ -101,6 +134,16 @@ namespace mlc
    * @return Error The error code or ErrorType::None on success.
    */
   Error einsum(const std::vector<Tensor *> &inputs, Tensor &output, const std::string &tree);
+
+  /**
+   * @brief Sets up the einsum tree for contraction based on the given tensor dimensions and tree.
+   *
+   * @param inputs The input tensors shapes.
+   * @param output The output tensor shape.
+   * @param tree The einsum tree to contract in the format [in0],[in1]->[out].
+   */
+  TensorOperation *einsum_operation(const std::vector<std::vector<uint64_t>> &inputs, const std::vector<uint64_t> &output,
+                                    const std::string &tree);
 
   /**
    * @brief Perform a binary contraction and adds it to the output.
