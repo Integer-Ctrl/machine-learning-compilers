@@ -42,7 +42,7 @@ Include(FetchContent)
 FetchContent_Declare(
     MachineLearningCompiler
     GIT_REPOSITORY https://github.com/Integer-Ctrl/machine-learning-compilers
-    GIT_TAG        individual-phase
+    GIT_TAG        individual-phase #TODO change
     EXCLUDE_FROM_ALL
 )
 FetchContent_MakeAvailable(MachineLearningCompiler)
