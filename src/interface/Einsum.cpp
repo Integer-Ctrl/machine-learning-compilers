@@ -1,6 +1,7 @@
 #include "Einsum.h"
 #include "../../include/MachineLearningCompiler/Tensor.h"
 #include "../main/EinsumTree.h"
+#include "utility"
 
 mlc::Error mlc::einsum(const std::vector<std::reference_wrapper<const Tensor>> &inputs, Tensor &output, const std::string &tree)
 {
@@ -69,12 +70,15 @@ mlc::Error mlc::EinsumOperation::execute(const std::vector<const Tensor *> &inpu
 mlc::TensorOperation *mlc::einsum_operation(const std::vector<std::vector<uint64_t>> &inputs, const std::vector<uint64_t> &output,
                                             const std::string &tree)
 {
+  std::vector<Tensor> rawTensor;
   std::vector<std::reference_wrapper<const Tensor>> inputTensors;
+  rawTensor.reserve(inputs.size());
+  inputTensors.reserve(inputs.size());
   for (const auto &shape : inputs)
   {
     // Create a dummy tensor with the given shape
-    Tensor tensor(nullptr, shape);
-    inputTensors.push_back(tensor);
+    rawTensor.emplace_back(nullptr, shape);
+    inputTensors.push_back(rawTensor.back());
   }
 
   Tensor outputTensor(output);

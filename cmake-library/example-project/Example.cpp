@@ -89,7 +89,8 @@ void example_fill()
   // filled are given as additional parameter.
   // Here the tensor is filled with 1 2 3, 1 2 3, 1 2 3
   mlc::Tensor tensorLambda({3, 3});
-  mlc::fill_lambda(tensorLambda, [](const mlc::Tensor &self, size_t index) { return index % self.strides[self.strides.size() - 1]; });
+  mlc::fill_lambda(tensorLambda, 
+    [](const mlc::Tensor &self, size_t index) { return index % self.strides[0] + 1; });
   std::cout << tensorLambda.to_string("Lambda 1 2 3") << std::endl;
 
   // We can also fill the tensor using outside defined variable.
@@ -143,7 +144,7 @@ void example_unary()
   mlc::Tensor tensorIdentityIn({3, 3});
   mlc::Tensor tensorIdentityOut({3, 3});
   mlc::fill_random(tensorIdentityIn);
-  mlc::fill_number(tensorIdentityIn, 0);
+  mlc::fill_number(tensorIdentityOut, 0);
   error = mlc::unary_identity(tensorIdentityIn, tensorIdentityOut);  // identity = copy from input to output
   if (error.type != mlc::ErrorType::None)
   {
@@ -157,7 +158,8 @@ void example_unary()
   mlc::Tensor tensorReluIn({3, 3});
   mlc::Tensor tensorReluOut({3, 3});
   // Fills even indices with positive and odd indices with negative numbers
-  mlc::fill_lambda(tensorReluIn, [](const mlc::Tensor &, size_t index) { return index * (2 * (index % 2) - 1); });
+  mlc::fill_lambda(tensorReluIn, 
+    [](const mlc::Tensor &, int64_t index) { return index * (2 * (index % 2) - 1); });
   mlc::fill_number(tensorReluOut, 0);
   error = mlc::unary_relu(tensorReluIn, tensorReluOut);  // ReLU = max(x, 0)
   if (error.type != mlc::ErrorType::None)
@@ -180,7 +182,7 @@ void example_contraction()
 
   mlc::fill_counting_up(in0, 0, 1);
   mlc::fill_counting_down(in1, 0, 1);
-  mlc::fill_number(in0, 1'000'000);
+  mlc::fill_number(out, 1'000'000);
 
   mlc::Error error = mlc::contraction(in0, in1, out, "[0,1,2],[3,4,1]->[0,3,4,2]");
   if (error.type != mlc::ErrorType::None)
@@ -205,7 +207,7 @@ void example_contraction_first_last_touch()
   mlc::Tensor out({5, 5, 2, 3});  // IDs: 0,3,4,2
 
   mlc::fill_counting_up(in0, 0, 1);
-  mlc::fill_counting_down(in1, 0, 1);
+  mlc::fill_counting_down(in1, 20, 1);
   // The out is default initialized with zeros.
 
   mlc::Error error = mlc::contraction(in0, in1, out, "[0,1,2],[3,4,1]->[0,3,4,2]", mlc::UnaryType::None, mlc::UnaryType::ReLU);
@@ -318,14 +320,31 @@ void example_einsum_operation()
 
 int main(int argc, const char **argv)
 {
-  example_tensor();
-  example_fill();
-  example_gemm();
-  example_unary();
-  example_contraction();
-  example_contraction_first_last_touch();
-  example_einsum();
-  example_einsum_operation();
+  size_t sep = 20;
+
+  // std::cout << std::string(sep, '=') << std::endl << "Tensors" << std::endl << std::string(sep, '=') << std::endl;
+  // example_tensor();
+
+  // std::cout << std::endl << std::string(sep, '=') << std::endl << "Fill Tensors" << std::endl << std::string(sep, '=') << std::endl;
+  // example_fill();
+
+  // std::cout << std::endl << std::string(sep, '=') << std::endl << "GEMM Operation" << std::endl << std::string(sep, '=') << std::endl;
+  // example_gemm();
+
+  // std::cout << std::endl << std::string(sep, '=') << std::endl << "Unary Operation" << std::endl << std::string(sep, '=') << std::endl;
+  // example_unary();
+
+  // std::cout << std::endl << std::string(sep, '=') << std::endl << "Contraction" << std::endl << std::string(sep, '=') << std::endl;
+  // example_contraction();
+
+  // std::cout << std::endl << std::string(sep, '=') << std::endl << "Contraction First & Last Touch" << std::endl << std::string(sep, '=') << std::endl;
+  // example_contraction_first_last_touch();
+
+  // std::cout << std::endl << std::string(sep, '=') << std::endl << "Einsum" << std::endl << std::string(sep, '=') << std::endl;
+  // example_einsum();
+
+  // std::cout << std::endl << std::string(sep, '=') << std::endl << "Einsum Operation" << std::endl << std::string(sep, '=') << std::endl;
+  // example_einsum_operation();
 
   return 0;
 }

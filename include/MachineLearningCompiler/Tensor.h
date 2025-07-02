@@ -19,9 +19,6 @@ namespace mlc
     // deletes the default constructor
     Tensor() = delete;
 
-    // deletes the copy constructor
-    Tensor(const Tensor &) = delete;
-
     /**
      * @brief Construct a new Tensor with with a pointer to memory and the dimension sizes sorted in by stride in descending order.
      *

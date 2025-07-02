@@ -534,3 +534,29 @@ TEST_CASE("Test interface tensor contraction first+last", "[tensor][correctness]
   delete[] data2;
   delete[] data3;
 }
+
+TEST_CASE("Test interface tensor einsum operation", "[setup][correctness]")
+{
+  std::vector<uint64_t> shape1 = {3, 4};
+  std::vector<uint64_t> shape2 = {4, 5};
+  std::vector<uint64_t> shape3 = {3, 5};
+
+  mlc::Tensor tensor1(shape1);
+  mlc::Tensor tensor2(shape2);
+  mlc::Tensor tensor3(shape3);
+
+  mlc::TensorOperation *setup = mlc::einsum_operation({shape1, shape2}, shape3, "[0,1],[1,2]->[0,2]");
+
+  mlc::Error error = setup->execute({tensor1, tensor2}, tensor3);
+  INFO(error.message);
+  REQUIRE(error.type == mlc::ErrorType::None);
+
+  error = setup->execute({tensor1, tensor2}, tensor3);
+  INFO(error.message);
+  REQUIRE(error.type == mlc::ErrorType::None);
+
+  error = setup->execute({tensor1, tensor2}, tensor3);
+  INFO(error.message);
+  REQUIRE(error.type == mlc::ErrorType::None);
+  delete setup;
+}

@@ -286,7 +286,6 @@ set(SRC_INTERFACE_FILES
 set(TEST_INTERFACE_FILES
     TensorUtils.test.cpp
     Tensor.test.cpp
-    TensorOperation.test.cpp
 )
 
 foreach(file ${SRC_MAIN_FILES})

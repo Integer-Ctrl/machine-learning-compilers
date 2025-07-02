@@ -148,7 +148,7 @@ void mlc::internal::tensor_dim_to_string(mlc::Tensor *tensor, std::string &str, 
 std::string mlc::Tensor::to_string(std::string name)
 {
   std::string str;
-  str += name + "(";
+  str += name + "(\n";
   if (dim_sizes.empty())
   {
     str += "[]";
