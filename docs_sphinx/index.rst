@@ -19,6 +19,7 @@ Machine Learning Compilers
    :caption: CHAPTERS
    :glob:
 
+   chapters/overview.rst
    chapters/assembly.rst
    chapters/base.rst
    chapters/neon.rst
@@ -26,22 +27,6 @@ Machine Learning Compilers
    chapters/tensor_operations.rst
    chapters/einsum_trees.rst
    chapters/report_individual.rst
-
-.. toctree::
-   :maxdepth: 4
-   :caption: SUBMISSIONS
-   :glob:
-
-   submissions/report_25_04_17.rst
-   submissions/report_25_04_24.rst
-   submissions/report_25_05_01.rst
-   submissions/report_25_05_08.rst
-   submissions/report_25_05_15.rst
-   submissions/report_25_05_22.rst
-   submissions/report_25_05_29.rst
-   submissions/report_25_06_05.rst
-   submissions/report_25_06_12.rst
-   submissions/report_25_06_19.rst
 
 .. toctree::
    :maxdepth: 4
