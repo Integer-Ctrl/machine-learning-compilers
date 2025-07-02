@@ -249,6 +249,8 @@ namespace mlc
         return mini_jit::TensorConfig::prim_t::zero;
       case mlc::UnaryType::ReLu:
         return mini_jit::TensorConfig::prim_t::relu;
+      default:
+        return mini_jit::TensorConfig::prim_t::none;
       }
     }
   }  // namespace internal
