@@ -222,10 +222,7 @@ File: ``unary_identity.cpp`` & File: ``unary_identity_transpose.cpp``
 - **BM_unary_identity/M:512/N:512** kernel: :math:`125.1` GiB/s
 - **BM_unary_identity/M:2048/N:2048** kernel: :math:`106.4` GiB/s
 
-ReLu Primitive
-^^^^^^^^^^^^^^
-
-**Without Transposition**
+**With Transposition**
 
 .. code-block::
     :emphasize-lines: 4, 8, 12, 16
@@ -254,6 +251,9 @@ ReLu Primitive
 - **BM_unary_identity_transpose/M:64/N:64** kernel: :math:`130.5` GiB/s
 - **BM_unary_identity_transpose/M:512/N:512** kernel: :math:`4.409` GiB/s
 - **BM_unary_identity_transpose/M:2048/N:2048** kernel: :math:`3.817` GiB/s
+
+ReLu Primitive
+^^^^^^^^^^^^^^
 
 1. mini_jit::Unary::generate function to support the ReLu primitive
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
