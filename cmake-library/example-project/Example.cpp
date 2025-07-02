@@ -301,10 +301,10 @@ void example_einsum_operation()
   mlc::Tensor in2_2(in2.dim_sizes);  // IDs: 1,3
   mlc::Tensor out_2(out.dim_sizes);  // IDs: 2,3
 
-  mlc::fill_random(in0_2);
-  mlc::fill_random(in1_2);
-  mlc::fill_random(in2_2);
-  mlc::fill_random(out_2);
+  mlc::fill_counting_up(in0_2, 10.5f, 33);
+  mlc::fill_number(in1_2, 13);
+  mlc::fill_counting_down(in2_2, 5, 2);
+  mlc::fill_number(out_2, -111);
 
   // Execute the operation again but on different tensors of the same size.
   error = op->execute({in0_2, in1_2, in2_2}, out_2);
@@ -315,36 +315,41 @@ void example_einsum_operation()
     return;
   }
 
+  std::cout << in0_2.to_string("in0_2") << std::endl;
+  std::cout << in1_2.to_string("in1_2") << std::endl;
+  std::cout << in2_2.to_string("in2_2") << std::endl;
+  std::cout << out_2.to_string("out_2") << std::endl;
+
   delete op;
 }
 
 int main(int argc, const char **argv)
 {
-  size_t sep = 20;
+  size_t sep = 50;
 
-  // std::cout << std::string(sep, '=') << std::endl << "Tensors" << std::endl << std::string(sep, '=') << std::endl;
-  // example_tensor();
+  std::cout << std::string(sep, '=') << std::endl << "Tensors" << std::endl << std::string(sep, '=') << std::endl;
+  example_tensor();
 
-  // std::cout << std::endl << std::string(sep, '=') << std::endl << "Fill Tensors" << std::endl << std::string(sep, '=') << std::endl;
-  // example_fill();
+  std::cout << std::endl << std::string(sep, '=') << std::endl << "Fill Tensors" << std::endl << std::string(sep, '=') << std::endl;
+  example_fill();
 
-  // std::cout << std::endl << std::string(sep, '=') << std::endl << "GEMM Operation" << std::endl << std::string(sep, '=') << std::endl;
-  // example_gemm();
+  std::cout << std::endl << std::string(sep, '=') << std::endl << "GEMM Operation" << std::endl << std::string(sep, '=') << std::endl;
+  example_gemm();
 
-  // std::cout << std::endl << std::string(sep, '=') << std::endl << "Unary Operation" << std::endl << std::string(sep, '=') << std::endl;
-  // example_unary();
+  std::cout << std::endl << std::string(sep, '=') << std::endl << "Unary Operation" << std::endl << std::string(sep, '=') << std::endl;
+  example_unary();
 
-  // std::cout << std::endl << std::string(sep, '=') << std::endl << "Contraction" << std::endl << std::string(sep, '=') << std::endl;
-  // example_contraction();
+  std::cout << std::endl << std::string(sep, '=') << std::endl << "Contraction" << std::endl << std::string(sep, '=') << std::endl;
+  example_contraction();
 
-  // std::cout << std::endl << std::string(sep, '=') << std::endl << "Contraction First & Last Touch" << std::endl << std::string(sep, '=') << std::endl;
-  // example_contraction_first_last_touch();
+  std::cout << std::endl << std::string(sep, '=') << std::endl << "Contraction First & Last Touch" << std::endl << std::string(sep, '=') << std::endl;
+  example_contraction_first_last_touch();
 
-  // std::cout << std::endl << std::string(sep, '=') << std::endl << "Einsum" << std::endl << std::string(sep, '=') << std::endl;
-  // example_einsum();
+  std::cout << std::endl << std::string(sep, '=') << std::endl << "Einsum" << std::endl << std::string(sep, '=') << std::endl;
+  example_einsum();
 
-  // std::cout << std::endl << std::string(sep, '=') << std::endl << "Einsum Operation" << std::endl << std::string(sep, '=') << std::endl;
-  // example_einsum_operation();
+  std::cout << std::endl << std::string(sep, '=') << std::endl << "Einsum Operation" << std::endl << std::string(sep, '=') << std::endl;
+  example_einsum_operation();
 
   return 0;
 }

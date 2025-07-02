@@ -86,7 +86,7 @@ namespace mlc
     if (errorExecute != mini_jit::EinsumTree::ErrorExecute::None)
     {
       mlc::ErrorType type = internal::convertErrorExecute(errorExecute);
-      return {type, ""};  // TODO add error message
+      return {type, "Failed to execute the einsum operation."};
     }
 
     return {mlc::ErrorType::None, "Success"};
