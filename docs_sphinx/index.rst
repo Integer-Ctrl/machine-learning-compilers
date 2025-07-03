@@ -16,20 +16,17 @@ Machine Learning Compilers
 
 .. toctree::
    :maxdepth: 4
-   :caption: SUBMISSIONS
+   :caption: CHAPTERS
    :glob:
 
-   submissions/report_25_04_17.rst
-   submissions/report_25_04_24.rst
-   submissions/report_25_05_01.rst
-   submissions/report_25_05_08.rst
-   submissions/report_25_05_15.rst
-   submissions/report_25_05_22.rst
-   submissions/report_25_05_29.rst
-   submissions/report_25_06_05.rst
-   submissions/report_25_06_12.rst
-   submissions/report_25_06_19.rst
-   submissions/report_individual.rst
+   chapters/overview.rst
+   chapters/assembly.rst
+   chapters/base.rst
+   chapters/neon.rst
+   chapters/code_generation.rst
+   chapters/tensor_operations.rst
+   chapters/einsum_trees.rst
+   chapters/report_individual.rst
 
 .. toctree::
    :maxdepth: 4

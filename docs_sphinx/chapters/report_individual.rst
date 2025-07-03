@@ -4,38 +4,37 @@ Individual Phase
 Draft Ideas
 -----------
 
-1. C++ Library
-^^^^^^^^^^^^^^
+C++ Library
+^^^^^^^^^^^
 
 Currently, our project is primarily usable by the developers, us, themselves. The goal for this
 phase is to transition the project from its developmental stage into a production-ready C++
 library that can be easily integrated into other C++ projects.
 
-To achieve this, we plan to package the existing functionality into a distributable library.
-In addition, we aim to improve usability by designing a clean tensor interface
-that allows users to easily create, manipulate, and convert tensors to and from our internal
-format.
+To achieve this, we plan to package the existing functionality into a distributable library. In order
+to simplify usage and improve consistency across our tensor operations, we are developing a dedicated
+tensor structure in C++. This structure will serve as a unified interface for creating and managing
+tensors, making it easier to use them for our tensor operations.
 
-Of course, documentation will also be a key part of this phase. We will provide clear
-instructions on how to install and use the library, along with detailed guidance on its
-features and functionality.
+Documentation will also be a key part of this phase. We will provide clear instructions on how to
+install and use the library, along with detailed guidance on its features and functionality.
 
-2. Python Library
-^^^^^^^^^^^^^^^^^
+.. 2. Python Library
+.. ^^^^^^^^^^^^^^^^^
 
-To make our C++ tensor operations even more accessible to a wider audience, we plan to
-publish a Python package that bridges the ease of Python with the performance of JIT-compiled
-C++ code. This will involve creating Python bindings for our C++ project and implementing
-a Python interface that fully exposes its functionality. The final package is intended to
-be published on `PyPi <https://pypi.org>`_, allowing users to easily install and use it
-with minimal setup.
+.. To make our C++ tensor operations even more accessible to a wider audience, we plan to
+.. publish a Python package that bridges the ease of Python with the performance of JIT-compiled
+.. C++ code. This will involve creating Python bindings for our C++ project and implementing
+.. a Python interface that fully exposes its functionality. The final package is intended to
+.. be published on `PyPi <https://pypi.org>`_, allowing users to easily install and use it
+.. with minimal setup.
 
-Suggestions
------------
+.. Suggestions
+.. -----------
 
-1. Implementation of the C++ library
-2. Implementation fo the Python library
-3. Implementation of the C++ library and creating the Python library on top of the C++ library
+.. 1. Implementation of the C++ library
+.. 2. Implementation fo the Python library
+.. 3. Implementation of the C++ library and creating the Python library on top of the C++ library
 
 Execution
 ---------
@@ -71,7 +70,7 @@ All files under ``src/`` are private.
 CMakeLists
 ^^^^^^^^^^
 
-Next, we adjust the CMakeLists of our project so it fullfills all required settins to be inluded as an library.
+Next, we adjust the CMakeLists of our project so it full fills all required settings to be included as an library.
 
 **Top-level-project vs. Sub-level-project**
 
@@ -86,7 +85,7 @@ In our case we do not build tests nor benchmarks if the project is used as libra
 
 Next we dynamically check whether our library should be a static or a shared library. Again, CMake provided a global flag for this.
 `BUILD_SHARED_LIBS <https://cmake.org/cmake/help/latest/variable/BUILD_SHARED_LIBS.html>` which means calls to ``add_library()``
-without any explicit libary type check the current ``BUILD_SHARED_LIBS``. If it is true, then the default library type is
+without any explicit library type check the current ``BUILD_SHARED_LIBS``. If it is true, then the default library type is
 ``SHARED``. Otherwise, the default is ``STATIC``.
 
 The targets themselves are all files under ``src/*``.
