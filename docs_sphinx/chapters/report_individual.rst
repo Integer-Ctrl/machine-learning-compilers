@@ -875,8 +875,7 @@ And the execution part:
   creation phase, helping to catch mismatches at runtime.
 
 Documentation
-~~~~~~~~~~~~~
-
+^^^^^^^^^^^^^
 A library is nothing without good documentation. Therefore, we created a
 `user documentation <https://github.com/Integer-Ctrl/machine-learning-compilers/blob/main/cmake-library/README.md>`_ file that explains the
 concept of the tensor object and the defined operations, together with examples of how to use them. In addition to the user guide, we provide
