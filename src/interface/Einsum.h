@@ -67,7 +67,7 @@ namespace mlc
      * @brief Executes the Einsum operation with the given inputs and output tensor.
      */
     template <typename T> Error execute(const std::vector<T> &inputs, Tensor &output);
-    template <typename T> Error hasSameDimensions(const std::vector<T> &inputs);
+    template <typename T> Error hasSameDimensions(const std::vector<T> &inputs, const Tensor &output);
 
     Error error;
     mini_jit::EinsumTree einsumTree;
@@ -95,16 +95,16 @@ namespace mlc
   template <typename T> inline Error EinsumOperation::hasSameDimensions(const std::vector<T> &inputs, const Tensor &output)
   {
     auto &sortedDimSizes = einsumTree.get_sorted_dim_sizes();
-    const mini_jit::EinsumTree::EinsumNode *root = einsumTree.getRoot();
+    const mini_jit::EinsumTree::EinsumNode *root = einsumTree.get_root();
 
-    if (output->dim_sizes.size() != root->output_dim_ids.size())
+    if (output.dim_sizes.size() != root->output_dim_ids.size())
     {
       return {ErrorType::ExecuteWrongDimension, "The count of dimensions do not match in the output tensor."};
     }
 
     for (size_t i = 0; i < root->output_dim_ids.size(); i++)
     {
-      if (output->dim_sizes[i] != static_cast<uint64_t>(sortedDimSizes[root->output_dim_ids[i]]))
+      if (output.dim_sizes[i] != static_cast<uint64_t>(sortedDimSizes[root->output_dim_ids[i]]))
       {
         return {ErrorType::ExecuteWrongDimension,
                 "The output tensor dimension has a different size than the size than the tensor it was setup up with."};
