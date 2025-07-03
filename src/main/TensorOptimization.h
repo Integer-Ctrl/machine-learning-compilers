@@ -74,7 +74,7 @@ namespace mini_jit
      * @param index1 The index of element 1 to be set a position of index2.
      * @param index2 The index of element 2 ot be set a position of index1.
      */
-    void _swap_elements(TensorConfig &config, size_t index1, size_t index2);
+    void _swap_elements(TensorConfig &config, int64_t index1, int64_t index2);
 
     /**
      * @brief Moves an element from the old index to the new index position.

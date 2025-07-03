@@ -5,7 +5,7 @@
 #include <catch2/generators/catch_generators_range.hpp>
 #include <vector>
 
-TEST_CASE("Test tensor utils get_sorted_dimensions_sizes", "[tensor][correctness]")
+TEST_CASE("Test interface tensor utils get_sorted_dimensions_sizes", "[tensor][correctness]")
 {
   std::vector<uint64_t> shape1 = {3, 4};
   std::vector<uint64_t> shape2 = {4, 5};
@@ -40,7 +40,7 @@ TEST_CASE("Test tensor utils get_sorted_dimensions_sizes", "[tensor][correctness
   tree.parse_tree();
 
   std::vector<int64_t> sorted_dimensions_sizes;
-  get_sorted_dimensions_sizes(tree.get_root(), {tensor1, tensor2}, sorted_dimensions_sizes);
+  mlc::internal::get_sorted_dimensions_sizes(tree.get_root(), {tensor1, tensor2}, sorted_dimensions_sizes);
 
   std::vector<int64_t> expected = {3, 4, 5};
 

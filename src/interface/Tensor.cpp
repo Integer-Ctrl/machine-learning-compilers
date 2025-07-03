@@ -1,5 +1,5 @@
 #include "../../include/MachineLearningCompiler/Tensor.h"
-#include "../main/EinsumTree.h"
+#include "../main/TensorOperation.h"
 #include "TensorUtils.h"
 #include <iostream>
 
@@ -10,12 +10,11 @@ void mlc::fill_random(Tensor &tensor)
     return;
   }
 
-  uint64_t size = 1;
-  for (auto dim : tensor.dim_sizes)
-  {
-    size *= dim;
-  }
+  uint64_t size = internal::getTensorSize(&tensor);
 
+#ifdef MLC_USE_OPENMP
+#pragma omp parallel for
+#endif
   for (size_t i = 0; i < size; ++i)
   {
     float denominator = 1;
@@ -34,22 +33,135 @@ void mlc::fill_random(Tensor &tensor)
   }
 }
 
-void mlc::einsum(const std::vector<Tensor> &inputs, Tensor &output, const std::string &tree)
+void mlc::fill_number(Tensor &tensor, float number)
 {
-  mini_jit::EinsumTree einsumTree(tree);
-  mini_jit::EinsumTree::ErrorParse errorParse = einsumTree.parse_tree();
-  (void)(errorParse);
-
-  std::vector<int64_t> sorted_dim_sizes;
-  ::get_sorted_dimensions_sizes(einsumTree.get_root(), inputs, sorted_dim_sizes);
-  einsumTree.set_sorted_dim_sizes(sorted_dim_sizes);
-
-  std::vector<void *> tensors(inputs.size() + 1);
-  for (size_t i = 0; i < inputs.size(); i++)
+  if (tensor.dim_sizes.size() == 0)
   {
-    tensors[i] = inputs[i].data;
+    return;
   }
-  tensors[inputs.size()] = output.data;
 
-  einsumTree.execute(tensors);
+  uint64_t size = internal::getTensorSize(&tensor);
+
+#ifdef MLC_USE_OPENMP
+#pragma omp parallel for
+#endif
+  for (size_t i = 0; i < size; i++)
+  {
+    tensor.data[i] = number;
+  }
+}
+
+void mlc::fill_counting_up(Tensor &tensor, float start, float step)
+{
+  if (tensor.dim_sizes.size() == 0)
+  {
+    return;
+  }
+
+  int64_t size = internal::getTensorSize(&tensor);
+
+#ifdef MLC_USE_OPENMP
+#pragma omp parallel for
+#endif
+  for (int64_t i = 0; i < size; i++)
+  {
+    tensor.data[i] = start + i * step;
+  }
+}
+
+void mlc::fill_counting_down(Tensor &tensor, float start, float step)
+{
+  if (tensor.dim_sizes.size() == 0)
+  {
+    return;
+  }
+
+  int64_t size = internal::getTensorSize(&tensor);
+
+#ifdef MLC_USE_OPENMP
+#pragma omp parallel for
+#endif
+  for (int64_t i = 0; i < size; i++)
+  {
+    tensor.data[i] = start - i * step;
+  }
+}
+
+void mlc::fill_lambda(Tensor &tensor, std::function<float(const Tensor &, size_t)> function)
+{
+  if (tensor.dim_sizes.size() == 0)
+  {
+    return;
+  }
+
+  uint64_t size = internal::getTensorSize(&tensor);
+
+#ifdef MLC_USE_OPENMP
+#pragma omp parallel for
+#endif
+  for (size_t i = 0; i < size; i++)
+  {
+    tensor.data[i] = function(tensor, i);
+  }
+}
+
+void mlc::internal::tensor_dim_to_string(mlc::Tensor *tensor, std::string &str, size_t dim, size_t offset, std::string indent)
+{
+  if (dim == tensor->dim_sizes.size() - 1)
+  {
+    str += "[";
+    for (size_t i = 0; i < tensor->dim_sizes[dim]; ++i)
+    {
+      if (i > 0)
+      {
+        str += ", ";
+      }
+      if (tensor->data == nullptr)
+      {
+        str += "-";
+      }
+      else
+      {
+        str += std::to_string(tensor->data[offset + i]);
+      }
+    }
+    str += "]";
+  }
+  else
+  {
+    str += "[";
+    indent += " ";
+
+    for (size_t i = 0; i < tensor->dim_sizes[dim]; ++i)
+    {
+      if (i > 0)
+      {
+        str += ",\n" + indent;
+      }
+
+      tensor_dim_to_string(tensor, str, dim + 1, offset + i * tensor->strides[dim], indent);
+    }
+    str += "]";
+  }
+}
+
+std::string mlc::Tensor::to_string(std::string name)
+{
+  std::string str;
+  str += name + "(\n";
+  if (dim_sizes.empty())
+  {
+    str += "[]";
+  }
+  else
+  {
+    internal::tensor_dim_to_string(this, str, 0, 0, "");
+  }
+  str += ")";
+  return str;
+}
+
+uint64_t mlc::Tensor::size()
+{
+  return internal::getTensorSize(this);
 }

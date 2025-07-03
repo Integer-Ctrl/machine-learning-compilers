@@ -107,12 +107,13 @@ int32_t mini_jit::TensorOperation::findMatch(const std::span<const TensorConfig:
                                              TensorConfig::exec_t searchExec, uint32_t startIndex)
 {
   release_assert(dim.size() == exec.size(), "Expected the dimension types size to match the execution types size.");
-  release_assert(startIndex <= dim.size(), "Expected the start index to be less than the dimension types size.");
 
   if (startIndex >= dim.size())
   {
     return -1;
   }
+
+  release_assert(startIndex < dim.size(), "Expected the start index to be less than the dimension types size.");
 
   for (auto [iDim, iExec] = std::tuple{dim.begin() + startIndex, exec.begin() + startIndex}; iDim != dim.end(); ++iDim, ++iExec)
   {

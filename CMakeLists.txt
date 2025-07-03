@@ -274,8 +274,13 @@ set(BENCH_KERNLES_FILES
 )
 
 set(SRC_INTERFACE_FILES
-    TensorUtils.h
+    Contraction.cpp
+    Einsum.cpp
+    Einsum.h
+    Gemm.cpp
     Tensor.cpp
+    TensorUtils.h
+    Unary.cpp
 )
 
 set(TEST_INTERFACE_FILES
@@ -326,6 +331,8 @@ endforeach()
 # ==== Public headers of the installed library ====
 set(public_headers
     include/${PROJECT_NAME}/Tensor.h
+    include/${PROJECT_NAME}/Error.h
+    include/${PROJECT_NAME}/UnaryType.h
 )
 
 list(APPEND TEST_FILEPATHS "${INTERFACE_FILEPATHS}" "${public_headers}")
@@ -436,7 +443,7 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC
         # using the project name as additional directory to include <project_name>/header.h instead of header.h if it is included as internal library
         # where top-level project will look for the library's public headers
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         # where external projects will look for the library's public headers
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
@@ -471,6 +478,7 @@ install(EXPORT "${PROJECT_NAME}Targets"
     NAMESPACE ${namespace}::
     DESTINATION cmake
 )
+add_library(mlc::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 include(CMakePackageConfigHelpers)
 

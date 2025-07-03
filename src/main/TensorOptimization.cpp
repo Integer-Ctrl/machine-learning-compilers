@@ -93,7 +93,11 @@ void mini_jit::TensorOptimization::_primitive_identification(TensorConfig &confi
 
       if (fixed_k2 == false && (primitive_k2 == -1 || primitive_stride < primitive_k2_stride))
       {
-        primitive_k2 = std::distance(config.dim_types.begin(), iDim);
+        int32_t index = std::distance(config.dim_types.begin(), iDim);
+        if (index != primitive_k1)
+        {
+          primitive_k2 = index;
+        }
       }
     }
     else if (*iDim == TensorConfig::dim_t::m)
@@ -260,7 +264,7 @@ void mini_jit::TensorOptimization::_dimension_reordering_shared(TensorConfig &co
   }
   if (primitive_m != -1)
   {
-    int32_t new_index = config.dim_types.size() - 2 - (primitive_k1 != -1);
+    int32_t new_index = config.dim_types.size() - 1 - (primitive_n != -1) - (primitive_k1 != -1);
     _swap_elements(config, primitive_m, new_index);
     _reorder_helper_adjust_index(new_index, primitive_m, primitive_m, primitive_n, primitive_k1, primitive_k2);
     primitive_m = new_index;
@@ -410,7 +414,7 @@ void mini_jit::TensorOptimization::_dimension_reordering_fusing(TensorConfig &co
   }
 }
 
-void mini_jit::TensorOptimization::_swap_elements(TensorConfig &config, size_t index1, size_t index2)
+void mini_jit::TensorOptimization::_swap_elements(TensorConfig &config, int64_t index1, int64_t index2)
 {
   if (index1 == index2)
   {
@@ -424,8 +428,10 @@ void mini_jit::TensorOptimization::_swap_elements(TensorConfig &config, size_t i
   release_assert(config.dim_types.size() == config.strides_in0.size(), "Expected the dimension types size to match the strides_in0 size.");
   release_assert(config.dim_types.size() == config.strides_in1.size(), "Expected the dimension types size to match the strides_in1 size.");
   release_assert(config.dim_types.size() == config.strides_out.size(), "Expected the dimension types size to match the strides_out size.");
-  release_assert(index1 < config.dim_types.size(), "Expected the index1 to be less than the dimension types size.");
-  release_assert(index2 < config.dim_types.size(), "Expected the index2 to be less than the dimension types size.");
+  release_assert(index1 < static_cast<int64_t>(config.dim_types.size()), "Expected the index1 to be less than the dimension types size.");
+  release_assert(index2 < static_cast<int64_t>(config.dim_types.size()), "Expected the index2 to be less than the dimension types size.");
+  release_assert(index1 >= 0, "Expected the index1 to be larger equal than 0.");
+  release_assert(index2 >= 0, "Expected the index2 to be larger equal than 0.");
 
   std::iter_swap(config.dim_types.begin() + index1, config.dim_types.begin() + index2);
   std::iter_swap(config.dim_sizes.begin() + index1, config.dim_sizes.begin() + index2);
@@ -498,6 +504,11 @@ void mini_jit::TensorOptimization::_dimension_fusing(TensorConfig &config)
 {
   for (size_t i = 0; i + 1 < config.dim_sizes.size(); ++i)
   {
+    if (config.dim_sizes.size() <= 2)
+    {
+      return;
+    }
+
     // Check if adjacent dims have the same type and their product is less equal than 256
     // stride(X) = |Y| * stride(Y)
     if (config.dim_types[i] == config.dim_types[i + 1] && config.strides_in0[i] == (config.dim_sizes[i + 1] * config.strides_in0[i + 1]) &&
