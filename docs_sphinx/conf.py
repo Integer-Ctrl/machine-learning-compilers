@@ -39,7 +39,7 @@ author = 'Fabian Hofer, Vincent Gerlach'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
-    'sphinx.ext.autosectionlabel',
+    # 'sphinx.ext.autosectionlabel',
     'sphinx_copybutton',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
@@ -51,7 +51,7 @@ extensions = [
     'sphinx_design'
 ]
 
-autosectionlabel_prefix_document = True  # link between sections
+# autosectionlabel_prefix_document = True  # link between sections
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

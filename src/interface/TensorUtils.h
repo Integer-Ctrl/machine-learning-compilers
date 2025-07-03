@@ -41,33 +41,3 @@ constexpr void get_sorted_dimensions_sizes(const mini_jit::EinsumTree::EinsumNod
     }
   }
 }
-
-// constexpr void fill_random(mlc::Tensor &tensor, uint64_t index, uint64_t offset)
-// {
-//   if (index < (tensor.dim_sizes.size() - 1))
-//   {
-//     for (uint64_t i = 0; i < tensor.dim_sizes[index]; i++)
-//     {
-//       fill_random(tensor, index + 1, offset + tensor.strides[index] * i);
-//     }
-//   }
-//   else
-//   {
-//     for (uint64_t i = 0; i < tensor.dim_sizes[index]; i++)
-//     {
-//       float denominator = 1;
-//       denominator = static_cast<float>(std::rand());
-//       if (denominator == 0)
-//       {
-//         denominator = 1;
-//       }
-
-//       float numerator = 1;
-//       numerator = static_cast<float>(std::rand());
-
-//       float random = numerator / denominator;
-
-//       tensor.data[offset + tensor.strides[index] * i] = random;
-//     }
-//   }
-// }
