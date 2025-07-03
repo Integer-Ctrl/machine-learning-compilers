@@ -154,7 +154,7 @@ mlc::Error error = mlc::contraction(in0, in1, out, "[0,1,2],[3,4,1]->[0,3,4,2]")
 
 In the example above, the contraction operation takes two input tensors `in0` and `in1`, and produces an output tensor `out`. The expression `"[0,1,2],[3,4,1]->[0,3,4,2]"` defines that the dimensions with IDs `0`, `2`, `3`and `4` are retained in the output tensor, while the dimensions with IDs `1` is contracted. The output tensor will have the dimensions `[5, 5, 2, 3]`.
 
-To further advance the contraction operation, a first touch primitive and a last touch primitive can be specified. The first touch primitive is applied to the output tensor before the contraction operation, while the last touch primitive is applied to the output tensor after the contraction operation. The supported primitives are `mlc::UnaryType::None`, `mlc::UnaryType::Zero`, `mlc::UnaryType::Identity` and `mlc::UnaryType::ReLu`.
+To further advance the contraction operation, a first touch primitive and a last touch primitive can be specified. The first touch primitive is applied to the output tensor before the contraction operation, while the last touch primitive is applied to the output tensor after the contraction operation. The supported primitives are `mlc::UnaryType::None`, `mlc::UnaryType::Zero`, `mlc::UnaryType::Identity` and `mlc::UnaryType::ReLU`.
 
 ```cpp
 #include <MachineLearningCompiler/Tensor.h>

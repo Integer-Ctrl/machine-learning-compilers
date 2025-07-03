@@ -9,10 +9,10 @@ Backend
 -------
 
 User Interface
-""""""""""""""
+^^^^^^^^^^^^^^
 
 1. setup
-^^^^^^^^
+""""""""
 
 **Task**: Begin implementing the ``setup`` function of the class ``einsum::backend::TensorOperation`` for binary tensor contractions.
 Parse the configuration parameters passed to the function and generate the corresponding (BR)GEMM kernel at runtime.
@@ -246,10 +246,10 @@ primitives in combination with a naive version. The tests are located in the fol
     TEST_CASE("Test tensor operation with outer loop with first touch: unary (zero, relu, copy) & main kernel: brgemm & last touch: unary (zero, relu, copy)", "[tensor_operation][unary][brgemm][correctness]")
 
 Performance Benchmarking
-------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 1. Performance
-^^^^^^^^^^^^^^
+""""""""""""""
 
 **Task**: Benchmark the performance of your implementation for the above examples. Report the measured performance in GFLOPS.
 
@@ -292,7 +292,7 @@ Tensor contraction using the Zero, BRGEMM and ReLU primitives:
     BM_tensor_Zero+BRGEMM+RELU/size_a:262144/size_b:262144/size_c:1048576/config:2/min_warmup_time:0.300_cv           0.32 %          0.32 %            10      0.32%
 
 2. Own Setups
-^^^^^^^^^^^^^
+"""""""""""""
 
 **Task**: Design your own setups. Which setups achieve a high performance and which setups are slow?
 
@@ -354,14 +354,14 @@ Tensor contraction using the Zero, BRGEMM and ReLU primitives:
 
 
 Shared Memory Parallelization
------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In the shared memory domain, loops can be parallelized at any point within the nested loop structure. However, to simplify the
 implementation, we only parallelize the outermost loops. In other words, we do not parallelize loops that are nested inside
 sequential loops.
 
 1. execute_iter_parallel
-^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""
 
 **Task**: Implement the function ``execute_iter_parallel``, which parallelizes a binary tensor contraction in the shared memory domain.
 
@@ -727,9 +727,9 @@ And validated with some additional tests: File: ``TensorOperation.test.cpp``.
 .. code-block:: cpp
 
     bool mini_jit::TensorOperation::isValidPrimStrides(const std::span<const TensorConfig::dim_t> &dim,
-                                                    const std::span<const TensorConfig::exec_t> &exec,
-                                                    const std::span<const int64_t> &strides_in0, const std::span<const int64_t> &strides_out,
-                                                    const TensorConfig::prim_t main_prim)
+                                                       const std::span<const TensorConfig::exec_t> &exec,
+                                                       const std::span<const int64_t> &strides_in0, const std::span<const int64_t> &strides_out,
+                                                       const TensorConfig::prim_t main_prim)
     {
     // ...
 

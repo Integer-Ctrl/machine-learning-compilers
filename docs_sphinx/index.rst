@@ -7,7 +7,7 @@ Machine Learning Compilers
 ==========================
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 1
    :caption: GETTING STARTED
    :glob:
 
@@ -15,7 +15,7 @@ Machine Learning Compilers
    getting_started/building_docs.rst
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
    :caption: CHAPTERS
    :glob:
 
@@ -29,7 +29,7 @@ Machine Learning Compilers
    chapters/report_individual.rst
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
    :caption: API
    :glob:
 

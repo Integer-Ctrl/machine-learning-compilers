@@ -42,7 +42,7 @@ mlc::Error mlc::EinsumOperation::execute(const std::vector<std::reference_wrappe
     return error;
   }
 
-  Error checkError = hasSameDimensions<std::reference_wrapper<const Tensor>>(inputs);
+  Error checkError = hasSameDimensions<std::reference_wrapper<const Tensor>>(inputs, output);
   if (checkError.type != ErrorType::None)
   {
     return checkError;
@@ -58,7 +58,7 @@ mlc::Error mlc::EinsumOperation::execute(const std::vector<const Tensor *> &inpu
     return error;
   }
 
-  Error checkError = hasSameDimensions<const Tensor *>(inputs);
+  Error checkError = hasSameDimensions<const Tensor *>(inputs, output);
   if (checkError.type != ErrorType::None)
   {
     return checkError;

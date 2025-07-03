@@ -16,10 +16,10 @@ This repository includes:
 
 The weekly tasks from the lab can be found here: [scalable-analyses](https://github.com/scalable-analyses/pbtc/tree/main/lab)
 
+## CMake Library
+
+To make the compiler easy to integrate into other projects, we structured it as a CMake library. This allows users to include and build upon our functionality directly in their own CMake-based projects. More details about the library and how to use it can be found in the [user-guide](https://github.com/Integer-Ctrl/machine-learning-compilers/blob/main/cmake-library/README.md).
+
 ## Technical Documentation
 
 A detailed technical documentation of our implementation including the design decisions and solutions to the lab tasks, and explanations of the source code is available on our [project website](https://integer-ctrl.github.io/machine-learning-compilers/).
-
-## CMake Library
-
-To make the compiler easy to integrate into other projects, we structured it as a CMake library. This allows users to include and build upon our functionality directly in their own CMake-based projects. More details about the library and how to use it can be found in the [user-guide.md](https://github.com/Integer-Ctrl/machine-learning-compilers/cmake-library/user-guide.md).

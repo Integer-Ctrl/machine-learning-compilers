@@ -72,6 +72,8 @@ html_theme_options = {
     "source_branch": "main",
     "source_directory": "docs_sphinx/",
 }
+html_title = "Machine Learning Compilers"
+language = "en"
 
 # html_theme = 'sphinx_rtd_theme'
 # html_theme_options = {
