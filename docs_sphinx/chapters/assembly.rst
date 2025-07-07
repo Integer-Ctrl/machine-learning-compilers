@@ -1,13 +1,20 @@
 Assembly
 ========
 
+Before we begin implementing the individual components of the project, we will start with a brief review of assembly language.
+This short chapter is intended as a refresher on the basic knowledge required for the project.
+
 Hello Assembly
 --------------
+
+First, we will look at a simple assembly function, compile it, and examine the generated assembly code.
 
 1. Compile
 ^^^^^^^^^^
 
 **Task**: Use the GCC and Clang compilers to compile the function and generate assembly code.
+
+The following commands will generate assembly code for the file ``hello_assembly.c``:
 
 - gcc: ``gcc -S hello_assembly.c -o hello_assembly.s``
 - clang: ``clang -S hello_assembly.c -o hello_assembly_clang.s``
@@ -134,6 +141,23 @@ Hello Assembly
 
 **Task**: Write a C++ driver that calls the ``hello_assembly`` function and test your implementation.
 
+The driver code can be found in the file ``hello_assembly.cpp``:
+
+.. code-block:: cpp
+
+  extern "C"
+  {
+    void hello_assembly();
+  }
+
+  int main()
+  {
+    hello_assembly();
+    return 0;
+  }
+
+Commands to generate an executable and run it:
+
 - ``gcc -c hello_assembly.c -o hello_assembly.o``
 - ``g++ -o hello_assembly.exe hello_assembly.cpp hello_assembly.o``
 - .. image:: ../_static/images/report_25_04_17/hello_assembly_example.png
@@ -142,6 +166,8 @@ Hello Assembly
 
 Assembly Function
 -----------------
+
+Next we have a look at the assembly file ``add_values.s`` which contains a function that adds two values together.
 
 1. Assemble
 ^^^^^^^^^^^
@@ -207,6 +233,8 @@ Size of ``.text``: 0x20 byte or equal 32 bytes. ``.text`` corresponds to the siz
 ^^^^^^^^^
 
 **Task**: Write a C++ driver that calls the ``add_values`` function and illustrate it with an example.
+
+The driver code can be found in the file ``add_values.cpp``:
 
 - ``g++ -o add_values.exe add_values.cpp add_values.o``
 - .. image:: ../_static/images/report_25_04_17/add_values_example.png
