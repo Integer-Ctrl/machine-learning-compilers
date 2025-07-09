@@ -1,15 +1,23 @@
 Neon
 ====
 
+This chapter focuses on implementing the first kernels using ARM64 `Neon <https://developer.arm.com/Architectures/Neon>`_ instructions.
+The goal is to develop highly optimized kernels for matrix-matrix multiplication and batch-reduced matrix multiplication.
+
 Execution Throughput and Latency
 --------------------------------
 
-This section microbenchmarks the execution throughput and latency of FP32 Neon instructions.
+First, we will microbenchmark the execution throughput and latency of selected FP32 NEON instructions. This will provide a better
+understanding of their performance characteristics and serve as a reference point for performance expectations.
 
 1. Execution Throughput
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 **Task**: Microbenchmark the execution throughput of the following instructions:
+
+Each subtask is sturctured into four parts: the file containing the implementation of the subtask, the driver file that runs the assembly code,
+a compilation command to create an executable, and a short description of the results. The results of the microbenchmarks are documented in the
+image below:
 
 .. image:: ../_static/images/report_25_05_01/neon_1_1.png
     :align: center
@@ -20,9 +28,7 @@ This section microbenchmarks the execution throughput and latency of FP32 Neon i
 - Driver: ``submissions/submission_25_05_01/neon_1_1_driver.cpp``
 - Compilation: ``g++ -o neon_1_1.exe neon_1_1_driver.cpp neon_1_1.s``
 - We have :math:`13.2304 \cdot 10^{10}` instructions per second.
-  That are :math:`13.2304 \cdot 10^{10} / 8 = 16.538 \cdot 10^9` instructions per ALU per second.
-  This aligns with a **throughput of** :math:`\approx 4` **instruction per cycle**, as it is known from benchmarks that the performance cores of the M4 chip have a clock speed of 4.4 GHz.
-
+  That are :math:`132.304` GFLOPs/sec in total.
 
 **Subtask**: ``FMLA`` (vector) with arrangement specifier ``2S``.
 
@@ -30,9 +36,7 @@ This section microbenchmarks the execution throughput and latency of FP32 Neon i
 - Driver: ``submissions/submission_25_05_01/neon_1_1_driver.cpp``
 - Compilation: ``g++ -o neon_1_1.exe neon_1_1_driver.cpp neon_1_1.s``
 - We have :math:`6.65221 \cdot 10^{10}` instructions per second.
-  That are :math:`6.65221 \cdot 10^{10} / 8 = 8.31526 \cdot 10^9` instructions per ALU per second.
-  This aligns with a **throughput of** :math:`\approx 2` **instruction per cycle**, as it is known from benchmarks that the performance cores of the M4 chip have a clock speed of 4.4 GHz.
-
+  That are :math:`66.5221` GFLOPs/sec in total.
 
 **Subtask**: ``FMADD`` (scalar), single-precision variant.
 
@@ -40,13 +44,23 @@ This section microbenchmarks the execution throughput and latency of FP32 Neon i
 - Driver: ``submissions/submission_25_05_01/neon_1_1_driver.cpp``
 - Compilation: ``g++ -o neon_1_1.exe neon_1_1_driver.cpp neon_1_1.s``
 - We have :math:`1.12728 \cdot 10^{10}` instructions per second.
-  That are :math:`1.12728 \cdot 10^{10} / 8 = 1.4091 \cdot 10^9` instructions per ALU per second.
-  This aligns with a **throughput of** :math:`\approx 1/3` **instruction per cycle**, as it is known from benchmarks that the performance cores of the M4 chip have a clock speed of 4.4 GHz.
+  That are :math:`11.2728` GFLOPs/sec in total.
+
+**Summary**
+
+It can be seen that the usage of SIMD lanes can increase the throughput significantly. From the scala ``FMADD`` instruction to the vector
+``FMLA``instruction with arrangement specifier ``2S`` the throughput increases by a factor of about 6. The throughput of the vector
+``FMLA`` instruction with arrangement specifier ``4S`` is about twice as high as the one with ``2S``, resulting in a factor of about 12 compared to
+the scalar ``FMADD`` instruction. This shows the power of SIMD instructions and how they can be used to increase the throughput.
 
 2. Execution Latency
 ^^^^^^^^^^^^^^^^^^^^
 
 **Task**: Microbenchmark the execution latency of ``FMLA`` (vector) with arrangement specifier ``4s``. Consider the following two cases:
+
+Same structure as above, with the file containing the implementation of the subtask, the driver file that runs the assembly code,
+a compilation command to create an executable, and a short description of the results. The results of the microbenchmarks are documented
+in the image below:
 
 .. image:: ../_static/images/report_25_05_01/neon_1_2.png
     :align: center
@@ -67,9 +81,16 @@ This section microbenchmarks the execution throughput and latency of FP32 Neon i
 - We have :math:`11.7019 \cdot 10^9` instruction per seconds in a single ALU.
   Resulting in a **latency of** :math:`\approx 1/3` **cycle** for the known clock speed of 4.4 GHz.
 
+**Summary**
+
+We see that the latency of the ``FMLA`` instruction is about 1/3 of a cycle, regardless of whether there is a dependency on one of the
+source registers or only on the destination register.
 
 Microkernel
 -----------
+
+Next, we implement the first microkernel for the matrix-matrix multiplication of :math:`16 \times 1`matrice with a :math:`1 \times 6` matrix
+which uses a :math:`16 \times 6` accumulator matrix C and computes C+=AB.
 
 1. matmul_16_6_1
 ^^^^^^^^^^^^^^^^
@@ -79,7 +100,7 @@ Microkernel
 - File: ``submissions/submission_25_05_01/neon_2_simple.s``
 - Driver: ``submissions/submission_25_05_01/neon_2_driver.cpp``
 
-Implementation loops over each column over the matrix c to be calculated.
+Implementation of the microkernel looping over each of the six columns of the matrix C:
 
 .. code-block:: asm
     :linenos:
@@ -120,14 +141,16 @@ Implementation loops over each column over the matrix c to be calculated.
         cbnz x6, process_next_column
         ...
 
+.. _neon_2_optimization:
+
 2. Performance
 ^^^^^^^^^^^^^^
 
 **Task**: Test and optimize your microkernel. Report its performance in GFLOPS.
 
-- Files:
-    - ``submissions/submission_25_05_01/neon_2.h``
-    - ``submissions/submission_25_05_01/neon_2_unrolled.s``
+- Files: 
+    - ``submissions/submission_25_05_01/neon_2.h`` using a loop over the columns
+    - ``submissions/submission_25_05_01/neon_2_unrolled.s`` using an unrolled version of the loop
 - Tests: ``submissions/submission_25_05_01/neon_2.test.cpp``
 - Benchmarks: ``submissions/submission_25_05_01/neon_2.bench.cpp``
 
@@ -221,10 +244,15 @@ The optimized unrolled version gets about 0.7 GFLOPS more resulting in **33.7 GF
 Loops
 -----
 
+To scale the microkernel to larger matrices, we will introduce loops over the *K*, *M*, and *N* dimensions.
+
 1. Loop over K
 ^^^^^^^^^^^^^^
 
 **Task**: Loop over K: Implement a kernel that computes C+=AB for M=16, N=6 and K=64. Wrap your kernel in the ``matmul_16_6_64`` function.
+
+The first loop implemented is over the *K* dimension, which is the most inner loop in the matrix multiplication. The result is a microkernel
+that computes C+=AB for M=16, N=6 and K=64.
 
 - File ``submissions/submission_25_05_01/neon_3_1.s``
 
@@ -358,6 +386,8 @@ Loops
 
 **Task**: Loop over M: Implement a kernel that computes C+=AB for M=64, N=6 and K=64. Wrap your kernel in the ``matmul_64_6_64`` function.
 
+The next extension is to loop over the *M* dimension to allow computation of C+=AB for *M*=64, N=6 and K=64*.
+
 - File ``submissions/submission_25_05_01/neon_3_2.s``
 
 .. code-block:: asm
@@ -397,11 +427,14 @@ Loops
       // Loop back to M
       cbnz x16, matmul_loop_over_M
 
+.. _neon_3_loop_over_N:
 
 3. Loop over N
 ^^^^^^^^^^^^^^
 
 **Task**: Loop over N: Implement a kernel that computes C+=AB for M=64, N=48 and K=64. Wrap your kernel in the ``matmul_64_48_64`` function.
+
+The final extension is to loop over the *N* dimension to allow computation of C+=AB for *M*=64, *N*=48 and *K*=64*.
 
 - File ``submissions/submission_25_05_01/neon_3_3.s``
 
@@ -459,7 +492,8 @@ Loops
 
 **Subtask**: Optimization
 
-Usage of already optimized `matmul_16_6_1` from task 2.
+Usage of already optimized `matmul_16_6_1` from task :ref:`neon_2_optimization` to as inner microkernel for the
+loop over K, M, and N.
 
 **Subtask**: Benchmarks
 
@@ -497,16 +531,26 @@ We run the benchmark with the following command:
 SIMD Lanes
 ----------
 
-This section considers matrix-matrix multiplications, that require instructions where only a subset of SIMD lanes are active.
+Up to this point, our *M* and *K* dimensions have always been multiples of 4. This allowed us to fully utilize all SIMD lanes when loading
+and storing data from memory. That means we could load or store 4 floats at once using a single instruction, which reduces complexity and
+improves the performance of our kernels.
+
+However, this assumption doesn't always exist in real-world applications. To make our implementation more robust, we need to adapt our
+kernels to handle cases where the *M* and *K* dimensions are not multiples of 4. Therefore Neon supports loading 4, 2, or 1 float(s) at a
+time, which enables us to manage these edge cases.
 
 1. matmul_14_6_64
 ^^^^^^^^^^^^^^^^^
 
 **Task**: Implement a kernel that computes C+=AB for M=14, N=6 and K=64. Wrap your kernel in the ``matmul_14_6_64`` function.
 
+We first have a look at the case where we have a *M* dimension of 14. Data management can be done by loading/storing three columns of 4
+floats and one column of 2 floats.
+
 File: ``neon_4_1.s``
 
-For this kernel ``matmul_14_6_64`` we adapt the already implemented kernel ``matmul_16_6_64``. The only change is that we now use 3 ``fmla`` instructions that operate on 4 scalars, and one ``fmla`` instruction that only uses 2 scalars: :math:`4 \cdot 3 + 1 \cdot 2 = 14`.
+For this kernel ``matmul_14_6_64`` we adapt the already implemented kernel ``matmul_16_6_64``. The only change is that we now use 3
+``fmla`` instructions that operate on 4 scalars, and one ``fmla`` instruction that only uses 2 scalars: :math:`4 \cdot 3 + 1 \cdot 2 = 14`.
 
 We load the full 16 floats and ignore the last 2:
 
@@ -563,7 +607,8 @@ Next the loop over K:
         fmla v20.2s, v3.2s, v4.s[0]
     ...
 
-We store the full 16 computed floats back to memory but only add an offset of 14 floats because the last two floats aren't used. The last 14 values are exactly stored (8+4+2).
+We store the full 16 computed floats back to memory but only add an offset of 14 floats because the last two floats aren't used.
+The last 14 values we have to save back to memory are exactly stored (8+4+2) to not right into memory we maybe not own.
 
 .. code-block:: asm
     :linenos:
@@ -590,9 +635,13 @@ We store the full 16 computed floats back to memory but only add an offset of 14
 
 **Task**: Implement a kernel that computes C+=AB for M=15, N=6 and K=64. Wrap your kernel in the ``matmul_15_6_64`` function.
 
+The second edge case we manage is the case where we have a *M* dimension of 15. Data management can be done by loading/storing three columns
+of 4 floats, one column of 2 floats, and one time 1 float.
+
 File: ``neon_4_2.s``
 
-For this kernel ``matmul_15_6_64`` we adapt the already implemented kernel ``matmul_16_6_64``. The only change is that we ignore the last computed float value from the 4 ``fmla`` instructions when saving back to memory.
+For this kernel ``matmul_15_6_64`` we adapt the already implemented kernel ``matmul_16_6_64``. The only change is that we ignore the last
+computed float value from the four ``fmla`` instructions when saving back to memory.
 
 We load the full 16 floats and ignore the last one:
 
@@ -652,7 +701,8 @@ Next the loop over K:
         fmla v20.4s, v3.4s, v4.s[0]
     ...
 
-We store the full 16 computed floats back to memory but only add an offset of 15 floats because the last float isn't used. The last 15 values are exactly stored (8+4+2+1).
+We store the full 16 computed floats back to memory but only add an offset of 15 floats because the last float isn't used. However, the last 15
+values are exactly stored (8+4+2+1) back to memory to not write into memory we maybe not own.
 
 .. code-block:: asm
     :linenos:
@@ -681,6 +731,9 @@ We store the full 16 computed floats back to memory but only add an offset of 15
 
 **Task**: Test and optimize the kernels. Report your performance in GFLOP
 
+Since we already optimized the base kernel ``matmul_16_6_1`` in task :ref:`neon_2_optimization`, we do not found any further
+optimizations for the kernels ``matmul_14_6_64`` and ``matmul_15_6_64``.
+
 Optimized benchmark results:
 
 .. code-block:: 
@@ -702,8 +755,8 @@ Optimized benchmark results:
 - **matmul_14_6_64** kernel: :math:`113.8` GFLOPS
 - **matmul_15_6_64** kernel: :math:`121.1` GFLOPS
 
-Accumulator Block Shapes
-------------------------
+Accumulator Shapes
+------------------
 
 This section considers a matrix-matrix multiplication where a high-performance implementation may require accumulator blocks with different shapes.
 
@@ -714,7 +767,8 @@ This section considers a matrix-matrix multiplication where a high-performance i
 
 File: ``neon_5_1.s``
 
-For this kernel ``matmul_64_64_64`` we adapt the already implemented kernel ``matmul_64_48_64``. The only changes is that we removed two ``fmla`` blocks from the inner loop:
+For this kernel ``matmul_64_64_64`` we adapt the already implemented kernel ``matmul_64_48_64``. The only changes is that we removed
+two ``fmla`` blocks from the inner loop:
 
 .. code-block:: asm
     :linenos:
@@ -782,7 +836,7 @@ For this kernel ``matmul_64_64_64`` we adapt the already implemented kernel ``ma
         cbnz x15, matmul_loop_over_K
     ...
 
-Then changed the number of loops over M to four :math:`4 \cdot 16 = 64`:
+Then changed the number of loops over M to four to achieve :math:`4 \cdot 16 = 64`:
 
 .. code-block:: asm
     :linenos:
@@ -826,7 +880,7 @@ And finaly changed the number of loops over N to 16 :math:`16 \cdot 4 = 64`:
 
 **Task**: Test and optimize the kernel. Report your performance in GFLOPS.
 
-Optimized benchmark result:
+After experimenting with different loop orders, we stay with the current order of loops over N, M, and K. The benchmark results are listed below.
 
 .. code-block:: 
 
@@ -844,16 +898,20 @@ Optimized benchmark result:
 Batch-Reduce GEMM
 -----------------
 
-This section considers a batch-reduce matrix-matrix multiplication that has a fourth dimension in addition to the known M, N, and K dimensions.
+This section examines a batch-reduced matrix-matrix multiplication that introduces a fourth dimension *C* alongside the knwon
+*M*, *N*, and *K* dimensions. A batch-reduced matrix-matrix multiplication (BRGEMM or BRMM) is an operation where multiple pairs
+of matrices are multiplied, and their results are accumulated into a single output matrix. This operation is commonly used in
+machine learning to efficiently perform repeated matrix multiplications with summation across a batch dimension.
 
 1. matmul_64_48_64_16
 ^^^^^^^^^^^^^^^^^^^^^
 
-**Task**: mplement a kernel that computes C+=∑AᵢBᵢ for M=64, N=48 and K=64 and a batch-reduce dimension size of 16. Wrap your kernel in the ``matmul_64_48_64_16`` function.
+**Task**: Implement a kernel that computes C+=∑AᵢBᵢ for M=64, N=48 and K=64 and a batch-reduce dimension size of 16. Wrap your kernel
+in the ``matmul_64_48_64_16`` function.
 
-File: ``neon_6_1.s``
+- File: ``neon_6_1.s``
 
-We started by implementing a kernel ``matmul_64_48_64`` with a batch dimension of one which is in the file ``neon_6_1_batch1.s``.
+We started by using our ``matmul_64_48_64`` from :ref:`neon_3_loop_over_N` kernel with a batch dimension of one which is in the file ``neon_6_1_batch1.s``.
 
 .. code-block:: asm
     :linenos:
@@ -891,7 +949,7 @@ We started by implementing a kernel ``matmul_64_48_64`` with a batch dimension o
         // Loop back to N
         cbnz x17, matmul_loop_over_N
 
-Then we wrapped the ``matmul_64_48_64`` kernel inside another batch loop of size 16:
+Then we wrapped the ``matmul_64_48_64`` kernel inside another loop of size 16, representing the batch dimension:
 
 .. code-block:: asm
     :linenos:
@@ -947,10 +1005,10 @@ Then we wrapped the ``matmul_64_48_64`` kernel inside another batch loop of size
 **Task**: Test and optimize the kernel. Report your performance in GFLOPS.
 
 We tested a variation in which the batch loop was positioned between the M and K loops. This approach achieved around :math:`73` GFLOPS. 
-We suspect that the reason for this was that the matrices did not fit into the cache.
-We do not follow this approach due to the poor performance, and we lost the file due to a false ``rm`` statement.
+We suspect that the reason for this was that the matrices did not fit into the cache. Therefore, we do not follow this approach due to
+the poor performance.
 
-However, this leads us to assume that our result of putting the batch loop outside is satisfactory.
+However, this leads us to assume that our result of putting the batch loop outside is a good choice. The benchmark results are listed below.
 
 .. code-block::
     :emphasize-lines: 4, 8
@@ -974,8 +1032,9 @@ However, this leads us to assume that our result of putting the batch loop outsi
 Transposition
 -------------
 
-This section develops a kernel that performs the identity operation on the elements of an 8x8 column-major matrix A and stores the
-result in row-major format in matrix B.
+The final topic of this chapter covers matrix transposition. Transposing a matrix means swapping its rows and columns which is a common
+operation in many matrix computations. We developed a kernel that performs the identity operation on the elements of an :math:`8 \times 8`
+matrix stored in column-major format matrix A and writes the result in row-major format to matrix B.
 
 1. Transpose
 ^^^^^^^^^^^^
@@ -984,12 +1043,12 @@ result in row-major format in matrix B.
 
 File: ``neon_7_1.s``
 
-From the lecture, we already know the 4x4 transpose kernel. Therefore, we have the following idea:
+From the lecture, we already know the :math:`4 \times 4` transpose kernel. Therefore, we have the following idea:
 
 1. Divide the 8x8 matrix A into four 4x4 sub-matrices
 2. Transpose each 4x4 sub-matrix
 3. Save T(A) and T(D) sub-matrix to matrix B
-4. Swap B and C: Save T(B) to bottom-left sub-matrix of B and T(C) to top-right sub-matrix of B
+4. Swap sub-matrix B and C: Save T(B) to bottom-left sub-matrix of B and T(C) to top-right sub-matrix of B
 
 .. image:: ../_static/images/report_25_05_22/trans_8_8.png
     :align: left
@@ -1092,6 +1151,8 @@ Code:
 
 **Task**: Test and optimize your kernel. Report its performance in GiB/s.
 
+We benchmarked the performance of our transpose kernel and achieved the following results:
+
 .. code-block::
     :emphasize-lines: 4
 
@@ -1104,5 +1165,4 @@ Code:
     Trans8x8Fixture/BT_tran_8_8/min_warmup_time:1.000_cv           0.59 %          0.59 %            10      0.58%
 
 
-- **tran_8_8** kernel: :math:`50.5` GiB/s
-
+- **tran_8_8** kernel: :math:`101.2` GiB/s
