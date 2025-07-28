@@ -17,7 +17,7 @@ extern "C"
    * @param ldb leading dimension of B.
    * @param ldc leading dimension of C.
    **/
-  void matmul_64_48_64(float const *a, float const *b, float *c, int64_t lda, int64_t ldb, int64_t ldc);
+  void matmul_64_48_64_1(float const *a, float const *b, float *c, int64_t lda, int64_t ldb, int64_t ldc);
 
   /**
    * @brief Batch-reduce GEMM that computes: C+=sum(Ai*Bi) over a batch.

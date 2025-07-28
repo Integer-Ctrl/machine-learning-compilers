@@ -29,7 +29,7 @@ TEST_CASE("Test 64x48x64 batch=1 gemm correctness random data", "[neon_6][correc
   copy_matrix(matrix_c, matrix_c_verify);
 
   // Run matmuls
-  matmul_64_48_64(matrix_a, matrix_b, matrix_c, 64, 64, 64);
+  matmul_64_48_64_1(matrix_a, matrix_b, matrix_c, 64, 64, 64);
   naive_matmul_M_N_K_Batch<M, N, K, 1>(matrix_a, matrix_b, matrix_c_verify, 64, 64, 64, 0, 0);
 
   verify_matmul(matrix_c_verify, matrix_c);
@@ -52,7 +52,7 @@ TEST_CASE("Test 64x48x64 batch=1 gemm correctness counting data", "[neon_6][corr
   copy_matrix(matrix_c, matrix_c_verify);
 
   // Run matmuls
-  matmul_64_48_64(matrix_a, matrix_b, matrix_c, 64, 64, 64);
+  matmul_64_48_64_1(matrix_a, matrix_b, matrix_c, 64, 64, 64);
   naive_matmul_M_N_K_Batch<M, N, K, 1>(matrix_a, matrix_b, matrix_c_verify, 64, 64, 64, 0, 0);
 
   verify_matmul(matrix_c_verify, matrix_c);
