@@ -30,7 +30,7 @@ image below:
 - Driver: ``neon_1_1_driver.cpp``
 - Compilation: ``g++ -o neon_1_1.exe neon_1_1_driver.cpp neon_1_1.s``
 - We have :math:`13.2304 \cdot 10^{10}` instructions per second.
-  That are :math:`132.304` GFLOPs in total.
+  That are :math:`132.304` GFLOPS in total.
 
 **Subtask**: ``FMLA`` (vector) with arrangement specifier ``2S``.
 
@@ -38,7 +38,7 @@ image below:
 - Driver: ``neon_1_1_driver.cpp``
 - Compilation: ``g++ -o neon_1_1.exe neon_1_1_driver.cpp neon_1_1.s``
 - We have :math:`6.65221 \cdot 10^{10}` instructions per second.
-  That are :math:`66.5221` GFLOPs in total.
+  That are :math:`66.5221` GFLOPS in total.
 
 **Subtask**: ``FMADD`` (scalar), single-precision variant.
 
@@ -46,7 +46,7 @@ image below:
 - Driver: ``neon_1_1_driver.cpp``
 - Compilation: ``g++ -o neon_1_1.exe neon_1_1_driver.cpp neon_1_1.s``
 - We have :math:`1.12728 \cdot 10^{10}` instructions per second.
-  That are :math:`11.2728` GFLOPs in total.
+  That are :math:`11.2728` GFLOPS in total.
 
 **Summary**
 
@@ -799,17 +799,17 @@ Optimized benchmark results:
 .. code-block:: 
     :emphasize-lines: 4, 8
 
-    --------------------------------------------------------------------------------------------------------------------------------------------
-    Benchmark                                                                                       Time             CPU   Iterations      FLOPS
-    --------------------------------------------------------------------------------------------------------------------------------------------
-    GemmMxNxKFixture<14, 6, 64>/BM_matmul_14_6_64/min_warmup_time:1.000_mean                     94.8 ns         94.5 ns           10 113.789G/s
-    GemmMxNxKFixture<14, 6, 64>/BM_matmul_14_6_64/min_warmup_time:1.000_median                   94.8 ns         94.5 ns           10 113.775G/s
-    GemmMxNxKFixture<14, 6, 64>/BM_matmul_14_6_64/min_warmup_time:1.000_stddev                  0.671 ns        0.659 ns           10 790.609M/s
-    GemmMxNxKFixture<14, 6, 64>/BM_matmul_14_6_64/min_warmup_time:1.000_cv                       0.71 %          0.70 %            10      0.69%
-    GemmMxNxKFixture<15, 6, 64>/BM_matmul_15_6_64/min_warmup_time:1.000_mean                     95.5 ns         95.1 ns           10 121.074G/s
-    GemmMxNxKFixture<15, 6, 64>/BM_matmul_15_6_64/min_warmup_time:1.000_median                   95.4 ns         95.1 ns           10  121.09G/s
-    GemmMxNxKFixture<15, 6, 64>/BM_matmul_15_6_64/min_warmup_time:1.000_stddev                  0.295 ns        0.293 ns           10 373.529M/s
-    GemmMxNxKFixture<15, 6, 64>/BM_matmul_15_6_64/min_warmup_time:1.000_cv                       0.31 %          0.31 %            10      0.31%
+    -----------------------------------------------------------------------------------------------------------------------------------------------
+    Benchmark                                                                                          Time             CPU   Iterations      FLOPS
+    -----------------------------------------------------------------------------------------------------------------------------------------------
+    GemmMxNxKFixture<14, 6, 64>/BM_matmul_14_6_64/min_warmup_time:1.000_mean                        98.0 ns         97.7 ns           10 110.099G/s
+    GemmMxNxKFixture<14, 6, 64>/BM_matmul_14_6_64/min_warmup_time:1.000_median                      98.0 ns         97.7 ns           10 110.107G/s
+    GemmMxNxKFixture<14, 6, 64>/BM_matmul_14_6_64/min_warmup_time:1.000_stddev                     0.119 ns        0.118 ns           10 132.517M/s
+    GemmMxNxKFixture<14, 6, 64>/BM_matmul_14_6_64/min_warmup_time:1.000_cv                          0.12 %          0.12 %            10      0.12%
+    GemmMxNxKFixture<15, 6, 64>/BM_matmul_15_6_64/min_warmup_time:1.000_mean                         104 ns          104 ns           10 110.801G/s
+    GemmMxNxKFixture<15, 6, 64>/BM_matmul_15_6_64/min_warmup_time:1.000_median                       104 ns          104 ns           10 110.857G/s
+    GemmMxNxKFixture<15, 6, 64>/BM_matmul_15_6_64/min_warmup_time:1.000_stddev                     0.267 ns        0.266 ns           10 283.469M/s
+    GemmMxNxKFixture<15, 6, 64>/BM_matmul_15_6_64/min_warmup_time:1.000_cv                          0.26 %          0.26 %            10      0.26%
 
 
 - **matmul_14_6_64** kernel: :math:`113.8` GFLOPS
@@ -1097,6 +1097,8 @@ The final topic of this chapter covers matrix transposition. Transposing a matri
 operation in many matrix computations. We developed a kernel that performs the identity operation on the elements of an :math:`8 \times 8`
 matrix stored in column-major format matrix A and writes the result in row-major format to matrix B.
 
+.. _neon_transpose:
+
 1. Transpose
 ^^^^^^^^^^^^
 
@@ -1226,4 +1228,4 @@ We benchmarked the performance of our transpose kernel and achieved the followin
     Trans8x8Fixture/BT_tran_8_8/min_warmup_time:1.000_cv           0.59 %          0.59 %            10      0.58%
 
 
-- **tran_8_8** kernel: :math:`101.2` GiB/s
+- **trans_8_8** kernel: :math:`101.2` GiB/s
