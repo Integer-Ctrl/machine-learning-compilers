@@ -5,6 +5,8 @@ on:
   push:
   pull_request:
     branches: [ "main" ]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
 env:
   parallel_processes: 8 # A good default counts is: available Threads + 4
@@ -29,38 +31,26 @@ jobs:
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: |
-        cmake -S ${{github.workspace}}/submissions/submission_25_05_01 -B ${{github.workspace}}/build/submission_25_05_01 -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
-        cmake -S ${{github.workspace}}/submissions/submission_25_05_08 -B ${{github.workspace}}/build/submission_25_05_08 -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
-        cmake -S ${{github.workspace}}/submissions/submission_25_05_15 -B ${{github.workspace}}/build/submission_25_05_15 -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
-        cmake -S ${{github.workspace}}/submissions/submission_25_05_22 -B ${{github.workspace}}/build/submission_25_05_22 -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+        cmake -S ${{github.workspace}}/submissions/neon -B ${{github.workspace}}/build/neon -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
         cmake -S ${{github.workspace}} -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
 
     - name: Build
       # Build your program with the given configuration
       run: |
-        cmake --build ${{github.workspace}}/build/submission_25_05_01 --config ${{matrix.build_type}} -j ${{env.parallel_processes}} 
-        cmake --build ${{github.workspace}}/build/submission_25_05_08 --config ${{matrix.build_type}} -j ${{env.parallel_processes}} 
-        cmake --build ${{github.workspace}}/build/submission_25_05_15 --config ${{matrix.build_type}} -j ${{env.parallel_processes}} 
-        cmake --build ${{github.workspace}}/build/submission_25_05_22 --config ${{matrix.build_type}} -j ${{env.parallel_processes}} 
+        cmake --build ${{github.workspace}}/build/neon --config ${{matrix.build_type}} -j ${{env.parallel_processes}} 
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} -j ${{env.parallel_processes}} 
 
     - name: Test
       working-directory: ${{github.workspace}}/build
       # Execute tests defined by the CMake configuration.
       run: |
-        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir submission_25_05_01 --output-on-failure
-        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir submission_25_05_08 --output-on-failure
-        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir submission_25_05_15 --output-on-failure
-        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir submission_25_05_22 --output-on-failure
+        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir neon --output-on-failure
         ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --output-on-failure -E "^Test einsum tree optimize and execute first example"
 
     - name: Test + Valgrind
       working-directory: ${{github.workspace}}/build
       # Execute tests defined by the CMake configuration.
       run: |
-        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_01 --output-on-failure
-        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_08 --output-on-failure
-        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_15 --output-on-failure
-        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir submission_25_05_22 --output-on-failure
+        ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --test-dir neon --output-on-failure
         ctest -j ${{env.parallel_processes}} -T memcheck -C ${{matrix.build_type}} --output-on-failure -E "^Test *(gemm generation|unary|tensor operation|parallel tensor operation|einsum tree execute|einsum tree optimize and execute)"
 

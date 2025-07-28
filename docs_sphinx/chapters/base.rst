@@ -3,12 +3,13 @@ Base
 
 In this chapter, we get more familiar with some base ARM64 assembly instructions and how to benchmark the performance of such instructions.
 
+All files related to the tasks of this chapter can be found under ``submissions/base/``.
+
 Copying Data
 ------------
 
 First, we will implement the functionality of the given ``copy_c_0`` and ``copy_c_1`` C functions from the ``copy_c.c`` file using only base instructions.
-The corresponding assembly code will be written in the ``copy_asm_0`` and ``copy_asm_1`` functions, located in the ``copy_asm.s`` file under
-``submissions/submission_25_04_24/copy_asm.s``.
+The corresponding assembly code will be written in the ``copy_asm_0`` and ``copy_asm_1`` functions, located in the ``copy_asm.s`` file. 
 
 1. copy_asm_0
 ^^^^^^^^^^^^^
@@ -53,7 +54,7 @@ The corresponding assembly code will be written in the ``copy_asm_0`` and ``copy
         cmp x3, x0  // compare value in x3 and x0
         b.ge end_loop  // conditions: counter x3 greater equal n/x0 (value in [x0])
 
-        ldr w4, [x1, x3, lsl #2]  // adress = x1 + (x3 << 2)
+        ldr w4, [x1, x3, lsl #2]  // address = x1 + (x3 << 2)
         str w4, [x2, x3, lsl #2]  // x3 << 2 = x3 * 4
 
         add x3, x3, #1
@@ -79,9 +80,7 @@ Instruction Throughput and Latency
 
 The next task is to benchmark the execution throughput and latency of the ``ADD`` (shifted register) and ``MUL`` instructions.
 
-Our implementation is located under the directory ``submissions/submission_25_05_24/``.
-
-Files: ``submissions/submission_25_05_24/``
+Files:
     - ``benchmark_driver.cpp``
     - ``benchmark.s``
 
@@ -151,7 +150,7 @@ throughput and latency. For the throughput measurement of ``ADD`` this looks lik
         ret
         .size throughput_add, (. - throughput_add)
 
-Throughput measurement of ``MUL`` is similar. For the latency benchmakring we use read-after-write dependencies to measure the latency of the instructions.
+Throughput measurement of ``MUL`` is similar. For the latency benchmarking we use read-after-write dependencies to measure the latency of the instructions.
 For ``ADD`` this looks like this:
 
 .. code-block:: asm

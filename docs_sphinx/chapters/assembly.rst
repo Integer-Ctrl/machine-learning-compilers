@@ -4,6 +4,8 @@ Assembly
 Before we begin implementing the individual components of the project, we will start with a brief review of assembly language.
 This short chapter is intended as a refresher on the basic knowledge required for the project.
 
+All files related to the tasks of this chapter can be found under ``submissions/assembly/``.
+
 Hello Assembly
 --------------
 
