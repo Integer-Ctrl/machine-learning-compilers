@@ -66,7 +66,7 @@ Finally, we measure the performance of our generated kernels across different si
 Tensor Operation
 ----------------
 
-This chapter introduces an additional layer of abstraction to code generation by describing higher-level tensor operations.
+This chapter introduces an additional layer of abstraction to :doc:`code_generation` by describing higher-level tensor operations.
 We therefore examine how to generate the correct kernel based on a provided tensor configuration object, i.e. the abstraction.
 This object describes which operations on parameters, such as the size and type of dimensions, the execution type and the strides of the involved tensors, are required to generate and execute a kernel.
 Furthermore, we also perform optimization passes such as primitive and shared identification, dimension splitting, dimension fusion and dimension reordering.
@@ -77,13 +77,13 @@ Einsum Tree
 
 In this chapter, we introduce an additional layer of abstraction by defining a tree representation of multiple chained contractions on a set of two or more input tensors.
 We therefore process a string representation of nested tensor operations alongside a list of the dimension sizes of the tensors used.
-We then generate a tree representation from these input values, where each non-leaf node represents a single tensor operation. These operations are lowered to kernels, as described in the 'tensor_operations' chapter.
+We then generate a tree representation from these input values, where each non-leaf node represents a single tensor operation. These operations are lowered to kernels, as described in the :doc:`tensor_operations` chapter.
 Furthermore, we optimize this tree representation by performing optimization passes: Swap, Reorder and Permutation Insert on a node of the tree.
 
 Individual Phase
 ----------------
 
-In the final chapter, we developed a plan on how to further develop the project.
+In the final chapter, :doc:`report_individual`, we developed a plan on how to further develop the project.
 We created a draft to convert the project into a CMake library with a convenient tensor interface.
 We then provide a step-by-step description of how we converted our project into a CMake library.
 We also present our library interface, which defines a high-level tensor structure and operations such as unary, GEMM, contraction and Einsum expressions.
