@@ -87,12 +87,12 @@ This structure holds one node of the tree, its possible children, dimension size
       std::string _to_string(uint depth, std::string connection, std::string depthString) const;
     };
 
-Then, we implemented the logic to parse the string into a set of nodes in the ``parse_tree_no_optimization()`` method. This method also indicates whether
+Then, we implemented the logic to parse the string into a set of nodes in the ``parse_tree_no_optimization(bool)`` method. This method also indicates whether
 the parsing was successful, ``ErrorParse``.
 
 .. code-block:: cpp
 
-    ErrorParse parse_tree_no_optimization();
+    ErrorParse parse_tree_no_optimization(bool build_operators);
 
     // AND
 

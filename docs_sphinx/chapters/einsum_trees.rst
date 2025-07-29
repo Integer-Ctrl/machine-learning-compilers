@@ -42,7 +42,9 @@ This structure holds one node of the tree, its possible children, dimension size
     struct EinsumNode
     {
       NodeType type;
-      float *tensor;
+      int32_t input_tensor_index = -1;
+      float *tensor = nullptr;
+      mini_jit::TensorOperation tensor_op;
 
       // Always filled — dims of the output tensor
       std::vector<int64_t> output_dim_ids;
@@ -75,12 +77,12 @@ This structure holds one node of the tree, its possible children, dimension size
       std::string _to_string(uint depth, std::string connection, std::string depthString) const;
     };
 
-Then, we implemented the logic to parse the string into a set of nodes in the ``parse_tree_no_optimization()`` method. This method also indicates whether
+Then, we implemented the logic to parse the string into a set of nodes in the ``parse_tree_no_optimization(bool)`` method. This method also indicates whether
 the parsing was successful, ``ErrorParse``.
 
 .. code-block:: cpp
 
-    ErrorParse parse_tree_no_optimization();
+    ErrorParse parse_tree_no_optimization(bool build_operators);
 
     // AND
 

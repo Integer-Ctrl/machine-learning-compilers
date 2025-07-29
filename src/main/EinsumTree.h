@@ -24,15 +24,7 @@ namespace mini_jit
       ExpectedDimensionList = 5,
       NotAllowedToParseAgain = 6,
       UndefinedNode = 7,
-    };
-
-    enum class ErrorExecute
-    {
-      None = 0,
-      InvalidRoot = 1,
-      NotEnoughInputTensors = 2,
-      TooManyInputTensors = 3,
-      NullPtrAsInputTensor = 5,
+      InvalidRoot = 8,
 
       err_wrong_dtype = 101,
       err_wrong_dimension = 102,
@@ -51,6 +43,15 @@ namespace mini_jit
       err_shared_required_for_parallel_execution = 115,
     };
 
+    enum class ErrorExecute
+    {
+      None = 0,
+      InvalidRoot = 1,
+      NotEnoughInputTensors = 2,
+      TooManyInputTensors = 3,
+      NullPtrAsInputTensor = 5,
+    };
+
     enum class NodeType
     {
       Leaf,
@@ -63,6 +64,7 @@ namespace mini_jit
       NodeType type;
       int32_t input_tensor_index = -1;
       float *tensor = nullptr;
+      mini_jit::TensorOperation tensor_op;
 
       // Always filled — dims of the output tensor
       std::vector<int64_t> output_dim_ids;
@@ -198,7 +200,7 @@ namespace mini_jit
      * @param error The error code from TensorOperation.
      * @return An ErrorExecute enum representing the parsed error.
      */
-    ErrorExecute parse_setup_error(TensorOperation::error_t error);
+    ErrorParse parse_setup_error(TensorOperation::error_t error);
 
     // Cleanup
     /**
@@ -231,6 +233,13 @@ namespace mini_jit
      */
     int32_t findMDim(EinsumNode *Node);
 
+    /**
+     * @brief Generates the operator to the parsed einsum tree.
+     *
+     * @return ErrorParse indicating the result of the parsing operation.
+     */
+    ErrorParse generate_operators();
+
   public:
     EinsumTree(const std::string &tree_str);
     EinsumTree(const std::string &tree_str, const std::vector<int64_t> &sorted_dim_sizes);
@@ -248,9 +257,10 @@ namespace mini_jit
     /**
      * Parses the einsum tree string and builds the tree structure.
      *
+     * @param build_operators indicates if the operators should be generate with the parse.
      * @return ErrorParse indicating the result of the parsing operation.
      */
-    ErrorParse parse_tree_no_optimization();
+    ErrorParse parse_tree_no_optimization(bool build_operators = true);
 
     /**
      * Parses the einsum tree string, builds the tree structure and optimizes the tree.
