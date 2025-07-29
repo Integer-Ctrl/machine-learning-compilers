@@ -22,7 +22,7 @@ namespace mlc
     template <typename T> mlc::Error einsum(const std::vector<T> &inputs, mlc::Tensor &output, const std::string &tree)
     {
       mini_jit::EinsumTree einsumTree(tree);
-      mini_jit::EinsumTree::ErrorParse errorParse = einsumTree.parse_tree();
+      mini_jit::EinsumTree::ErrorParse errorParse = einsumTree.parse_tree(false);
       if (errorParse != mini_jit::EinsumTree::ErrorParse::None)
       {
         mlc::ErrorType type = convertParseError(errorParse);
@@ -32,6 +32,12 @@ namespace mlc
       std::vector<int64_t> sorted_dim_sizes;
       get_sorted_dimensions_sizes(einsumTree.get_root(), inputs, sorted_dim_sizes);
       einsumTree.set_sorted_dim_sizes(sorted_dim_sizes);
+      errorParse = einsumTree.generate_operators();
+      if (errorParse != mini_jit::EinsumTree::ErrorParse::None)
+      {
+        mlc::ErrorType type = convertParseError(errorParse);
+        return {type, "Failed during operator generation for the given einsum tree."};
+      }
 
       std::vector<void *> tensors(inputs.size() + 1);
       for (size_t i = 0; i < inputs.size(); i++)

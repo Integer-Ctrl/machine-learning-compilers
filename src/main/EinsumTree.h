@@ -49,6 +49,7 @@ namespace mini_jit
       InvalidRoot = 1,
       NotEnoughInputTensors = 2,
       TooManyInputTensors = 3,
+      SetupHasError = 4,
       NullPtrAsInputTensor = 5,
     };
 
@@ -234,11 +235,12 @@ namespace mini_jit
     int32_t findMDim(EinsumNode *Node);
 
     /**
-     * @brief Generates the operator to the parsed einsum tree.
+     * @brief Generates the operator of the given node recursively
      *
-     * @return ErrorParse indicating the result of the parsing operation.
+     * @param node The node to generate the operator for.
+     * @return ErrorParse The error during creation of the operator.
      */
-    ErrorParse generate_operators();
+    ErrorParse generate_operator_node(EinsumNode *node);
 
     /**
      * @brief Swap the strides so that the strides position match the out Ids with the current stride location based on the inIds.
@@ -275,9 +277,17 @@ namespace mini_jit
     /**
      * Parses the einsum tree string, builds the tree structure and optimizes the tree.
      *
+     * @param build_operators indicates if the operators should be generate with the parse.
      * @return ErrorParse indicating the result of the parsing operation.
      */
-    ErrorParse parse_tree();
+    ErrorParse parse_tree(bool build_operators = true);
+
+    /**
+     * @brief Generates the operator to the parsed einsum tree.
+     *
+     * @return ErrorParse indicating the result of the parsing operation.
+     */
+    ErrorParse generate_operators();
 
     /**
      * Returns the root node of the EinsumTree.

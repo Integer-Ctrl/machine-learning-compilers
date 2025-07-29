@@ -16,7 +16,7 @@ mlc::Error mlc::einsum(const std::vector<Tensor *> &inputs, Tensor &output, cons
 mlc::EinsumOperation::EinsumOperation(const std::vector<std::reference_wrapper<const Tensor>> &inputs, Tensor &, const std::string &tree)
     : einsumTree(tree)
 {
-  mini_jit::EinsumTree::ErrorParse errorParse = einsumTree.parse_tree();
+  mini_jit::EinsumTree::ErrorParse errorParse = einsumTree.parse_tree(false);
   if (errorParse != mini_jit::EinsumTree::ErrorParse::None)
   {
     mlc::ErrorType type = internal::convertParseError(errorParse);
@@ -26,6 +26,12 @@ mlc::EinsumOperation::EinsumOperation(const std::vector<std::reference_wrapper<c
   std::vector<int64_t> sorted_dim_sizes;
   internal::get_sorted_dimensions_sizes<std::reference_wrapper<const Tensor>>(einsumTree.get_root(), inputs, sorted_dim_sizes);
   einsumTree.set_sorted_dim_sizes(sorted_dim_sizes);
+  errorParse = einsumTree.generate_operators();
+  if (errorParse != mini_jit::EinsumTree::ErrorParse::None)
+  {
+    mlc::ErrorType type = internal::convertParseError(errorParse);
+    error = {type, "Failed to generate operators for the tree."};
+  }
 
   error = {mlc::ErrorType::None, "Success"};
 }

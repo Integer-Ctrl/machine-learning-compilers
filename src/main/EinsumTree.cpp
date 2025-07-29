@@ -275,6 +275,8 @@ mini_jit::TensorConfig mini_jit::EinsumTree::lower_node(const EinsumNode *node)
     std::vector<int64_t> dim_sizes;
     std::map<int64_t, size_t> id_map;
     uint32_t number_of_k = 0;
+    dim_types.reserve(node->output_dim_ids.size());
+    dim_sizes.reserve(node->output_dim_ids.size());
 
     get_config_dim_types_and_sizes(node, id_map, dim_types, dim_sizes, number_of_k);
 
@@ -509,9 +511,12 @@ mini_jit::EinsumTree::ErrorExecute mini_jit::EinsumTree::execute_node(const std:
       node->tensor = new float[node->get_size(dim_sizes)]();
     }
 
-    std::cerr << node->to_string() << node->tensor_op.get_config().to_string() << std::endl;
+    if (node->tensor_op.getHasSetupError() == true)
+    {
+      return ErrorExecute::SetupHasError;
+    }
+
     node->tensor_op.execute(node->left->tensor, nullptr, node->tensor);
-    std::cerr << "SUCCESS" << std::endl << std::endl;
   }
   else if (node->type == NodeType::Contraction)
   {
@@ -539,6 +544,11 @@ mini_jit::EinsumTree::ErrorExecute mini_jit::EinsumTree::execute_node(const std:
     {
       // Generate intermediate tensor.
       node->tensor = new float[node->get_size(dim_sizes)]();
+    }
+
+    if (node->tensor_op.getHasSetupError() == true)
+    {
+      return ErrorExecute::SetupHasError;
     }
 
     node->tensor_op.execute(node->left->tensor, node->right->tensor, node->tensor);
@@ -680,7 +690,7 @@ void mini_jit::EinsumTree::conditional_swap(mini_jit::EinsumTree::EinsumNode *no
   }
 }
 
-mini_jit::EinsumTree::ErrorParse mini_jit::EinsumTree::parse_tree()
+mini_jit::EinsumTree::ErrorParse mini_jit::EinsumTree::parse_tree(bool build_operators)
 {
   ErrorParse error = parse_tree_no_optimization(false);
 
@@ -691,7 +701,10 @@ mini_jit::EinsumTree::ErrorParse mini_jit::EinsumTree::parse_tree()
 
   optimize(root);
 
-  error = generate_operators();
+  if (build_operators)
+  {
+    error = generate_operators();
+  }
 
   return error;
 }
@@ -704,63 +717,73 @@ mini_jit::EinsumTree::ErrorParse mini_jit::EinsumTree::generate_operators()
     return ErrorParse::InvalidRoot;
   }
 
-  ErrorParse error = ErrorParse::None;
-  std::vector<EinsumNode *> stack = {root};
+  return generate_operator_node(root);
+}
 
-  while (stack.size() > 0)
+mini_jit::EinsumTree::ErrorParse mini_jit::EinsumTree::generate_operator_node(EinsumNode *node)
+{
+  if (node->type == NodeType::Leaf)
   {
-    EinsumNode *node = stack.back();
-    stack.pop_back();
+    return ErrorParse::None;
+  }
+  else if (node->type == NodeType::Transposition)
+  {
+    release_assert(node->left != nullptr, "Expected the left child of contraction to be a valid pointer.");
+    release_assert(node->right == nullptr, "Expected the right child of contraction to be a nullptr.");
 
-    if (node->type == NodeType::Leaf)
+    ErrorParse error = generate_operator_node(node->left);
+
+    if (error != ErrorParse::None)
     {
-      continue;
+      return error;
     }
-    else if (node->type == NodeType::Transposition)
+
+    TensorConfig config = lower_node(node);
+    TensorOperation::error_t error_setup = node->tensor_op.setup(config);
+    error = parse_setup_error(error_setup);
+
+    if (error != ErrorParse::None)
     {
-      release_assert(node->left != nullptr, "Expected the left child of contraction to be a valid pointer.");
-      release_assert(node->right == nullptr, "Expected the right child of contraction to be a nullptr.");
-
-      stack.push_back(node->left);
-
-      TensorConfig config = lower_node(node);
-      TensorOperation::error_t error_setup = node->tensor_op.setup(config);
-      error = parse_setup_error(error_setup);
-
-      if (error != ErrorParse::None)
-      {
-        return error;
-      }
+      return error;
+    }
 
 #ifdef SAVE_JITS_TO_FILE
-      node->tensor_op.write_kernel_to_file(node->name());
+    node->tensor_op.write_kernel_to_file(node->name());
 #endif  // SAVE_JITS_TO_FILE
-    }
-    else if (node->type == NodeType::Contraction)
+  }
+  else if (node->type == NodeType::Contraction)
+  {
+    release_assert(node->left != nullptr, "Expected the left child of contraction to be a valid pointer.");
+    release_assert(node->right != nullptr, "Expected the right child of contraction to be a valid pointer.");
+
+    ErrorParse error = generate_operator_node(node->left);
+    if (error != ErrorParse::None)
     {
-      release_assert(node->left != nullptr, "Expected the left child of contraction to be a valid pointer.");
-      release_assert(node->right != nullptr, "Expected the right child of contraction to be a valid pointer.");
+      return error;
+    }
 
-      stack.push_back(node->left);
-      stack.push_back(node->right);
+    error = generate_operator_node(node->right);
+    if (error != ErrorParse::None)
+    {
+      return error;
+    }
 
-      TensorConfig config = lower_node(node);
-      TensorOperation::error_t error_setup = node->tensor_op.setup(config);
-      error = parse_setup_error(error_setup);
+    TensorConfig config = lower_node(node);
+    TensorOperation::error_t error_setup = node->tensor_op.setup(config);
+    error = parse_setup_error(error_setup);
 
-      if (error != ErrorParse::None)
-      {
-        return error;
-      }
+    if (error != ErrorParse::None)
+    {
+      return error;
+    }
 
 #ifdef SAVE_JITS_TO_FILE
-      node->tensor_op.write_kernel_to_file(node->name());
+    node->tensor_op.write_kernel_to_file(node->name());
 #endif  // SAVE_JITS_TO_FILE
-    }
-    else
-    {
-      release_assert(false, "Found unhandled einsum tree node type.");
-    }
+  }
+  else
+  {
+    release_assert(false, "Found unhandled einsum tree node type.");
   }
   return ErrorParse::None;
 }
