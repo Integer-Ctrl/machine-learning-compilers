@@ -450,7 +450,7 @@ Implementation of the heuristic:
 
 Einsum tree:
 
-.. code-block::
+.. code-block:: vim
 
    0,1,2,3,4
    ├─ 7,3,4
