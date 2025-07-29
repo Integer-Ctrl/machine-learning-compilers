@@ -240,6 +240,16 @@ namespace mini_jit
      */
     ErrorParse generate_operators();
 
+    /**
+     * @brief Swap the strides so that the strides position match the out Ids with the current stride location based on the inIds.
+     *
+     * @param strides The strides to adjust.
+     * @param inIds The ids the strides got calculated with.
+     * @param outIds The order of the strides that is expected for the strides.
+     */
+    std::vector<int64_t> swap_strides_id_based(const std::vector<int64_t> &strides, const std::vector<int64_t> &inIds,
+                                               const std::vector<int64_t> &outIds);
+
   public:
     EinsumTree(const std::string &tree_str);
     EinsumTree(const std::string &tree_str, const std::vector<int64_t> &sorted_dim_sizes);

@@ -45,7 +45,7 @@ jobs:
       # Execute tests defined by the CMake configuration.
       run: |
         ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --test-dir neon --output-on-failure
-        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --output-on-failure -E "^Test einsum tree optimize and execute first example"
+        ctest -j ${{env.parallel_processes}} -C ${{matrix.build_type}} --output-on-failure
 
     - name: Test + Valgrind
       working-directory: ${{github.workspace}}/build

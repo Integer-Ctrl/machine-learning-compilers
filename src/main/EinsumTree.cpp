@@ -304,6 +304,9 @@ mini_jit::TensorConfig mini_jit::EinsumTree::lower_node(const EinsumNode *node)
                    "Expected input and output to have same dimensions for copy operation.");
     release_assert(node->get_size(dim_sizes) == node->left->get_size(dim_sizes), "Expected the accumulated size to be the same.");
 
+    std::vector<int64_t> stridesIn0 = compute_strides(node->left->output_dim_ids);
+    stridesIn0 = swap_strides_id_based(stridesIn0, node->left->output_dim_ids, node->output_dim_ids);
+
     TensorConfig config{
       TensorConfig::prim_t::none,                                                                 // first_touch
       TensorConfig::prim_t::copy,                                                                 // main
@@ -311,7 +314,7 @@ mini_jit::TensorConfig mini_jit::EinsumTree::lower_node(const EinsumNode *node)
       std::vector<TensorConfig::dim_t>(node->output_dim_ids.size(), TensorConfig::dim_t::c),      // dim_types
       std::vector<TensorConfig::exec_t>(node->output_dim_ids.size(), TensorConfig::exec_t::seq),  // exec_types
       get_output_dims(node->output_dim_ids),                                                      // dim_sizes
-      compute_strides(node->left->output_dim_ids),                                                // strides_in0
+      stridesIn0,                                                                                 // strides_in0
       std::vector<int64_t>(node->output_dim_ids.size(), 0),  // strides_in1 (not used for transposition)
       compute_strides(node->output_dim_ids),                 // strides_out
       TensorConfig::dtype_t::fp32                            // dtype_t
@@ -506,7 +509,9 @@ mini_jit::EinsumTree::ErrorExecute mini_jit::EinsumTree::execute_node(const std:
       node->tensor = new float[node->get_size(dim_sizes)]();
     }
 
+    std::cerr << node->to_string() << node->tensor_op.get_config().to_string() << std::endl;
     node->tensor_op.execute(node->left->tensor, nullptr, node->tensor);
+    std::cerr << "SUCCESS" << std::endl << std::endl;
   }
   else if (node->type == NodeType::Contraction)
   {
@@ -568,6 +573,26 @@ std::vector<int64_t> mini_jit::EinsumTree::compute_strides(const std::vector<int
   }
 
   return strides;
+}
+
+std::vector<int64_t> mini_jit::EinsumTree::swap_strides_id_based(const std::vector<int64_t> &strides, const std::vector<int64_t> &inIds,
+                                                                 const std::vector<int64_t> &outIds)
+{
+  release_assert(inIds.size() == outIds.size(), "Expected inIds to have the same size as the outIds.");
+  release_assert(inIds.size() == strides.size(), "Expected the inIds to have the same size as the outIds.");
+
+  std::vector<int64_t> outStrides(strides.size());
+
+  for (size_t i = 0; i < inIds.size(); i++)
+  {
+    auto outPtr = std::find(outIds.begin(), outIds.end(), inIds[i]);
+    release_assert(outPtr != outIds.end(), "Expected to have the same elements as the inIds.");
+
+    auto outIndex = std::distance(outIds.begin(), outPtr);
+    outStrides[outIndex] = strides[i];
+  }
+
+  return outStrides;
 }
 
 std::vector<int64_t> mini_jit::EinsumTree::get_output_dims(const std::vector<int64_t> &dim_ids)
