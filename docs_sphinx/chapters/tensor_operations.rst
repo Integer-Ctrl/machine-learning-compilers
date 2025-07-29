@@ -407,6 +407,10 @@ Performance Benchmarking
     BM_tensor_Zero+BRGEMM/size_a:262144/size_b:262144/size_c:1048576/config:3/min_warmup_time:0.300_stddev            8350 ns         7959 ns           10   217.4M/s
     BM_tensor_Zero+BRGEMM/size_a:262144/size_b:262144/size_c:1048576/config:3/min_warmup_time:0.300_cv                0.19 %          0.18 %            10      0.18%
 
+.. raw:: html
+
+    <hr>
+
 
 - Last: Relu
 - A: 8388608, B: 8192, C: 8388608
@@ -420,6 +424,10 @@ Performance Benchmarking
     BM_tensor_Relu/size_a:8388608/size_b:8192/size_c:8388608/config:4/min_warmup_time:0.300_median                 1693287 ns      1685075 ns           10 9.95636G/s
     BM_tensor_Relu/size_a:8388608/size_b:8192/size_c:8388608/config:4/min_warmup_time:0.300_stddev                   11637 ns        11124 ns           10 65.7127M/s
     BM_tensor_Relu/size_a:8388608/size_b:8192/size_c:8388608/config:4/min_warmup_time:0.300_cv                        0.69 %          0.66 %            10      0.66%
+
+.. raw:: html
+
+    <hr>
 
 
 - Main: BRGEMM & Last: RELU
@@ -435,6 +443,10 @@ Performance Benchmarking
     BM_tensor_BRGEMM+RELU/size_a:262144/size_b:262144/size_c:1048576/config:5/min_warmup_time:0.300_median         4476878 ns      4460413 ns           10 120.364G/s
     BM_tensor_BRGEMM+RELU/size_a:262144/size_b:262144/size_c:1048576/config:5/min_warmup_time:0.300_stddev            9309 ns         9001 ns           10 243.248M/s
     BM_tensor_BRGEMM+RELU/size_a:262144/size_b:262144/size_c:1048576/config:5/min_warmup_time:0.300_cv                0.21 %          0.20 %            10      0.20%
+
+.. raw:: html
+
+    <hr>
 
 
 - Main: BRGEMM & Last: RELU

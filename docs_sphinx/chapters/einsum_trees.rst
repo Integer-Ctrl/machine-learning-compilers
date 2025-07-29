@@ -547,8 +547,6 @@ On the three example we get the following performance:
     BM_einsum_tree_optimize_third_example/config:4/optimize:1/min_warmup_time:0.300_stddev      853382 ns       535716 ns           10 1.23652G/s
     BM_einsum_tree_optimize_third_example/config:4/optimize:1/min_warmup_time:0.300_cv            0.70 %          0.45 %            10      0.44%
 
-**First Example:** 142.7 GFLOPS
-
-**Second Example:** 276.9 GFLOPS
-
-**Third Example:** 277.8 GFLOPS
+- **First Example:** 142.7 GFLOPS
+- **Second Example:** 276.9 GFLOPS
+- **Third Example:** 277.8 GFLOPS

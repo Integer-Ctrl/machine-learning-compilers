@@ -631,7 +631,7 @@ Unary Primitives
 
 Now we further extend our kernel with primitives.
 Primitives are operation which only operate one one input i.e. B:=op(A).
-We will take a look at the Zero, Identity and ReLu primitives and their transpose variants.
+We will take a look at the Zero, Identity and ReLU primitives and their transpose variants.
 
 Zero Primitive
 ^^^^^^^^^^^^^^
@@ -858,13 +858,13 @@ because we already load and store the transposed matrix.
 - **BM_unary_identity_transpose/M:512/N:512** kernel: :math:`4.409` GiB/s
 - **BM_unary_identity_transpose/M:2048/N:2048** kernel: :math:`3.817` GiB/s
 
-ReLu Primitive
+ReLU Primitive
 ^^^^^^^^^^^^^^
 
 1. generate
 """""""""""
 
-**Task**: Extend the implementation of the ``mini_jit::Unary::generate`` function to support the ReLu primitive.
+**Task**: Extend the implementation of the ``mini_jit::Unary::generate`` function to support the ReLU primitive.
 
 Files: ``unary_relu.cpp`` & ``unary_relu_transpose.cpp``
 
