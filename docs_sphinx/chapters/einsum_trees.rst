@@ -1,18 +1,39 @@
 Einsum Trees
 ============
 
+This chapter expands the capabilities of our tensor compiler by adding support for einsum trees. Specifically, we execute einsum trees
+by mapping them to a tree of unary and binary tensor operations. These operations can then be executed by our tensor operation backend.
+
 Lowering
 --------
 
-This section expands the capabilities of our tensor compiler by adding support for einsum trees. Specifically, we execute einsum trees
-by mapping them to a tree of unary and binary tensor operations. These operations can then be executed by our tensor operation backend.
+An einsum tree represents multiple dependent tensor operations. It may contain nodes with two children (contractions), nodes with one
+child (transpositions), or leaf nodes (input tensors). The output tensor of the root node represents the result of the entire tree.
 
 1. Parsing
 ^^^^^^^^^^
 
 **Task**: Implement a function that parses the string representation of a tree and the numerically sorted dimension sizes.
 
-First, we implemented a struct called ``EinsumNode`` to parse the string representation of a tree and the numerically sorted dimension sizes.
+To complete the task we have to parse a string of the format, where a tensor is represented by a list of numerical dimension e.g. ``[3,2,4,1]``.
+Further a operation is written by a ``->`` symbol e.g. a contraction ``[<input0>][<input1>]->[<output>]`` or a unary ``[<input>]->[<output>]``.
+Also note that we can produce dependencies on other operation by nesting a operation inside a Tensor e.g. ``[[<in0>][<in1>]->[<op0>]]->[<output>]``,
+where the output tensor of the nested operations defines the shape of the immediate input tensor.
+
+A complete example of a einsum tree input is the string: 
+
+.. code-block:: 
+
+  [[[[3,6,8,9]->[8,6,9,3]],[[2,5,7,9]->[7,5,2,9]]->[7,8,5,6,2,3]],[0,4,5,6]->[0,4,7,8,2,3]],[1,4,7,8]->[0,1,2,3]
+
+And an additional list of dimensions sizes sorted by the numerical id of the dimension:
+
+.. code-block::
+
+  60,60,20,20,8,8,8,8,8,8
+
+
+To achieve this goal, we implemented a struct called ``EinsumNode`` to parse the string representation of a tree and the numerically sorted dimension sizes.
 This structure holds one node of the tree, its possible children, dimension sizes, and a tensor representing an intermediate or final
 (root node) result.
 
@@ -21,7 +42,9 @@ This structure holds one node of the tree, its possible children, dimension size
     struct EinsumNode
     {
       NodeType type;
-      float *tensor;
+      int32_t input_tensor_index = -1;
+      float *tensor = nullptr;
+      mini_jit::TensorOperation tensor_op;
 
       // Always filled — dims of the output tensor
       std::vector<int64_t> output_dim_ids;
@@ -54,12 +77,12 @@ This structure holds one node of the tree, its possible children, dimension size
       std::string _to_string(uint depth, std::string connection, std::string depthString) const;
     };
 
-Then, we implemented the logic to parse the string into a set of nodes in the ``parse_tree_no_optimization()`` method. This method also indicates whether
+Then, we implemented the logic to parse the string into a set of nodes in the ``parse_tree_no_optimization(bool)`` method. This method also indicates whether
 the parsing was successful, ``ErrorParse``.
 
 .. code-block:: cpp
 
-    ErrorParse parse_tree_no_optimization();
+    ErrorParse parse_tree_no_optimization(bool build_operators);
 
     // AND
 
@@ -105,6 +128,65 @@ To ensure the success of all tensor operations, the methods return an ``ErrorExe
 
 **Task**: Benchmark the performance of your implementation for the above examples. Report the measured performance in GFLOPS.
 
+**First Example**
+
+Einsum tree:
+
+.. code-block:: vim
+
+   0,1,2,3,4
+   ├─ 7,3,4
+   |  ├─ 8,4
+   |  └─ 7,3,8
+   └─ 0,1,2,7
+      ├─ 1,2,5,7
+      |  ├─ 2,6,7
+      |  └─ 1,5,6
+      └─ 0,5
+
+String representation:
+
+.. code-block::
+
+   [[8,4],[7,3,8]->[7,3,4]],[[[2,6,7],[1,5,6]->[1,2,5,7]],[0,5]->[0,1,2,7]]->[0,1,2,3,4]
+
+Dimension sizes (sorted by numerical ID):
+
+.. code-block::
+
+   100,72,128,128,3,71,305,32,3
+
+**Second Example**
+
+Einsum tree:
+
+.. code-block:: vim
+
+   0,1,2,3
+   ├─ 0,4,7,8,2,3
+   |  ├─ 7,8,5,6,2,3
+   |  |  ├─ 8,6,9,3
+   |  |  |  └─ 3,6,8,9
+   |  |  └─ 7,5,2,9
+   |  |     └─ 2,5,7,9
+   |  └─ 0,4,5,6
+   └─ 1,4,7,8
+
+String representation:
+
+.. code-block::
+
+   [[[[3,6,8,9]->[8,6,9,3]],[[2,5,7,9]->[7,5,2,9]]->[7,8,5,6,2,3]],[0,4,5,6]->[0,4,7,8,2,3]],[1,4,7,8]->[0,1,2,3]
+
+Dimension sizes (sorted by numerical ID):
+
+.. code-block::
+
+   60,60,20,20,8,8,8,8,8,8
+
+
+Performing a benchmark on both Einsum Trees, we get the following performance:
+
 .. code-block:: bash
     :emphasize-lines: 4, 8
   
@@ -132,18 +214,25 @@ Optimization
 
 **Task**: Develop an optimization pass for einsum trees that applies the three transformations.
 
+Three transformation that can be performed on the einsum tree are reorder, swap and permutation insert.
+
+- **Reorder**: Operates on individual tensor to reorder its dimensions such that next involved tensor operation has a better performance.
+- **Swap**: Swap the two children of a contraction to mitigate the usage of permutation inserts.
+- **Permutation Insert**: Inserts an additional node in the tree to perform a reordering for the next tensor operation.
+
 Reorder Node
 """"""""""""
 
-For the reorder node we divided into an different optimization pass for the left and the right node.
+For the reorder node we divided the optimization into an different pass for the left and the right node.
 
 For the reorder pass, we divided the transformation into two methods. The first is ``reorder_left_node``, which reorders the left child node
 of a node. The second method is ``reorder_right_node``, which is designed to reorder the right child node of a node.
-This division is due to the fact that the left node requires the M dimension as the unit stride, while the right node requires the K1 dimension.
+This division is due to the fact that the left node requires the M dimension as the unit-stride, while the right node requires the K1 dimension
+as unit-stride.
 
 *Left Node:*
 
-The method ``reorder_left_node`` checks if the last dimensions of the left child node are ``KM``. If not, it permutes the dimensions to
+The method ``reorder_left_node`` checks if the last dimensions of the left child node are ``KM`` dimensions. If not, it permutes the dimensions to
 move ``KM`` to the rightmost location. First, we determine the index of the first occurrence of the ``M`` and ``K`` dimension in the left
 child node of the node from right to left. If they are already in order, we return. Otherwise, we place them at the desired index location.
 
@@ -221,7 +310,7 @@ child node of the node from right to left. If they are already in order, we retu
 
 *Right Node:*
 
-The method ``reorder_right_node`` checks if the last dimensions of the right child node are ``NK``. If not, it permutes the dimensions to
+The method ``reorder_right_node`` checks if the last dimensions of the right child node are ``NK`` dimensions. If not, it permutes the dimensions to
 move ``NK`` to the rightmost location. First, we determine the index of the first occurrence of the ``N`` and ``K`` dimension in the right
 child node of the node from right to left. If they are already in order, we return. Otherwise, we place them at the desired index location.
 
@@ -256,8 +345,9 @@ The right node reordering is very similar to the left node reordering, but it or
 Insert Permutation Node
 """""""""""""""""""""""
 
-If the ``reorder_left_node`` or ``reorder_right_node`` method reorders a leaf node, an additional permutation node is inserted. Here the
-fragment in the ``reorder_left_node`` method:
+The permutation node is only added if the ``reorder_left_node`` or ``reorder_right_node`` method reorders a leaf node i.e. a node that is provided by the user.
+
+The code fragment of a permutation node in the ``reorder_left_node`` method:
 
 .. code-block:: cpp
 
@@ -301,9 +391,10 @@ And for the ``reorder_right_node`` method:
 Swap Contraction Nodes
 """"""""""""""""""""""
 
-For our current needs, a conditional swap is sufficient. The idea behind the method is to check if a node's unit stride dimension is of type
-``N``. If this is the case, we swap its children to later obtain a unit stride dimension in the first input tensor (left child node). We use
-the C++ ``swap`` method to swap the child nodes of a node, swapping the left child node pointer with the right child node pointer.
+The swap method allows optimization so that the order of the input tensor does not affect the performance of the contraction.
+Therefore, the idea behind the swap method is to check if a node's unit-stride dimension is of type ``N``.
+If this is the case, we swap its children to obtain a unit-stride dimension in the first input tensor (left child node). 
+We use the C++ ``swap`` method to swap the child nodes of a node, swapping the left child node pointer with the right child node pointer.
 
 .. code-block:: cpp
 
@@ -314,51 +405,13 @@ the C++ ``swap`` method to swap the child nodes of a node, swapping the left chi
         {
             std::swap(node->left, node->right);
         }
-    }.. code-block:: cpp
-  
-    void mini_jit::EinsumTree::reorder_left_node(EinsumNode *node)
-    {
-      ...
-
-      if (node->left->type == NodeType::Leaf)
-      {
-        // Add additional Permutation Node
-        EinsumNode *reorderNode = new EinsumNode();
-        reorderNode->type = NodeType::Transposition;
-        reorderNode->output_dim_ids = std::move(reorderDimIds);
-
-        reorderNode->left = node->left;
-        node->left = reorderNode;
-      }
-      else
-      {
-        // Only reorder the output of the left operation
-        node->left->output_dim_ids = std::move(reorderDimIds);
-      }
     }
 
 Heuristic
 """""""""
 
-We used a heuristic to apply the optimization passes to our einsum tree.
-
-.. code-block:: cpp
-
-    void mini_jit::EinsumTree::optimize(EinsumNode *node)
-    {
-    if (node->type != NodeType::Contraction)
-    {
-        return;
-    }
-
-    conditional_swap(node);
-
-    reorder_left_node(node);
-    reorder_right_node(node);
-
-    optimize(node->left);
-    optimize(node->right);
-    }
+To apply the optimization passes to three, we used a heuristic to decided when and how the optimization are applied.
+We do the following steps:
 
 1. First, we check whether the node is a contraction node, and if it is, we proceed to the next check. Otherwise we return from the optimization.
 2. Next, we check if the unit stride dimension type of the node is ``N``. If so, we swap the child nodes of the node to get a unit stride
@@ -369,10 +422,113 @@ We used a heuristic to apply the optimization passes to our einsum tree.
    ``NK``. If not, it permutes the dimensions to move ``NK`` to the rightmost location.
 5. We call on both child nodes recursively the optimization pass.
 
+Implementation of the heuristic:
+
+.. code-block:: cpp
+
+    void mini_jit::EinsumTree::optimize(EinsumNode *node)
+    {
+      if (node->type != NodeType::Contraction)
+      {
+          return;
+      }
+
+      conditional_swap(node);
+
+      reorder_left_node(node);
+      reorder_right_node(node);
+
+      optimize(node->left);
+      optimize(node->right);
+    }
+
+
 2. Performance
 ^^^^^^^^^^^^^^
 
 **Task**: Benchmark the performance of your implementation on the provided examples. Report the measured performance in GFLOPS.
+
+**First Example**
+
+Einsum tree:
+
+.. code-block:: vim
+
+   0,1,2,3,4
+   ├─ 7,3,4
+   |  ├─ 7,3,8
+   |  └─ 8,4
+   └─ 0,1,2,7
+      ├─ 0,5
+      └─ 5,1,2,7
+         ├─ 5,1,6
+         └─ 6,2,7
+
+String representation:
+
+.. code-block::
+
+   [[7,3,8],[8,4]->[7,3,4]],[[0,5],[[5,1,6],[6,2,7]->[5,1,2,7]]->[0,1,2,7]]->[0,1,2,3,4]
+
+Dimension sizes (by numerical ID):
+
+.. code-block::
+
+   100,72,128,128,3,71,305,32,3
+
+**Second Example**
+
+Einsum tree:
+
+.. code-block:: vim
+
+   0,1,2,3
+   ├─ 1,4,7,8
+   └─ 0,4,2,7,3,8
+      ├─ 0,4,5,6
+      └─ 2,5,7,3,6,8
+         ├─ 2,5,7,9
+         └─ 3,6,8,9
+
+String representation:
+
+.. code-block::
+
+  [1,4,7,8],[[0,4,5,6],[[2,5,7,9],[3,6,8,9]->[2,5,7,3,6,8]]->[0,4,2,7,3,8]]->[0,1,2,3]
+
+Dimension sizes (by numerical ID):
+
+.. code-block::
+
+   60,60,20,20,8,8,8,8,8,8
+
+**Third Example**
+
+.. code-block:: vim
+
+   5,6,7,8,9
+   ├─ 2,7,8,4
+   |  ├─ 2,7,3
+   |  └─ 3,8,4
+   └─ 4,9,5,6,2
+      ├─ 4,9,0
+      └─ 0,5,6,2
+         ├─ 0,5,1
+         └─ 1,6,2
+
+String representation:
+
+.. code-block::
+
+  [[2,7,3],[3,8,4]->[2,7,8,4]],[[4,9,0],[[0,5,1],[1,6,2]->[0,5,6,2]]->[4,9,5,6,2]]->[5,6,7,8,9]
+
+Dimension sizes (by numerical ID):
+
+.. code-block::
+
+   40,40,40,40,40,25,25,25,25,25
+
+On the three example we get the following performance:
 
 .. code-block:: bash
     :emphasize-lines: 4, 8, 12
@@ -393,8 +549,6 @@ We used a heuristic to apply the optimization passes to our einsum tree.
     BM_einsum_tree_optimize_third_example/config:4/optimize:1/min_warmup_time:0.300_stddev      853382 ns       535716 ns           10 1.23652G/s
     BM_einsum_tree_optimize_third_example/config:4/optimize:1/min_warmup_time:0.300_cv            0.70 %          0.45 %            10      0.44%
 
-**First Example:** 142.7 GFLOPS
-
-**Second Example:** 276.9 GFLOPS
-
-**Third Example:** 277.8 GFLOPS
+- **First Example:** 142.7 GFLOPS
+- **Second Example:** 276.9 GFLOPS
+- **Third Example:** 277.8 GFLOPS

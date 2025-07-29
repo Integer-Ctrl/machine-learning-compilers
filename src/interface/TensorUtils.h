@@ -145,6 +145,11 @@ namespace mlc
      */
     constexpr mlc::ErrorType convertParseError(mini_jit::EinsumTree::ErrorParse error)
     {
+      if (static_cast<int64_t>(error) > 100)
+      {
+        return static_cast<mlc::ErrorType>(static_cast<int64_t>(error));
+      }
+
       switch (error)
       {
       case mini_jit::EinsumTree::ErrorParse::None:
@@ -176,11 +181,6 @@ namespace mlc
      */
     constexpr mlc::ErrorType convertErrorExecute(mini_jit::EinsumTree::ErrorExecute error)
     {
-      if (static_cast<int64_t>(error) > 100)
-      {
-        return static_cast<mlc::ErrorType>(static_cast<int64_t>(error));
-      }
-
       switch (error)
       {
       case mini_jit::EinsumTree::ErrorExecute::None:

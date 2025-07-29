@@ -6,9 +6,9 @@
     * @param x4 = ldb leading dimension of B.
     * @param x5 = ldc leading dimension of C.
 **/
-.type matmul_64_48_64, %function
-.global matmul_64_48_64
-matmul_64_48_64:
+.type matmul_64_48_64_1, %function
+.global matmul_64_48_64_1
+matmul_64_48_64_1:
     
     // Procedural Call Standard
     // save frame pointer and link register
@@ -191,4 +191,4 @@ matmul_loop_over_K:
     // ldp fp, lr, [sp], #16
 
     ret
-    .size matmul_64_48_64, (. - matmul_64_48_64)
+    .size matmul_64_48_64_1, (. - matmul_64_48_64_1)

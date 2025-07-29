@@ -408,7 +408,7 @@ To simplify usage, we provide various functions for filling tensors with data.
 
 .. note::
 
-  All of the listed functions below are implemented as regular C++ functions and do not generate *jitted* kernels.
+  All of the listed functions below are implemented as regular C++ functions and do not generate *JITed* kernels.
 
 .. code-block:: cpp
 
@@ -446,7 +446,7 @@ An more complex example using ``fill_lambda`` is shown below. In this case, the 
 Tensor Expressions
 """"""""""""""""""
 
-The tensor expression include all *jitted* operations developed during this project. Each expression is implemented as an independent
+The tensor expression include all *JITed* operations developed during this project. Each expression is implemented as an independent
 function within the ``mlc`` namespace and returns an ``mlc::Error`` object. This object contains a ``type`` and a ``message`` field
 which should be used to catch any errors that may occur during the execution of the expression. To check if an expression
 executed successfully, check whether the ``type`` is equal to ``mlc::ErrorType::None``. See the example below with the ``mlc::gemm`` expression.
@@ -479,7 +479,7 @@ the interface like shown below:
   mlc::Error error = mlc::unary_identity(in, out);
   mlc::Error error = mlc::unary_relu(in, out);
 
-These functions internally generate the appropriate *jitted* code and execute it directly on the memory space of the tensors.
+These functions internally generate the appropriate *JITed* code and execute it directly on the memory space of the tensors.
 This is achieved using our ``mini_jit::TensorOperation`` class, which operates based on a configuration object.
 For example, the implementation of the ``unary_zero`` operation is shown below. The other two unary operations are implemented
 similarly.

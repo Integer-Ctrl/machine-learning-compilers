@@ -29,18 +29,18 @@ public:
   }
 };
 
-BENCHMARK_TEMPLATE_DEFINE_F(GemmMxNxKxBatchFixture, BM_matmul_64_48_64, 64, 48, 64, 1)(benchmark::State &state)
+BENCHMARK_TEMPLATE_DEFINE_F(GemmMxNxKxBatchFixture, BM_matmul_64_48_64_1, 64, 48, 64, 1)(benchmark::State &state)
 {
   for (auto _ : state)
   {
-    matmul_64_48_64(matrix_a, matrix_b, matrix_c, lda, ldb, ldc);
+    matmul_64_48_64_1(matrix_a, matrix_b, matrix_c, lda, ldb, ldc);
   }
 
   flops = (64 * 48 * 64) * 2;  // M * N * K * 2 instructions (add & mul)
   flops *= state.iterations();
 };
 
-BENCHMARK_REGISTER_F(GemmMxNxKxBatchFixture, BM_matmul_64_48_64)->MinWarmUpTime(1.0);  // WarmUp in seconds
+BENCHMARK_REGISTER_F(GemmMxNxKxBatchFixture, BM_matmul_64_48_64_1)->MinWarmUpTime(1.0);  // WarmUp in seconds
 
 BENCHMARK_TEMPLATE_DEFINE_F(GemmMxNxKxBatchFixture, BM_matmul_64_48_64_16, 64, 48, 64, 16)(benchmark::State &state)
 {

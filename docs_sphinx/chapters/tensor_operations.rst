@@ -1,15 +1,27 @@
 Tensor Operations
 =================
 
-This section implements a backend for binary tensor contractions and unary tensor permutations. The backend performs the provided tensor
-operation exactly as defined by the interface and does not optimize it. Contractions are executed as recursive loops over small GEMM or
-Batch-Reduce GEMM (BRGEMM) kernels. Permutations are executed as recursive loops over small transposition kernels.
+In this chapter we implement a abstraction to configure a single tensor contraction based on a loops over small GEMM or Batch-Reduce GEMM (BRGEMM)
+with our JITed kernel.
+On the configuration object we then can call optimization passes to automatically configure primitive and shared dimension, block against cache levels
+and optimization dimension size for the primitive. 
+At last we also implement unary operation on tensor, including permutations, by executing recursive loops over unary or unary-transpose kernels.
+
+All files related to the tasks of this chapter can be found under ``src/main/``.
 
 Backend
 -------
 
+This section implements a backend for binary tensor contractions. The backend performs the provided tensor
+operation exactly as defined by the interface and does not optimize it. In addition, a first and last touch unary primitive is provided that
+gets executed before/after on the first/last access on the output tensor.
+
 User Interface
 ^^^^^^^^^^^^^^
+
+Now we can configure a tensor operation through a generic tensor configuration, which is then parsed to generate the correct kernel.
+
+.. _tensor_op_setup:
 
 1. setup
 """"""""
@@ -31,86 +43,91 @@ that the input configuration for the tensor operation is correct and executable.
                                                                         std::span<const int64_t> strides_in1,
                                                                         std::span<const int64_t> strides_out)
     {
-    hasSetupError = false;
-    indexPrimBatch = -1;
-    indexPrimK = -1;
-    indexPrimM = -1;
-    indexPrimN = -1;
+        hasSetupError = false;
+        indexPrimBatch = -1;
+        indexPrimK = -1;
+        indexPrimM = -1;
+        indexPrimN = -1;
 
-    // Validate dimensions
-    if (dim_sizes.size() != dim_types.size() || dim_sizes.empty() || dim_types.empty()) {...}
+        // Validate dimensions
+        if (dim_sizes.size() != dim_types.size() || dim_sizes.empty() || dim_types.empty()) {...}
 
-    if (!(strides_in0.size() == dim_sizes.size() && strides_out.size() == dim_sizes.size() && (strides_in1.size() == dim_sizes.size()
-        // strides_in1 can be empty for unary operations
-        || ((isUnary(prim_first_touch)
-        || prim_first_touch == prim_t::none) && (isUnary(prim_main) || prim_main == prim_t::none) && (isUnary(prim_last_touch)
-        || prim_last_touch == prim_t::none) && strides_in1.empty())))) {...}
+        if (!(strides_in0.size() == dim_sizes.size() && strides_out.size() == dim_sizes.size() && (strides_in1.size() == dim_sizes.size()
+            // strides_in1 can be empty for unary operations
+            || ((isUnary(prim_first_touch)
+            || prim_first_touch == prim_t::none) && (isUnary(prim_main) || prim_main == prim_t::none) && (isUnary(prim_last_touch)
+            || prim_last_touch == prim_t::none) && strides_in1.empty())))) {...}
 
-    for (exec_t exec : exec_types) { if (exec == exec_t::shared) {...} }
+        for (exec_t exec : exec_types) { if (exec == exec_t::shared) {...} }
 
-    // Validate dtype types - currently only fp32 is supported
-    if (dtype != dtype_t::fp32) {...}
+        // Validate dtype types - currently only fp32 is supported
+        if (dtype != dtype_t::fp32) {...}
 
-    if (!isSortedConfiguration(exec_types)) {...}
+        if (!isSortedConfiguration(exec_types)) {...}
 
-    if (!isValidPrimConfig(dim_types, exec_types, strides_in0, strides_out)) {...}
+        if (!isValidPrimConfig(dim_types, exec_types, strides_in0, strides_out)) {...}
 
-    if (!isValidKDim(dim_types, exec_types, strides_in1, prim_main)) {...}
+        if (!isValidKDim(dim_types, exec_types, strides_in1, prim_main)) {...}
 
-    if (isUnary(prim_main)) { if (!isValidStride(dim_types, strides_in0, stride_t::out) || !isValidStride(dim_types, strides_out, stride_t::out)) {...} }
-    else if (isBrgemm(prim_main)) { if (!isValidStride(dim_types, strides_in0, stride_t::in0) 
-                                       || !isValidStride(dim_types, strides_in1, stride_t::in1) 
-                                       || !isValidStride(dim_types, strides_out, stride_t::out)) {...} }
-    else if (prim_main == prim_t::none) { /* Do nothing */ }
-    else { release_assert(false, "Unexpected value for the main primitive"); }
+        if (isUnary(prim_main)) { if (!isValidStride(dim_types, strides_in0, stride_t::out) || !isValidStride(dim_types, strides_out, stride_t::out)) {...} }
+        else if (isBrgemm(prim_main)) { if (!isValidStride(dim_types, strides_in0, stride_t::in0) 
+                                        || !isValidStride(dim_types, strides_in1, stride_t::in1) 
+                                        || !isValidStride(dim_types, strides_out, stride_t::out)) {...} }
+        else if (prim_main == prim_t::none) { /* Do nothing */ }
+        else { release_assert(false, "Unexpected value for the main primitive"); }
 
-    // Validated through isValidPrimConfig that these indices exists
-    indexPrimM = findMatch(dim_types, exec_types, dim_t::m, exec_t::prim);
-    indexPrimN = findMatch(dim_types, exec_types, dim_t::n, exec_t::prim);
+        // Validated through isValidPrimConfig that these indices exists
+        indexPrimM = findMatch(dim_types, exec_types, dim_t::m, exec_t::prim);
+        indexPrimN = findMatch(dim_types, exec_types, dim_t::n, exec_t::prim);
 
-    release_assert(indexPrimM != -1, "Expected a valid index for the M dimension but found none.");
-    release_assert(indexPrimN != -1, "Expected a valid index for the N dimension but found none.");
+        release_assert(indexPrimM != -1, "Expected a valid index for the M dimension but found none.");
+        release_assert(indexPrimN != -1, "Expected a valid index for the N dimension but found none.");
 
 
 Possible errors that can occur during the configuration verification step are:
 
 .. code-block:: cpp
 
-    err_wrong_dtype,
-    err_wrong_dimension,
-    err_wrong_primitive,
-    err_wrong_first_touch_primitive,
-    err_wrong_main_primitive,
-    err_wrong_last_touch_primitive,
-    err_execution_type_not_supported,
-    err_invalid_primitive_configuration,
-    err_invalid_first_touch_configuration,
-    err_invalid_main_configuration0,
-    err_invalid_last_touch_configuration,
-    err_invalid_execution_order,
-    err_invalid_strides,
+    err_wrong_dtype = 1,
+    err_wrong_dimension = 2,
+    err_wrong_primitive = 3,
+    err_wrong_first_touch_primitive = 4,
+    err_wrong_main_primitive = 5,
+    err_wrong_last_touch_primitive = 6,
+    err_execution_type_not_supported = 7,
+    err_invalid_primitive_configuration = 8,
+    err_invalid_first_touch_configuration = 9,
+    err_invalid_main_configuration = 10,
+    err_invalid_last_touch_configuration = 11,
+    err_invalid_execution_order = 12,
+    err_invalid_strides = 13,
+    err_k_dimension_must_not_be_shared = 14,
+    err_shared_required_for_parallel_execution = 15,
 
 If the verification step is successful, we check whether ``prim_first_touch``, ``prim_main``, and ``prim_last_touch`` are defined. If so, we create the corresponding kernel.
 ``prim_first_touch`` and ``prim_last_touch`` are restricted to unary operations, but ``prim_main`` can be either a unary or a GEMM or BRGEMM.
 
 .. code-block:: cpp
     
-    if (prim_first_touch != prim_t::none) {...}
+    ...
+        if (prim_first_touch != prim_t::none) {...}
 
-    if (prim_main != prim_t::none)
-    {
-        if (isBrgemm(prim_main)) {...}
-        else if (isUnary(prim_main)) {...}
-    }
+        if (prim_main != prim_t::none)
+        {
+            if (isBrgemm(prim_main)) {...}
+            else if (isUnary(prim_main)) {...}
+        }
 
-    if (prim_last_touch != prim_t::none) {...}
+        if (prim_last_touch != prim_t::none) {...}
 
-    return error_t::success;
+        return error_t::success;
     }
 
 
 Recursive Loops Over Primitives
 -------------------------------
+
+To execute a operation we recursive loop over the generated kernel.
 
 1. execute
 ^^^^^^^^^^
@@ -126,20 +143,20 @@ executer function, ``execute_dimension``.
 
     void mini_jit::TensorOperation::execute(void const *tensor_in0, void const *tensor_in1, void *tensor_out)
     {
-    release_assert(hasSetupError != true, "The setup resulted in a error, do not execute the setup");
-    release_assert(tensor_in0 != nullptr, "The tensor_in0 parameter is a nullptr, but should be a valid pointer to memory.");
-    release_assert(tensor_out != nullptr, "The tensor_out parameter is a nullptr, but should be a valid pointer to memory.");
+        release_assert(hasSetupError != true, "The setup resulted in a error, do not execute the setup");
+        release_assert(tensor_in0 != nullptr, "The tensor_in0 parameter is a nullptr, but should be a valid pointer to memory.");
+        release_assert(tensor_out != nullptr, "The tensor_out parameter is a nullptr, but should be a valid pointer to memory.");
 
-    if (isBrgemm(prim_main))
-    {
-        release_assert(tensor_in1 != nullptr, "The tensor_in1 parameter is a nullptr, but should be a valid pointer to memory");
-    }
+        if (isBrgemm(prim_main))
+        {
+            release_assert(tensor_in1 != nullptr, "The tensor_in1 parameter is a nullptr, but should be a valid pointer to memory");
+        }
 
-    char const *ptr_in0 = static_cast<char const *>(tensor_in0);
-    char const *ptr_in1 = static_cast<char const *>(tensor_in1);
-    char *ptr_out = static_cast<char *>(tensor_out);
+        char const *ptr_in0 = static_cast<char const *>(tensor_in0);
+        char const *ptr_in1 = static_cast<char const *>(tensor_in1);
+        char *ptr_out = static_cast<char *>(tensor_out);
 
-    execute_dimension(0, ptr_in0, ptr_in1, ptr_out, true, true);
+        execute_dimension(0, ptr_in0, ptr_in1, ptr_out, true, true);
     }
 
 ``execute_dimension`` has three main tasks. First, if defined, check whether the ``prim_first_touch`` or ``prim_last_touch`` primitive
@@ -154,34 +171,34 @@ Compute the ``first_access`` and ``last_access`` and check if higher dimensions 
     void mini_jit::TensorOperation::execute_dimension(int64_t index_dim, char const *ptr_in0, char const *ptr_in1, char *ptr_out,
                                                   bool first_access, bool last_access)
     {
-    uint32_t dtype_bytes = 4;
-    int64_t dim_size = dim_sizes[index_dim];
-    int64_t stride_in0 = strides_in0[index_dim];
-    int64_t stride_in1 = isUnary(prim_main) ? 1 : strides_in1[index_dim];
-    int64_t stride_out = strides_out[index_dim];
+        uint32_t dtype_bytes = 4;
+        int64_t dim_size = dim_sizes[index_dim];
+        int64_t stride_in0 = strides_in0[index_dim];
+        int64_t stride_in1 = isUnary(prim_main) ? 1 : strides_in1[index_dim];
+        int64_t stride_out = strides_out[index_dim];
 
-    // std::cout << "Execute check " << index_dim + 1 << " " << std::endl;
-    if (exec_types[index_dim] == exec_t::seq)
-    {
-        release_assert(exec_types[index_dim] == exec_t::seq, "Expected a sequential loop");
-
-        bool is_first = first_access;
-        bool is_last = last_access;
-
-        for (int64_t iDim = 0; iDim < dim_size; iDim++)
+        // std::cout << "Execute check " << index_dim + 1 << " " << std::endl;
+        if (exec_types[index_dim] == exec_t::seq)
         {
-        if (dim_types[index_dim] == dim_t::k)
-        {
-            is_first = first_access && (iDim == 0);
-            is_last = last_access && (iDim == (dim_size - 1));
-        }
+            release_assert(exec_types[index_dim] == exec_t::seq, "Expected a sequential loop");
 
-        char const *rec_ptr_in0 = ptr_in0 + iDim * stride_in0 * dtype_bytes;
-        char const *rec_ptr_in1 = ptr_in1 + iDim * stride_in1 * dtype_bytes;
-        char *rec_ptr_out = ptr_out + iDim * stride_out * dtype_bytes;
-        execute_dimension(index_dim + 1, rec_ptr_in0, rec_ptr_in1, rec_ptr_out, is_first, is_last);
+            bool is_first = first_access;
+            bool is_last = last_access;
+
+            for (int64_t iDim = 0; iDim < dim_size; iDim++)
+            {
+                if (dim_types[index_dim] == dim_t::k)
+                {
+                    is_first = first_access && (iDim == 0);
+                    is_last = last_access && (iDim == (dim_size - 1));
+                }
+
+                char const *rec_ptr_in0 = ptr_in0 + iDim * stride_in0 * dtype_bytes;
+                char const *rec_ptr_in1 = ptr_in1 + iDim * stride_in1 * dtype_bytes;
+                char *rec_ptr_out = ptr_out + iDim * stride_out * dtype_bytes;
+                execute_dimension(index_dim + 1, rec_ptr_in0, rec_ptr_in1, rec_ptr_out, is_first, is_last);
+            }
         }
-    }
 
 If no higher dimension is left for iteration, call the primitive kernels:
 
@@ -253,7 +270,32 @@ Performance Benchmarking
 
 **Task**: Benchmark the performance of your implementation for the above examples. Report the measured performance in GFLOPS.
 
-Tensor contraction using the GEMM primitive:
+.. list-table:: Tensor contraction using the GEMM primitive.
+   :widths: 40 60
+   :header-rows: 1
+
+   * - Variable
+     - Value
+   * - dtype
+     - FP32
+   * - prim_first_touch
+     - None
+   * - prim_main
+     - GEMM
+   * - prim_last_touch
+     - None
+   * - dim_types
+     - (     M,    N,    K,    M,    N,    K )
+   * - exec_types
+     - (   Seq,  Seq,  Seq, Prim, Prim, Prim )
+   * - dim_sizes
+     - (    32,   32,    8,   32,   32,   32 )
+   * - strides_in0
+     - (  8192,    0, 1024,    1,    0,   32 )
+   * - strides_in1
+     - (     0, 8192, 1024,    0,   32,    1 )
+   * - strides_out
+     - ( 32768, 1024,    0,    1,   32,    0 )
 
 .. code-block:: bash
 
@@ -265,8 +307,36 @@ Tensor contraction using the GEMM primitive:
     BM_tensor_GEMM/size_a:262144/size_b:262144/size_c:1048576/config:0/min_warmup_time:0.300_stddev                  17304 ns        17543 ns           10  500.82M/s
     BM_tensor_GEMM/size_a:262144/size_b:262144/size_c:1048576/config:0/min_warmup_time:0.300_cv                       0.40 %          0.40 %            10      0.41%
 
+.. raw:: html
 
-Tensor contraction using the BRGEMM primitive:
+    <hr>
+
+.. list-table:: Tensor contraction using the BRGEMM primitive.
+   :widths: 40 60
+   :header-rows: 1
+
+   * - Variable
+     - Value
+   * - dtype
+     - FP32
+   * - prim_first_touch
+     - None
+   * - prim_main
+     - BRGEMM
+   * - prim_last_touch
+     - None
+   * - dim_types
+     - (     M,    N,    K,    M,    N,    K )
+   * - exec_types
+     - (   Seq,  Seq, Prim, Prim, Prim, Prim )
+   * - dim_sizes
+     - (    32,   32,    8,   32,   32,   32 )
+   * - strides_in0
+     - (  8192,    0, 1024,    1,    0,   32 )
+   * - strides_in1
+     - (     0, 8192, 1024,    0,   32,    1 )
+   * - strides_out
+     - ( 32768, 1024,    0,    1,   32,    0 )
 
 .. code-block:: bash
 
@@ -278,8 +348,36 @@ Tensor contraction using the BRGEMM primitive:
     BM_tensor_BRGEMM/size_a:262144/size_b:262144/size_c:1048576/config:1/min_warmup_time:0.300_stddev                14186 ns        14016 ns           10  396.45M/s
     BM_tensor_BRGEMM/size_a:262144/size_b:262144/size_c:1048576/config:1/min_warmup_time:0.300_cv                     0.32 %          0.32 %            10      0.32%
 
+.. raw:: html
 
-Tensor contraction using the Zero, BRGEMM and ReLU primitives:
+    <hr>
+
+.. list-table:: Tensor contraction using the Zero, BRGEMM and ReLU primitives.
+   :widths: 40 60
+   :header-rows: 1
+
+   * - Variable
+     - Value
+   * - dtype
+     - FP32
+   * - prim_first_touch
+     - Zero
+   * - prim_main
+     - BRGEMM
+   * - prim_last_touch
+     - ReLU
+   * - dim_types
+     - (     M,    N,    K,    M,    N,    K )
+   * - exec_types
+     - (   Seq,  Seq, Prim, Prim, Prim, Prim )
+   * - dim_sizes
+     - (    32,   32,    8,   32,   32,   32 )
+   * - strides_in0
+     - (  8192,    0, 1024,    1,    0,   32 )
+   * - strides_in1
+     - (     0, 8192, 1024,    0,   32,    1 )
+   * - strides_out
+     - ( 32768, 1024,    0,    1,   32,    0 )
 
 .. code-block:: bash
 
@@ -309,6 +407,10 @@ Tensor contraction using the Zero, BRGEMM and ReLU primitives:
     BM_tensor_Zero+BRGEMM/size_a:262144/size_b:262144/size_c:1048576/config:3/min_warmup_time:0.300_stddev            8350 ns         7959 ns           10   217.4M/s
     BM_tensor_Zero+BRGEMM/size_a:262144/size_b:262144/size_c:1048576/config:3/min_warmup_time:0.300_cv                0.19 %          0.18 %            10      0.18%
 
+.. raw:: html
+
+    <hr>
+
 
 - Last: Relu
 - A: 8388608, B: 8192, C: 8388608
@@ -322,6 +424,10 @@ Tensor contraction using the Zero, BRGEMM and ReLU primitives:
     BM_tensor_Relu/size_a:8388608/size_b:8192/size_c:8388608/config:4/min_warmup_time:0.300_median                 1693287 ns      1685075 ns           10 9.95636G/s
     BM_tensor_Relu/size_a:8388608/size_b:8192/size_c:8388608/config:4/min_warmup_time:0.300_stddev                   11637 ns        11124 ns           10 65.7127M/s
     BM_tensor_Relu/size_a:8388608/size_b:8192/size_c:8388608/config:4/min_warmup_time:0.300_cv                        0.69 %          0.66 %            10      0.66%
+
+.. raw:: html
+
+    <hr>
 
 
 - Main: BRGEMM & Last: RELU
@@ -337,6 +443,10 @@ Tensor contraction using the Zero, BRGEMM and ReLU primitives:
     BM_tensor_BRGEMM+RELU/size_a:262144/size_b:262144/size_c:1048576/config:5/min_warmup_time:0.300_median         4476878 ns      4460413 ns           10 120.364G/s
     BM_tensor_BRGEMM+RELU/size_a:262144/size_b:262144/size_c:1048576/config:5/min_warmup_time:0.300_stddev            9309 ns         9001 ns           10 243.248M/s
     BM_tensor_BRGEMM+RELU/size_a:262144/size_b:262144/size_c:1048576/config:5/min_warmup_time:0.300_cv                0.21 %          0.20 %            10      0.20%
+
+.. raw:: html
+
+    <hr>
 
 
 - Main: BRGEMM & Last: RELU
@@ -358,7 +468,8 @@ Shared Memory Parallelization
 
 In the shared memory domain, loops can be parallelized at any point within the nested loop structure. However, to simplify the
 implementation, we only parallelize the outermost loops. In other words, we do not parallelize loops that are nested inside
-sequential loops.
+sequential loops. Also note that we do not parallelize the k-dimension, which is reduced by the contraction, as operate on the same memory if parallelized.
+Thus the k-dimension requires to reduce the partial result of each parallel process. 
 
 1. execute_iter_parallel
 """"""""""""""""""""""""
@@ -377,7 +488,7 @@ an execution type of ``shared`` exists. Additionally, we ensure that the k dimen
     {
         if (exec == exec_t::shared)
         {
-        isParallel = true;
+            isParallel = true;
         }
     }
 
@@ -387,8 +498,8 @@ an execution type of ``shared`` exists. Additionally, we ensure that the k dimen
         int32_t kDimExecType = findMatch(dim_types, exec_types, dim_t::k, exec_t::shared);
         if (kDimExecType != -1)
         {
-        hasSetupError = true;
-        return error_t::err_k_dimension_must_not_be_shared;
+            hasSetupError = true;
+            return error_t::err_k_dimension_must_not_be_shared;
         }
     }
 
@@ -399,33 +510,33 @@ first ``shared``, then ``sequential``, and finally ``primitive``.
 
     bool mini_jit::TensorOperation::isSortedConfiguration(const std::span<const exec_t> &exec)
     {
-    bool seenSequential = false;
-    bool seenPrimitive = false;
-    for (exec_t exec_type : exec)
-    {
-        if (exec_type == exec_t::shared && !seenSequential && !seenPrimitive)
+        bool seenSequential = false;
+        bool seenPrimitive = false;
+        for (exec_t exec_type : exec)
         {
-        // Nothing to do, shared must be first
+            if (exec_type == exec_t::shared && !seenSequential && !seenPrimitive)
+            {
+                // Nothing to do, shared must be first
+            }
+            else if (exec_type == exec_t::shared && (seenSequential || seenPrimitive))
+            {
+                return false;
+            }
+            else if (exec_type == exec_t::seq && !seenPrimitive)
+            {
+                seenSequential = true;
+            }
+            else if (exec_type == exec_t::seq && seenPrimitive)
+            {
+                return false;
+            }
+            else if (exec_type == exec_t::prim)
+            {
+                seenPrimitive = true;
+            }
         }
-        else if (exec_type == exec_t::shared && (seenSequential || seenPrimitive))
-        {
-        return false;
-        }
-        else if (exec_type == exec_t::seq && !seenPrimitive)
-        {
-        seenSequential = true;
-        }
-        else if (exec_type == exec_t::seq && seenPrimitive)
-        {
-        return false;
-        }
-        else if (exec_type == exec_t::prim)
-        {
-        seenPrimitive = true;
-        }
-    }
 
-    return true;
+        return true;
     }
 
 
@@ -481,6 +592,93 @@ This configuration contains all the input data for our tensor operation. Before 
 setup, we run our optimization passes over it. We also added a ``equal(const TensorConfig &config1, const TensorConfig config2)`` and
 ``to_string()`` method for testing purposes.
 
+.. code-block:: cpp
+    
+    struct TensorConfig
+    {
+        enum class exec_t : uint32_t
+        {
+            seq = 0,
+            prim = 1,
+            shared = 2,
+        };
+
+        /// primitive type
+        enum class prim_t : uint32_t
+        {
+            none = 0,
+            zero = 1,
+            copy = 2,
+            relu = 3,
+            gemm = 4,
+            brgemm = 5,
+        };
+
+        /// dimension type
+        enum class dim_t : uint32_t
+        {
+            undefined = 0,
+            c = 1,
+            m = 2,
+            n = 3,
+            k = 4,
+        };
+
+        /// data type
+        enum class dtype_t : uint32_t
+        {
+            fp32 = 0,
+            fp64 = 1
+        };
+
+        /// @brief The first touch primitive to be executed.
+        prim_t first_touch;
+
+        /// @brief The main primitive to be executed.
+        prim_t main;
+
+        /// @brief The last touch primitive to be executed.
+        prim_t last_touch;
+
+        /// @brief The dimensions types of each dimension.
+        std::vector<dim_t> dim_types;
+
+        /// @brief The execution types of each dimension.
+        std::vector<exec_t> exec_types;
+
+        /// @brief The dim_sizes that are supported.
+        std::vector<int64_t> dim_sizes;
+
+        /// @brief The strides of the first input of each dimension.
+        std::vector<int64_t> strides_in0;
+
+        /// @brief The strides of the second input of each dimension.
+        std::vector<int64_t> strides_in1;
+
+        /// @brief The strides of the output of each dimension.
+        std::vector<int64_t> strides_out;
+
+        /// @brief The data type to be used in the tensor operation.
+        dtype_t dtype;
+
+        /**
+        * @brief Converts the config to a string.
+        *
+        * @return std::string The string representation
+        */
+        std::string to_string() const;
+
+        /**
+        * @brief Compares the two configuration and check if all values are equal.
+        *
+        * @param config1 The first configuration.
+        * @param config2 The second configuration.
+        * @return true Both configuration are equal.
+        * @return false Both configuration are NOT equal.
+        */
+        static bool equals(const TensorConfig &config1, const TensorConfig config2);
+    };
+
 2. Optimization Passes
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -525,7 +723,7 @@ strides and divide by eight if it is a k-dimensional stride and divide by two if
 
     void mini_jit::TensorOptimization::_dimension_reordering_shared(TensorConfig &config)
     {
-    ...
+        ...
         uint64_t value = (*jStrideIn0 * *jStrideIn0) + (*jStrideIn1 * *jStrideIn1) + (*jStrideOut * *jStrideOut);
 
         // value/8 if we have a k-dimension
@@ -533,7 +731,7 @@ strides and divide by eight if it is a k-dimensional stride and divide by two if
 
         // value/2 if we have the same dimension type as the last dimension, but not for c dimension
         value >>= (*jDim == previous_dim && *jDim != TensorConfig::dim_t::c) * 1;
-    ...
+        ...
     }
 
 
@@ -543,7 +741,7 @@ We added primitive identification support to our optimization pass.
 The following rules are applied based on the dimension type:
 - m-dimension: search m-dimension with a unit-stride in the first input 
 - n-dimension: search in the second input and in the output for the smallest stride
-- k-dimension: only applies to GEMM or BRGEMM, search for unit--stride in the second input
+- k-dimension: only applies to GEMM or BRGEMM, search for unit-stride in the second input
 - second-k-dimension: only applies to BRGEMM, search for the smallest stride in first input or second input, but not select the already found k-dimension
 
 Additionally, we do not modify any existing chosen primitives by the user.
@@ -559,9 +757,9 @@ We added shared identification support to our optimization pass. At most, we can
 first k-dimensional primitive. We only tag as many dimensions as are shared, i.e., if the first dimension is perfectly divisible by the
 number of OpenMP threads in use, we do not convert any further dimensions as shared. Additionally, we only convert to shared if the
 unbalanced ratio of the dimensions is greater than 1%.
-:code:`(shared_dimensions_size % thread_count) / shared_dimensions_size < 1%`.
+:code:`(shared_dimensions_size % thread_count) / shared_dimensions_size > 1%`.
 
-.. code-block::
+.. code-block:: cpp
 
     void mini_jit::TensorOptimization::_shared_identification(TensorConfig &config)
 
@@ -578,34 +776,33 @@ setup. This order ensures that the optimizer creates a valid configuration for t
 
     mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup(const TensorConfig &config)
     {
-    mini_jit::TensorOptimization optimization;
-    TensorOperation::config = optimization.optimize(config);
+        mini_jit::TensorOptimization optimization;
+        TensorOperation::config = optimization.optimize(config);
 
-    return setup_no_optimization(TensorOperation::config.dtype, TensorOperation::config.first_touch, TensorOperation::config.main,
-                                 TensorOperation::config.last_touch, TensorOperation::config.dim_types, TensorOperation::config.exec_types,
-                                 TensorOperation::config.dim_sizes, TensorOperation::config.strides_in0, TensorOperation::config.strides_in1,
-                                 TensorOperation::config.strides_out);
+        return setup_no_optimization(TensorOperation::config.dtype, TensorOperation::config.first_touch, TensorOperation::config.main,
+                                    TensorOperation::config.last_touch, TensorOperation::config.dim_types, TensorOperation::config.exec_types,
+                                    TensorOperation::config.dim_sizes, TensorOperation::config.strides_in0, TensorOperation::config.strides_in1,
+                                    TensorOperation::config.strides_out);
     }
 
-Our ``TensorOptimization`` 's ``optimize`` method executes individual optimization passes on the config struct.
+Our TensorOptimization's ``optimize`` method executes individual optimization passes on the config struct.
 
 .. code-block:: cpp
 
     mini_jit::TensorConfig mini_jit::TensorOptimization::optimize(TensorConfig config)
     {
-    _dimension_reordering_fusing(config);
+        _dimension_reordering_fusing(config);
 
-    _dimension_splitting(config);
+        _dimension_splitting(config);
 
-    _dimension_fusing(config);
+        _dimension_fusing(config);
 
-    _primitive_identification(config);
+        _primitive_identification(config);
 
-    _dimension_reordering_shared(config);
+        _dimension_reordering_shared(config);
 
-    // Only call shared after reordering it only parallelize the first loops until the first seq k-loops at maximum
-    _shared_identification(config);
-    return config;
+        _shared_identification(config);
+        return config;
     }
 
 
@@ -616,7 +813,24 @@ Our ``TensorOptimization`` 's ``optimize`` method executes individual optimizati
 
 File: ``TensorOptimization.bench.cpp``
 
-**Matrix multiplication example**
+.. list-table:: Matrix multiplication example.
+   :widths: 40 60
+   :header-rows: 1
+
+   * - Variable
+     - Value
+   * - dim_types
+     - (    M,    N,    K )
+   * - exec_types
+     - (  Seq,  Seq,  Seq )
+   * - dim_sizes
+     - ( 1600, 1600, 1600 )
+   * - strides_in0
+     - (    1,    0, 1600 )
+   * - strides_in1
+     - (    0, 1600,    1 )
+   * - strides_out
+     - (    1, 1600,    0 )
 
 .. code-block:: bash
 
@@ -628,7 +842,28 @@ File: ``TensorOptimization.bench.cpp``
     BM_optimized_tensor_GEMM/size_a:2560000/size_b:2560000/size_c:2560000/config:0/min_warmup_time:0.300_stddev         7770 ns         1120 ns           10   353.7M/s
     BM_optimized_tensor_GEMM/size_a:2560000/size_b:2560000/size_c:2560000/config:0/min_warmup_time:0.300_cv             0.59 %          0.09 %            10      0.09%
 
-**Tensor contraction example**
+.. raw:: html
+
+    <hr>
+
+.. list-table:: Tensor contraction example.
+   :widths: 30 70
+   :header-rows: 1
+
+   * - Variable
+     - Value
+   * - dim_types
+     - (   M,    M,     N,    N,     K,    K )
+   * - exec_types
+     - ( Seq,  Seq,   Seq,  Seq,   Seq,  Seq )
+   * - dim_sizes
+     - (  64,   25,    64,   25,    64,   25 )
+   * - strides_in0
+     - (  25,    1,     0,    0, 40000, 1600 )
+   * - strides_in1
+     - (   0,    0, 40000, 1600,    25,    1 )
+   * - strides_out
+     - (  25,    1, 40000, 1600,     0,    0 )
 
 .. code-block:: bash
 
@@ -654,72 +889,77 @@ configuration after the optimization passes, we also test the correctness of the
 
     TEST_CASE("Test tensor operation with optimization dimension test reordering and fusing", "[tensor_optimization][gemm][correctness]")
     {
-    using namespace mini_jit;
+        using namespace mini_jit;
 
-    mini_jit::TensorConfig config{
-        mini_jit::TensorConfig::prim_t::none,  // first_touch
-        mini_jit::TensorConfig::prim_t::gemm,  // main
-        mini_jit::TensorConfig::prim_t::none,  // last touch
-        {mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k, mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n,
-        mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k},  // dim_types
-        {mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq,
-        mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq},  // exec_types
-        {32, 8, 32, 5, 32, 32},                                                                                           // dim_sizes
-        {0, 1024, 1, 0, 0, 32},                                                                                           // strides_in0
-        {8192, 1024, 0, 8192 * 32, 32, 1},                                                                                // strides_in1
-        {1024, 0, 1, 32768, 32, 0},                                                                                       // strides_out
-        mini_jit::TensorConfig::dtype_t::fp32,                                                                            // dtype_t
-    };
+        mini_jit::TensorConfig config{
+            mini_jit::TensorConfig::prim_t::none,  // first_touch
+            mini_jit::TensorConfig::prim_t::gemm,  // main
+            mini_jit::TensorConfig::prim_t::none,  // last touch
+            {mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k, mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n,
+            mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k},  // dim_types
+            {mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq,
+            mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::seq},  // exec_types
+            {32, 8, 32, 5, 32, 32},                                                                                           // dim_sizes
+            {0, 1024, 1, 0, 0, 32},                                                                                           // strides_in0
+            {8192, 1024, 0, 8192 * 32, 32, 1},                                                                                // strides_in1
+            {1024, 0, 1, 32768, 32, 0},                                                                                       // strides_out
+            mini_jit::TensorConfig::dtype_t::fp32,                                                                            // dtype_t
+        };
 
-    mini_jit::TensorConfig expected{
-        mini_jit::TensorConfig::prim_t::none,  // first_touch
-        mini_jit::TensorConfig::prim_t::gemm,  // main
-        mini_jit::TensorConfig::prim_t::none,  // last touch
-        {mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k, mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n,
-        mini_jit::TensorConfig::dim_t::k},  // dim_types
-        {mini_jit::TensorConfig::exec_t::shared, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::prim,
-        mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim},  // exec_types
-        {5 * 32, 8, 32, 32, 32},                                                       // dim_sizes
-        {0, 1024, 1, 0, 32},                                                           // strides_in0
-        {8192, 1024, 0, 32, 1},                                                        // strides_in1
-        {1024, 0, 1, 32, 0},                                                           // strides_out
-        mini_jit::TensorConfig::dtype_t::fp32,                                         // dtype_t
-    };
+        mini_jit::TensorConfig expected{
+            mini_jit::TensorConfig::prim_t::none,  // first_touch
+            mini_jit::TensorConfig::prim_t::gemm,  // main
+            mini_jit::TensorConfig::prim_t::none,  // last touch
+            {mini_jit::TensorConfig::dim_t::n, mini_jit::TensorConfig::dim_t::k, mini_jit::TensorConfig::dim_t::m, mini_jit::TensorConfig::dim_t::n,
+            mini_jit::TensorConfig::dim_t::k},  // dim_types
+            {mini_jit::TensorConfig::exec_t::shared, mini_jit::TensorConfig::exec_t::seq, mini_jit::TensorConfig::exec_t::prim,
+            mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim},  // exec_types
+            {5 * 32, 8, 32, 32, 32},                                                       // dim_sizes
+            {0, 1024, 1, 0, 32},                                                           // strides_in0
+            {8192, 1024, 0, 32, 1},                                                        // strides_in1
+            {1024, 0, 1, 32, 0},                                                           // strides_out
+            mini_jit::TensorConfig::dtype_t::fp32,                                         // dtype_t
+        };
 
-    mini_jit::TensorOperation tensor_op;
-    TensorOperation::error_t err = tensor_op.setup(config);
+        mini_jit::TensorOperation tensor_op;
+        TensorOperation::error_t err = tensor_op.setup(config);
 
-    INFO(tensor_op.get_config().to_string());
+        INFO(tensor_op.get_config().to_string());
 
-    REQUIRE(err == TensorOperation::error_t::success);
-    REQUIRE_FALSE(mini_jit::TensorConfig::equals(config, tensor_op.get_config()));
-    REQUIRE(mini_jit::TensorConfig::equals(expected, tensor_op.get_config()));
+        REQUIRE(err == TensorOperation::error_t::success);
+        REQUIRE_FALSE(mini_jit::TensorConfig::equals(config, tensor_op.get_config()));
+        REQUIRE(mini_jit::TensorConfig::equals(expected, tensor_op.get_config()));
 
-    GenerationTest test(32, 32, 32, 32 * 1 * 32 * 8 * 1 * 1, 32 * 32 * 1 * 8 * 32 * 5, 1 * 32 * 32 * 1 * 32 * 5);
-    test.SetUp(TestInfill::Random);
+        GenerationTest test(32, 32, 32, 32 * 1 * 32 * 8 * 1 * 1, 32 * 32 * 1 * 8 * 32 * 5, 1 * 32 * 32 * 1 * 32 * 5);
+        test.SetUp(TestInfill::Random);
 
-    tensor_op.execute(test.matrix_a.data(), test.matrix_b.data(), test.matrix_c.data());
+        tensor_op.execute(test.matrix_a.data(), test.matrix_b.data(), test.matrix_c.data());
 
-    for (int64_t i0 = 0; i0 < expected.dim_sizes[0]; i0++)
-    {
-        for (int64_t i1 = 0; i1 < expected.dim_sizes[1]; i1++)
+        for (int64_t i0 = 0; i0 < expected.dim_sizes[0]; i0++)
         {
-        uint64_t offset_a = i0 * expected.strides_in0[0] + i1 * expected.strides_in0[1];
-        uint64_t offset_b = i0 * expected.strides_in1[0] + i1 * expected.strides_in1[1];
-        uint64_t offset_c = i0 * expected.strides_out[0] + i1 * expected.strides_out[1];
-        test.naive_matmul_M_N_K_Batch(test.matrix_a.data() + offset_a, test.matrix_b.data() + offset_b,
-                                        test.matrix_c_verify.data() + offset_c, 32, 32, 32, 32 * 32, 32 * 32);
+            for (int64_t i1 = 0; i1 < expected.dim_sizes[1]; i1++)
+            {
+            uint64_t offset_a = i0 * expected.strides_in0[0] + i1 * expected.strides_in0[1];
+            uint64_t offset_b = i0 * expected.strides_in1[0] + i1 * expected.strides_in1[1];
+            uint64_t offset_c = i0 * expected.strides_out[0] + i1 * expected.strides_out[1];
+            test.naive_matmul_M_N_K_Batch(test.matrix_a.data() + offset_a, test.matrix_b.data() + offset_b,
+                                            test.matrix_c_verify.data() + offset_c, 32, 32, 32, 32 * 32, 32 * 32);
+            }
         }
-    }
 
-    test.verify_matmul(test.matrix_c_verify.data(), test.matrix_c.data(), test.matrix_c.size());
+        test.verify_matmul(test.matrix_c_verify.data(), test.matrix_c.data(), test.matrix_c.size());
     }
 
 Unary Operations
 ----------------
 
-The support for none transposed unary operations was already added in the chapter :ref:`unary_primitives`.
-Therefore, we only needed to include the transpose operation additionally.
+1. Extend Backend
+^^^^^^^^^^^^^^^^^
+
+**Task**: Extend the tensor operation backend to support unary tensor operations.
+
+The support for none transposed unary operations was already added in the section :ref:`tensor_op_setup`.
+Therefore, we will take a closer look at the tensor operation that support for transposed unary operations.
 
 We added transpose support to parse our ``TensorConfig`` in the ``TensorOperation.cpp``.
 And validated with some additional tests: File: ``TensorOperation.test.cpp``.
@@ -749,8 +989,101 @@ And validated with some additional tests: File: ``TensorOperation.test.cpp``.
     // ...
     }
 
+2. Unary Shared & Primitive Identification
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. attention::
-  DOCUMENTATION IS NOT COMPLETE YET.
+**Task**: Implement primitive identification and shared memory parallelization optimization passes for unary tensor operations.
 
-  https://github.com/scalable-analyses/pbtc/tree/main/lab/tensor_op#unary-operations
+To begin with, we can have the dimension of unary of all c-dimensions, since it is present in all tensors.
+
+For shared identification we do not need to make modification as the already implemented shared identification already respects the c-dimension.
+
+For the primitive identification we need one c-dimension with unit-stride and choose the second primitive dimension with the smallest stride
+of all dimension, excluding the unit-stride dimension.
+
+
+3. Verify
+^^^^^^^^^
+
+**Task**: Verify the correctness of your implementation against a reference implementation.
+
+We tested the unary based on the single optimization passes and verify the optimized tensor configuration:
+
+.. code-block:: cpp
+
+    TEST_CASE("Test tensor optimization primitive identification unary", "[tensor_optimization][unary][correctness]")
+    TEST_CASE("Test tensor optimization primitive identification unary all c dimensions", "[tensor_optimization][unary][correctness]")
+    TEST_CASE("Test tensor optimization primitive identification unary transpose all c dimensions",
+              "[tensor_optimization][unary][transpose][correctness]")
+    TEST_CASE("Test tensor optimization shared identification unary 4 Threads", "[tensor_optimization][unary][correctness]")
+    TEST_CASE("Test tensor optimization shared identification unary 3 Threads", "[tensor_optimization][unary][correctness]")
+
+Also including on a full optimization passes, verify the optimized tensor configuration and the output of the unary:
+
+.. code-block:: cpp
+
+    TEST_CASE("Test tensor operation with optimization with main kernel: unary (zero, relu, copy)", "[tensor_operation][unary][correctness]")
+    {
+        using namespace mini_jit;
+
+        auto type = GENERATE(TensorConfig::prim_t::zero, TensorConfig::prim_t::copy, TensorConfig::prim_t::relu);
+
+        CAPTURE(type);
+
+        std::vector<TensorConfig::dim_t> dim_types = {TensorConfig::dim_t::m, TensorConfig::dim_t::n};
+        std::vector<TensorConfig::exec_t> exec_types = {TensorConfig::exec_t::seq, TensorConfig::exec_t::seq};
+        std::vector<int64_t> dim_sizes = {64, 64};
+        std::vector<int64_t> strides_in0 = {1, 64};
+        std::vector<int64_t> strides_in1 = {0, 0};
+        std::vector<int64_t> strides_out = {1, 64};
+
+        GenerationTest test(64, 64, 64);
+        test.SetUp(TestInfill::Counting);
+
+        mini_jit::TensorConfig config{
+            TensorConfig::prim_t::none, type, TensorConfig::prim_t::none, dim_types, exec_types, dim_sizes, strides_in0, strides_in1, strides_out,
+            TensorConfig::dtype_t::fp32};
+
+        mini_jit::TensorConfig expected{
+            mini_jit::TensorConfig::prim_t::none,                                          // first_touch
+            type,                                                                          // main
+            mini_jit::TensorConfig::prim_t::none,                                          // last touch
+            dim_types,                                                                     // dim_types
+            {mini_jit::TensorConfig::exec_t::prim, mini_jit::TensorConfig::exec_t::prim},  // exec_types
+            dim_sizes,                                                                     // dim_sizes
+            strides_in0,                                                                   // strides_in0
+            strides_in1,                                                                   // strides_in1
+            strides_out,                                                                   // strides_out
+            mini_jit::TensorConfig::dtype_t::fp32,                                         // dtype_t
+        };
+
+        mini_jit::TensorOperation tensor_op;
+        TensorOperation::error_t err = tensor_op.setup(config);
+
+        REQUIRE(err == TensorOperation::error_t::success);
+        REQUIRE_FALSE(mini_jit::TensorConfig::equals(config, tensor_op.get_config()));
+        REQUIRE(mini_jit::TensorConfig::equals(expected, tensor_op.get_config()));
+
+        tensor_op.execute(test.matrix_a.data(), nullptr, test.matrix_c.data());
+
+        UnaryType test_type = UnaryType::None;
+        switch (type)
+        {
+        case TensorConfig::prim_t::zero:
+            test_type = UnaryType::Zero;
+            break;
+        case TensorConfig::prim_t::copy:
+            test_type = UnaryType::Identity;
+            break;
+        case TensorConfig::prim_t::relu:
+            test_type = UnaryType::ReLu;
+            break;
+        default:
+            FAIL("Could not parse the unary type!");
+            break;
+        }
+
+        test.naive_unary_M_N(test.matrix_a.data(), test.matrix_c_verify.data(), 64, 64, false, test_type);
+
+        test.verify_matmul(test.matrix_c_verify.data(), test.matrix_c.data(), test.matrix_c.size());
+    }

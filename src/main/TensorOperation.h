@@ -73,7 +73,7 @@ namespace mini_jit
 
     bool isTranspose = false;  // default is no transpose
 
-    bool hasSetupError = false;
+    bool hasSetupError = true;  // default is true to indicate no setup was executed
 
     /**
      * @brief Validates that exactly one m primitive dimension and one n primitive dimension exists.
@@ -249,6 +249,14 @@ namespace mini_jit
      * @param path The file to write the kernel to without extension.
      */
     void write_kernel_to_file(std::string path_no_extension) const;
+
+    /**
+     * @brief Indicates if the setup resulted in an error or was not initalized.
+     *
+     * @return true Setup has error.
+     * @return false The setup was successful.
+     */
+    bool getHasSetupError();
   };
 };  // namespace mini_jit
 

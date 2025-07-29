@@ -60,16 +60,34 @@ set(SRC_FILES
     neon_3_1.s
     neon_3_2.s
     neon_3_3.s
+
+    neon_4_1.s
+    neon_4_2.s
+    neon_5_1.s
+    neon_5_1-base-line.s
+
+    neon_6_1_no_batch.s
+    neon_6_1.s
+
+    neon_7_1.s
 )
 
 set(TEST_FILES
     neon_2.test.cpp
     neon_3.test.cpp
+    neon_4.test.cpp
+    neon_5.test.cpp
+    neon_6.test.cpp
+    neon_7.test.cpp
 )
 
 set(BENCH_FILES
     neon_2.bench.cpp
     neon_3.bench.cpp
+    neon_4.bench.cpp
+    neon_5.bench.cpp
+    neon_6.bench.cpp
+    neon_7.bench.cpp
 )
 
 add_executable(neon_1_1 "${SRC_FILES}"

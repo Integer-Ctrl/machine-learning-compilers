@@ -403,7 +403,7 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup_no_optimizat
   std::span<const int64_t> strides_in0, std::span<const int64_t> strides_in1, std::span<const int64_t> strides_out)
 {
   // Reset to defaults
-  hasSetupError = false;
+  hasSetupError = true;
   isParallel = false;
   isTranspose = false;
   indexPrimBatch = -1;
@@ -665,6 +665,7 @@ mini_jit::TensorOperation::error_t mini_jit::TensorOperation::setup_no_optimizat
   TensorOperation::strides_in1 = strides_in1;
   TensorOperation::strides_out = strides_out;
 
+  hasSetupError = false;
   return error_t::success;
 }
 
@@ -833,4 +834,9 @@ void mini_jit::TensorOperation::write_kernel_to_file(std::string path_no_extensi
   {
     std::get<Unary>(last_touch).write_kernel_to_file(std::format("{}_first_touch.bin", path_no_extension).c_str());
   }
+}
+
+bool mini_jit::TensorOperation::getHasSetupError()
+{
+  return hasSetupError;
 }

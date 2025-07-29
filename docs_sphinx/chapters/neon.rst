@@ -4,6 +4,8 @@ Neon
 This chapter focuses on implementing the first kernels using ARM64 `Neon <https://developer.arm.com/Architectures/Neon>`_ instructions.
 The goal is to develop highly optimized kernels for matrix-matrix multiplication and batch-reduced matrix multiplication.
 
+All files related to the tasks of this chapter can be found under ``submissions/neon/``.
+
 Execution Throughput and Latency
 --------------------------------
 
@@ -15,7 +17,7 @@ understanding of their performance characteristics and serve as a reference poin
 
 **Task**: Microbenchmark the execution throughput of the following instructions:
 
-Each subtask is sturctured into four parts: the file containing the implementation of the subtask, the driver file that runs the assembly code,
+Each subtask is structured into four parts: the file containing the implementation of the subtask, the driver file that runs the assembly code,
 a compilation command to create an executable, and a short description of the results. The results of the microbenchmarks are documented in the
 image below:
 
@@ -24,32 +26,32 @@ image below:
 
 **Subtask**: ``FMLA`` (vector) with arrangement specifier ``4S``.
 
-- File: ``submissions/submission_25_05_01/neon_1_1.s``
-- Driver: ``submissions/submission_25_05_01/neon_1_1_driver.cpp``
+- File: ``neon_1_1.s``
+- Driver: ``neon_1_1_driver.cpp``
 - Compilation: ``g++ -o neon_1_1.exe neon_1_1_driver.cpp neon_1_1.s``
 - We have :math:`13.2304 \cdot 10^{10}` instructions per second.
-  That are :math:`132.304` GFLOPs/sec in total.
+  That are :math:`132.304` GFLOPS in total.
 
 **Subtask**: ``FMLA`` (vector) with arrangement specifier ``2S``.
 
-- File: ``submissions/submission_25_05_01/neon_1_1.s``
-- Driver: ``submissions/submission_25_05_01/neon_1_1_driver.cpp``
+- File: ``neon_1_1.s``
+- Driver: ``neon_1_1_driver.cpp``
 - Compilation: ``g++ -o neon_1_1.exe neon_1_1_driver.cpp neon_1_1.s``
 - We have :math:`6.65221 \cdot 10^{10}` instructions per second.
-  That are :math:`66.5221` GFLOPs/sec in total.
+  That are :math:`66.5221` GFLOPS in total.
 
 **Subtask**: ``FMADD`` (scalar), single-precision variant.
 
-- File: ``submissions/submission_25_05_01/neon_1_1.s``
-- Driver: ``submissions/submission_25_05_01/neon_1_1_driver.cpp``
+- File: ``neon_1_1.s``
+- Driver: ``neon_1_1_driver.cpp``
 - Compilation: ``g++ -o neon_1_1.exe neon_1_1_driver.cpp neon_1_1.s``
 - We have :math:`1.12728 \cdot 10^{10}` instructions per second.
-  That are :math:`11.2728` GFLOPs/sec in total.
+  That are :math:`11.2728` GFLOPS in total.
 
 **Summary**
 
 It can be seen that the usage of SIMD lanes can increase the throughput significantly. From the scala ``FMADD`` instruction to the vector
-``FMLA``instruction with arrangement specifier ``2S`` the throughput increases by a factor of about 6. The throughput of the vector
+``FMLA`` instruction with arrangement specifier ``2S`` the throughput increases by a factor of about 6. The throughput of the vector
 ``FMLA`` instruction with arrangement specifier ``4S`` is about twice as high as the one with ``2S``, resulting in a factor of about 12 compared to
 the scalar ``FMADD`` instruction. This shows the power of SIMD instructions and how they can be used to increase the throughput.
 
@@ -67,16 +69,16 @@ in the image below:
 
 **Subtask**: Dependency on one of the source registers.
 
-- File: ``submissions/submission_25_05_01/neon_1_2.s``
-- Driver: ``submissions/submission_25_05_01/neon_1_2_driver.cpp``
+- File: ``neon_1_2.s``
+- Driver: ``neon_1_2_driver.cpp``
 - Compilation: ``g++ -o neon_1_2.exe neon_1_2_driver.cpp neon_1_2.s``
 - We have :math:`11.4961 \cdot 10^9` instruction per seconds in a single ALU.
   Resulting in a **latency of** :math:`\approx 1/3` **cycle** for the known clock speed of 4.4 GHz.
 
 **Subtask**: Dependency on the destination register only.
 
-- File: ``submissions/submission_25_05_01/neon_1_2.s``
-- Driver: ``submissions/submission_25_05_01/neon_1_2_driver.cpp``
+- File: ``neon_1_2.s``
+- Driver: ``neon_1_2_driver.cpp``
 - Compilation: ``g++ -o neon_1_2.exe neon_1_2_driver.cpp neon_1_2.s``
 - We have :math:`11.7019 \cdot 10^9` instruction per seconds in a single ALU.
   Resulting in a **latency of** :math:`\approx 1/3` **cycle** for the known clock speed of 4.4 GHz.
@@ -89,7 +91,7 @@ source registers or only on the destination register.
 Microkernel
 -----------
 
-Next, we implement the first microkernel for the matrix-matrix multiplication of :math:`16 \times 1`matrice with a :math:`1 \times 6` matrix
+Next, we implement the first microkernel for the matrix-matrix multiplication of :math:`16 \times 1` matrices with a :math:`1 \times 6` matrix
 which uses a :math:`16 \times 6` accumulator matrix C and computes C+=AB.
 
 1. matmul_16_6_1
@@ -97,8 +99,8 @@ which uses a :math:`16 \times 6` accumulator matrix C and computes C+=AB.
 
 **Task**: Implement a Neon microkernel that computes C+=AB for M=16, N=6, and K=1. Wrap your microkernel in the ``matmul_16_6_1`` function.
 
-- File: ``submissions/submission_25_05_01/neon_2_simple.s``
-- Driver: ``submissions/submission_25_05_01/neon_2_driver.cpp``
+- File: ``neon_2_simple.s``
+- Driver: ``neon_2_driver.cpp``
 
 Implementation of the microkernel looping over each of the six columns of the matrix C:
 
@@ -149,10 +151,10 @@ Implementation of the microkernel looping over each of the six columns of the ma
 **Task**: Test and optimize your microkernel. Report its performance in GFLOPS.
 
 - Files: 
-    - ``submissions/submission_25_05_01/neon_2.h`` using a loop over the columns
-    - ``submissions/submission_25_05_01/neon_2_unrolled.s`` using an unrolled version of the loop
-- Tests: ``submissions/submission_25_05_01/neon_2.test.cpp``
-- Benchmarks: ``submissions/submission_25_05_01/neon_2.bench.cpp``
+    - ``neon_2.h`` using a loop over the columns
+    - ``neon_2_unrolled.s`` using an unrolled version of the loop
+- Tests: ``neon_2.test.cpp``
+- Benchmarks: ``neon_2.bench.cpp``
 
 **Subtask**: Optimization
 
@@ -254,7 +256,7 @@ To scale the microkernel to larger matrices, we will introduce loops over the *K
 The first loop implemented is over the *K* dimension, which is the most inner loop in the matrix multiplication. The result is a microkernel
 that computes C+=AB for M=16, N=6 and K=64.
 
-- File ``submissions/submission_25_05_01/neon_3_1.s``
+- File ``neon_3_1.s``
 
 .. code-block:: asm
   :linenos:
@@ -386,9 +388,9 @@ that computes C+=AB for M=16, N=6 and K=64.
 
 **Task**: Loop over M: Implement a kernel that computes C+=AB for M=64, N=6 and K=64. Wrap your kernel in the ``matmul_64_6_64`` function.
 
-The next extension is to loop over the *M* dimension to allow computation of C+=AB for *M*=64, N=6 and K=64*.
+The next extension is to loop over the *M* dimension to allow computation of C+=AB for M=64, N=6 and K=64.
 
-- File ``submissions/submission_25_05_01/neon_3_2.s``
+- File ``neon_3_2.s``
 
 .. code-block:: asm
   :linenos:
@@ -434,9 +436,9 @@ The next extension is to loop over the *M* dimension to allow computation of C+=
 
 **Task**: Loop over N: Implement a kernel that computes C+=AB for M=64, N=48 and K=64. Wrap your kernel in the ``matmul_64_48_64`` function.
 
-The final extension is to loop over the *N* dimension to allow computation of C+=AB for *M*=64, *N*=48 and *K*=64*.
+The final extension is to loop over the *N* dimension to allow computation of C+=AB for M=64, N=48 and K=64.
 
-- File ``submissions/submission_25_05_01/neon_3_3.s``
+- File ``neon_3_3.s``
 
 .. code-block:: asm
   :linenos:
@@ -486,9 +488,9 @@ The final extension is to loop over the *N* dimension to allow computation of C+
 
 **Task**: Test and optimize the kernels. Report your performance in GFLOPS.
 
-- File ``submissions/submission_25_05_01/neon_3.h``
-- Tests ``submissions/submission_25_05_01/neon_3.test.cpp``
-- Benchmarks ``submissions/submission_25_05_01/neon_3.bench.cpp``
+- File ``neon_3.h``
+- Tests ``neon_3.test.cpp``
+- Benchmarks ``neon_3.bench.cpp``
 
 **Subtask**: Optimization
 
@@ -550,26 +552,33 @@ floats and one column of 2 floats.
 File: ``neon_4_1.s``
 
 For this kernel ``matmul_14_6_64`` we adapt the already implemented kernel ``matmul_16_6_64``. The only change is that we now use 3
-``fmla`` instructions that operate on 4 scalars, and one ``fmla`` instruction that only uses 2 scalars: :math:`4 \cdot 3 + 1 \cdot 2 = 14`.
+``ld1/st1`` instructions that loads/stores on 4 scalars, and one ``ldr/st1`` instruction that load/store the last 2 scalars: :math:`4 \cdot 3 + 1 \cdot 2 = 14`.
+The ``fmla`` remain unchanged as we "mask" the operation by the correct load and store operations.
 
-We load the full 16 floats and ignore the last 2:
+We load the first 14 floats and additional the last 2 floats:
 
 .. code-block:: asm
     :linenos:
 
     ...
-    // Load first column from the 14x6 matrix c - load full 16 entries - ignore last 2
-    ld1 {v25.4s, v26.4s, v27.4s, v28.4s}, [x2], x5
+    // Load first column from the 14x6 matrix c - load 12 + 2 entries
+    ldr d28, [x2, #12*4]
+    ld1 {v25.4s, v26.4s, v27.4s}, [x2], x5
     // Load second column from the 14x6 matrix c
-    ld1 {v17.4s, v18.4s, v19.4s, v20.4s}, [x2], x5
+    ldr d20, [x2, #12*4]
+    ld1 {v17.4s, v18.4s, v19.4s}, [x2], x5
     // Load third column from the 14x6 matrix c
-    ld1 {v21.4s, v22.4s, v23.4s, v24.4s}, [x2], x5
+    ldr d24, [x2, #12*4]
+    ld1 {v21.4s, v22.4s, v23.4s}, [x2], x5
     // Load fourth column from the 14x6 matrix c
-    ld1 {v5.4s, v6.4s, v7.4s, v8.4s}, [x2], x5
+    ldr d8, [x2, #12*4]
+    ld1 {v5.4s, v6.4s, v7.4s}, [x2], x5
     // Load fifth column from the 14x6 matrix c
-    ld1 {v9.4s, v10.4s, v11.4s, v12.4s}, [x2], x5
+    ldr d12, [x2, #12*4]
+    ld1 {v9.4s, v10.4s, v11.4s}, [x2], x5
     // Load sixth column from the 14x6 matrix c
-    ld1 {v13.4s, v14.4s, v15.4s, v16.4s}, [x2], x5
+    ldr d16, [x2, #12*4]
+    ld1 {v13.4s, v14.4s, v15.4s}, [x2], x5
     ...
 
 Next the loop over K:
@@ -582,8 +591,9 @@ Next the loop over K:
     matmul_loop_over_K:
         sub x9, x9, #1
 
-        // Load first column data from the 14x1 matrix a (again 16 but we'll only using two from v3)
-        ld1 {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], x3
+        // Load first column data from the 14x1 matrix a  (loading 2 + 12 entries)
+        ldr d3, [x0, #12*4]
+        ld1 {v0.4s, v1.4s, v2.4s}, [x0], x3
 
         // run the known matmul_16_6_1_unrolled kernel with modification to matmult_14_6_1
         // Load first element from the 1x6 matrix b
@@ -594,7 +604,7 @@ Next the loop over K:
         fmla v25.4s, v0.4s, v4.s[0] // 4 floats
         fmla v26.4s, v1.4s, v4.s[0] // 4 floats
         fmla v27.4s, v2.4s, v4.s[0] // 4 floats
-        fmla v28.2s, v3.2s, v4.s[0] // 2 floats
+        fmla v28.4s, v3.4s, v4.s[0] // 4 floats
 
         // Load second element from the 1x6 matrix b
         ldr s4, [x1]
@@ -604,30 +614,33 @@ Next the loop over K:
         fmla v17.4s, v0.4s, v4.s[0]
         fmla v18.4s, v1.4s, v4.s[0]
         fmla v19.4s, v2.4s, v4.s[0]
-        fmla v20.2s, v3.2s, v4.s[0]
+        fmla v20.4s, v3.4s, v4.s[0]
     ...
 
-We store the full 16 computed floats back to memory but only add an offset of 14 floats because the last two floats aren't used.
-The last 14 values we have to save back to memory are exactly stored (8+4+2) to not right into memory we maybe not own.
+To store the matrix c back to memory, we use the exact same code we used to load the matrix c, but replace the load with store instructions.
 
 .. code-block:: asm
     :linenos:
 
     ...
-    // Store first column back to memory
-    st1 {v25.4s, v26.4s, v27.4s, v28.4s}, [x2], x5 // offset of 14 floats
-    // Store second column back to memory
-    st1 {v17.4s, v18.4s, v19.4s, v20.4s}, [x2], x5 // offset of 14 floats
-    // Store third column back to memory
-    st1 {v21.4s, v22.4s, v23.4s, v24.4s}, [x2], x5 // offset of 14 floats
-    // Store fourth column back to memory
-    st1 {v5.4s, v6.4s, v7.4s, v8.4s}, [x2], x5 // offset of 14 floats
-    // Store fifth column back to memory
-    st1 {v9.4s, v10.4s, v11.4s, v12.4s}, [x2], x5 // offset of 14 floats
-    // Store sixth column back to memory (exactly last 14 elements)
-    stp q13, q14, [x2] // 8 floats
-    str q15, [x2, #32] // 4 floats
-    str d16, [x2, #48] // 2 floats
+    // Store first column from the 14x6 matrix c - store 12 + 2 entries
+    str d28, [x2, #12*4]
+    st1 {v25.4s, v26.4s, v27.4s}, [x2], x5
+    // Store second column from the 14x6 matrix c
+    str d20, [x2, #12*4]
+    st1 {v17.4s, v18.4s, v19.4s}, [x2], x5
+    // Store third column from the 14x6 matrix c
+    str d24, [x2, #12*4]
+    st1 {v21.4s, v22.4s, v23.4s}, [x2], x5
+    // Store fourth column from the 14x6 matrix c
+    str d8, [x2, #12*4]
+    st1 {v5.4s, v6.4s, v7.4s}, [x2], x5
+    // Store fifth column from the 14x6 matrix c
+    str d12, [x2, #12*4]
+    st1 {v9.4s, v10.4s, v11.4s}, [x2], x5
+    // Store sixth column from the 14x6 matrix c
+    str d16, [x2, #12*4]
+    st1 {v13.4s, v14.4s, v15.4s}, [x2], x5
     ...
 
 2. matmul_15_6_64
@@ -640,27 +653,52 @@ of 4 floats, one column of 2 floats, and one time 1 float.
 
 File: ``neon_4_2.s``
 
-For this kernel ``matmul_15_6_64`` we adapt the already implemented kernel ``matmul_16_6_64``. The only change is that we ignore the last
-computed float value from the four ``fmla`` instructions when saving back to memory.
+For this kernel ``matmul_15_6_64`` we adapt the already implemented kernel ``matmul_16_6_64``. Similar to ``matmul_14_6_64`` we load/store 
+the first 12 float and handel the last 3 elements separately. For the last 3 float we divide into a load/store of 2 elements + load/store of
+1 element. Again we "mask" the computation by the load and store operation. 
 
-We load the full 16 floats and ignore the last one:
+We load the loads 12 + 2 + 1 floats:
 
 .. code-block:: asm
     :linenos:
 
     ...
-    // Load first column from the 15x6 matrix c - load full 16 entries - ignore last
-    ld1 {v25.4s, v26.4s, v27.4s, v28.4s}, [x2], x5
-    // Load second column from the 15x6 matrix c
-    ld1 {v17.4s, v18.4s, v19.4s, v20.4s}, [x2], x5
-    // Load third column from the 15x6 matrix c
-    ld1 {v21.4s, v22.4s, v23.4s, v24.4s}, [x2], x5
-    // Load fourth column from the 15x6 matrix c
-    ld1 {v5.4s, v6.4s, v7.4s, v8.4s}, [x2], x5
-    // Load fifth column from the 15x6 matrix c
-    ld1 {v9.4s, v10.4s, v11.4s, v12.4s}, [x2], x5
-    // Load sixth column from the 15x6 matrix c
-    ld1 {v13.4s, v14.4s, v15.4s, v16.4s}, [x2], x5
+    // Load first column from the 15x6 matrix c - load 12 + 2 + 1 entries
+    ldr d28, [x2, #12*4]!
+    add x2, x2, #2*4 // offset 2 elements
+    ld1 {v28.s}[2],[x2]
+    sub x2, x2, #14*4 // revert offset 2+12 elements
+    ld1 {v25.4s, v26.4s, v27.4s}, [x2], x5
+    // Load second column from the 14x6 matrix c
+    ldr d20, [x2, #12*4]!
+    add x2, x2, #2*4 // offset 2 elements
+    ld1 {v20.s}[2],[x2]
+    sub x2, x2, #14*4 // revert offset 2+12 elements
+    ld1 {v17.4s, v18.4s, v19.4s}, [x2], x5
+    // Load third column from the 14x6 matrix c
+    ldr d24, [x2, #12*4]!
+    add x2, x2, #2*4 // offset 2 elements
+    ld1 {v24.s}[2],[x2]
+    sub x2, x2, #14*4 // revert offset 2+12 elements
+    ld1 {v21.4s, v22.4s, v23.4s}, [x2], x5
+    // Load fourth column from the 14x6 matrix c
+    ldr d8, [x2, #12*4]!
+    add x2, x2, #2*4 // offset 2 elements
+    ld1 {v8.s}[2],[x2]
+    sub x2, x2, #14*4 // revert offset 2+12 elements
+    ld1 {v5.4s, v6.4s, v7.4s}, [x2], x5
+    // Load fifth column from the 14x6 matrix c
+    ldr d12, [x2, #12*4]!
+    add x2, x2, #2*4 // offset 2 elements
+    ld1 {v12.s}[2],[x2]
+    sub x2, x2, #14*4 // revert offset 2+12 elements
+    ld1 {v9.4s, v10.4s, v11.4s}, [x2], x5
+    // Load sixth column from the 14x6 matrix c
+    ldr d16, [x2, #12*4]!
+    add x2, x2, #2*4 // offset 2 elements
+    ld1 {v16.s}[2],[x2]
+    sub x2, x2, #14*4 // revert offset 2+12 elements
+    ld1 {v13.4s, v14.4s, v15.4s}, [x2], x5
     ...
 
 Next the loop over K:
@@ -674,12 +712,13 @@ Next the loop over K:
         sub x9, x9, #1
 
         // Load first column data from the 15x1 matrix a
-        ld1 {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], x3
-        // ldp q0, q1, [x0] // 4 + 4 values
-        // ldr q2, [x0, #32] // 4 values
-        // ldr d3, [x0, #48] // 2 values
+        ldr d3, [x0, #12*4]!
+        add x0, x0, #2*4 // offset 2 elements
+        ld1 {v3.s}[2],[x0]
+        sub x0, x0, #14*4 // revert offset 2+12 elements
+        ld1 {v0.4s, v1.4s, v2.4s}, [x0], x3
 
-        // run the known matmul_16_6_1_unrolled kernel with modification to matmult_15_6_1
+        // run the known matmul_16_6_1_unrolled kernel with modification to matmul_15_6_1
         // Load first element from the 1x6 matrix b
         ldr s4, [x1]
         add x1, x1, x4
@@ -701,55 +740,76 @@ Next the loop over K:
         fmla v20.4s, v3.4s, v4.s[0]
     ...
 
-We store the full 16 computed floats back to memory but only add an offset of 15 floats because the last float isn't used. However, the last 15
-values are exactly stored (8+4+2+1) back to memory to not write into memory we maybe not own.
+To store the matrix c back to memory, we use the exact same code we used to load the matrix c, but replace the load with store instructions.
 
 .. code-block:: asm
     :linenos:
 
     ...
-    // Store first column back to memory
-    st1 {v25.4s, v26.4s, v27.4s, v28.4s}, [x2], x5 // offset of 15 floats
-    // Store second column back to memory
-    st1 {v17.4s, v18.4s, v19.4s, v20.4s}, [x2], x5 // offset of 15 floats
-    // Store third column back to memory
-    st1 {v21.4s, v22.4s, v23.4s, v24.4s}, [x2], x5 // offset of 15 floats
-    // Store fourth column back to memory
-    st1 {v5.4s, v6.4s, v7.4s, v8.4s}, [x2], x5 // offset of 15 floats
-    // Store fifth column back to memory
-    st1 {v9.4s, v10.4s, v11.4s, v12.4s}, [x2], x5 // offset of 15 floats
-    // Store sixth column back to memory (exactly last 15 elements)
-    stp q13, q14, [x2] // 8 floats
-    str q15, [x2, #32] // 4 floats
-    str d16, [x2, #48] // 2 floats
-    mov w9, v16.s[2]
-    str w9, [x2, #56] // 1 floats
+    // Load first column from the 15x6 matrix c - load 12 + 2 + 1 entries
+    str d28, [x2, #12*4]!
+    add x2, x2, #2*4 // offset 2 elements
+    st1 {v28.s}[2],[x2]
+    sub x2, x2, #14*4 // revert offset 2+12 elements
+    st1 {v25.4s, v26.4s, v27.4s}, [x2], x5
+    // Load second column from the 14x6 matrix c
+    str d20, [x2, #12*4]!
+    add x2, x2, #2*4 // offset 2 elements
+    st1 {v20.s}[2],[x2]
+    sub x2, x2, #14*4 // revert offset 2+12 elements
+    st1 {v17.4s, v18.4s, v19.4s}, [x2], x5
+    // Load third column from the 14x6 matrix c
+    str d24, [x2, #12*4]!
+    add x2, x2, #2*4 // offset 2 elements
+    st1 {v24.s}[2],[x2]
+    sub x2, x2, #14*4 // revert offset 2+12 elements
+    st1 {v21.4s, v22.4s, v23.4s}, [x2], x5
+    // Load fourth column from the 14x6 matrix c
+    str d8, [x2, #12*4]!
+    add x2, x2, #2*4 // offset 2 elements
+    st1 {v8.s}[2],[x2]
+    sub x2, x2, #14*4 // revert offset 2+12 elements
+    st1 {v5.4s, v6.4s, v7.4s}, [x2], x5
+    // Load fifth column from the 14x6 matrix c
+    str d12, [x2, #12*4]!
+    add x2, x2, #2*4 // offset 2 elements
+    st1 {v12.s}[2],[x2]
+    sub x2, x2, #14*4 // revert offset 2+12 elements
+    st1 {v9.4s, v10.4s, v11.4s}, [x2], x5
+    // Load sixth column from the 14x6 matrix c
+    str d16, [x2, #12*4]!
+    add x2, x2, #2*4 // offset 2 elements
+    st1 {v16.s}[2],[x2]
+    sub x2, x2, #14*4 // revert offset 2+12 elements
+    st1 {v13.4s, v14.4s, v15.4s}, [x2], x5
     ...
 
 3. Performance
 ^^^^^^^^^^^^^^
 
-**Task**: Test and optimize the kernels. Report your performance in GFLOP
+**Task**: Test and optimize the kernels. Report your performance in GFLOPS.
 
 Since we already optimized the base kernel ``matmul_16_6_1`` in task :ref:`neon_2_optimization`, we do not found any further
 optimizations for the kernels ``matmul_14_6_64`` and ``matmul_15_6_64``.
 
 Optimized benchmark results:
 
+#TODO rerun benchmark
+
 .. code-block:: 
     :emphasize-lines: 4, 8
 
-    --------------------------------------------------------------------------------------------------------------------------------------------
-    Benchmark                                                                                       Time             CPU   Iterations      FLOPS
-    --------------------------------------------------------------------------------------------------------------------------------------------
-    GemmMxNxKFixture<14, 6, 64>/BM_matmul_14_6_64/min_warmup_time:1.000_mean                     94.8 ns         94.5 ns           10 113.789G/s
-    GemmMxNxKFixture<14, 6, 64>/BM_matmul_14_6_64/min_warmup_time:1.000_median                   94.8 ns         94.5 ns           10 113.775G/s
-    GemmMxNxKFixture<14, 6, 64>/BM_matmul_14_6_64/min_warmup_time:1.000_stddev                  0.671 ns        0.659 ns           10 790.609M/s
-    GemmMxNxKFixture<14, 6, 64>/BM_matmul_14_6_64/min_warmup_time:1.000_cv                       0.71 %          0.70 %            10      0.69%
-    GemmMxNxKFixture<15, 6, 64>/BM_matmul_15_6_64/min_warmup_time:1.000_mean                     95.5 ns         95.1 ns           10 121.074G/s
-    GemmMxNxKFixture<15, 6, 64>/BM_matmul_15_6_64/min_warmup_time:1.000_median                   95.4 ns         95.1 ns           10  121.09G/s
-    GemmMxNxKFixture<15, 6, 64>/BM_matmul_15_6_64/min_warmup_time:1.000_stddev                  0.295 ns        0.293 ns           10 373.529M/s
-    GemmMxNxKFixture<15, 6, 64>/BM_matmul_15_6_64/min_warmup_time:1.000_cv                       0.31 %          0.31 %            10      0.31%
+    -----------------------------------------------------------------------------------------------------------------------------------------------
+    Benchmark                                                                                          Time             CPU   Iterations      FLOPS
+    -----------------------------------------------------------------------------------------------------------------------------------------------
+    GemmMxNxKFixture<14, 6, 64>/BM_matmul_14_6_64/min_warmup_time:1.000_mean                        98.0 ns         97.7 ns           10 110.099G/s
+    GemmMxNxKFixture<14, 6, 64>/BM_matmul_14_6_64/min_warmup_time:1.000_median                      98.0 ns         97.7 ns           10 110.107G/s
+    GemmMxNxKFixture<14, 6, 64>/BM_matmul_14_6_64/min_warmup_time:1.000_stddev                     0.119 ns        0.118 ns           10 132.517M/s
+    GemmMxNxKFixture<14, 6, 64>/BM_matmul_14_6_64/min_warmup_time:1.000_cv                          0.12 %          0.12 %            10      0.12%
+    GemmMxNxKFixture<15, 6, 64>/BM_matmul_15_6_64/min_warmup_time:1.000_mean                         104 ns          104 ns           10 110.801G/s
+    GemmMxNxKFixture<15, 6, 64>/BM_matmul_15_6_64/min_warmup_time:1.000_median                       104 ns          104 ns           10 110.857G/s
+    GemmMxNxKFixture<15, 6, 64>/BM_matmul_15_6_64/min_warmup_time:1.000_stddev                     0.267 ns        0.266 ns           10 283.469M/s
+    GemmMxNxKFixture<15, 6, 64>/BM_matmul_15_6_64/min_warmup_time:1.000_cv                          0.26 %          0.26 %            10      0.26%
 
 
 - **matmul_14_6_64** kernel: :math:`113.8` GFLOPS
@@ -768,7 +828,7 @@ This section considers a matrix-matrix multiplication where a high-performance i
 File: ``neon_5_1.s``
 
 For this kernel ``matmul_64_64_64`` we adapt the already implemented kernel ``matmul_64_48_64``. The only changes is that we removed
-two ``fmla`` blocks from the inner loop:
+two ``fmla`` blocks from the inner loop i.e. our microkernel becomes a ``matmul_16_4_1`` matrix multiplication.
 
 .. code-block:: asm
     :linenos:
@@ -846,13 +906,13 @@ Then changed the number of loops over M to four to achieve :math:`4 \cdot 16 = 6
     matmul_loop_over_M:
         sub x16, x16, #1
 
-        // Load first column from the 16x6 matrix c
+        // Load first column from the 16x4 matrix c
         ld1 {v25.4s, v26.4s, v27.4s, v28.4s}, [x2], x5
-        // Load second column from the 16x6 matrix c
+        // Load second column from the 16x4 matrix c
         ld1 {v17.4s, v18.4s, v19.4s, v20.4s}, [x2], x5
-        // Load third column from the 16x6 matrix c
+        // Load third column from the 16x4 matrix c
         ld1 {v21.4s, v22.4s, v23.4s, v24.4s}, [x2], x5
-        // Load fourth column from the 16x6 matrix c
+        // Load fourth column from the 16x4 matrix c
         ld1 {v5.4s, v6.4s, v7.4s, v8.4s}, [x2], x5
 
         mov x15, #64 // x15 iterator for K loop
@@ -860,7 +920,7 @@ Then changed the number of loops over M to four to achieve :math:`4 \cdot 16 = 6
         sub x15, x15, #1
     ...
 
-And finaly changed the number of loops over N to 16 :math:`16 \cdot 4 = 64`:
+And finally changed the number of loops over N to 16 :math:`16 \cdot 4 = 64`:
 
 .. code-block:: asm
     :linenos:
@@ -898,7 +958,7 @@ After experimenting with different loop orders, we stay with the current order o
 Batch-Reduce GEMM
 -----------------
 
-This section examines a batch-reduced matrix-matrix multiplication that introduces a fourth dimension *C* alongside the knwon
+This section examines a batch-reduced matrix-matrix multiplication that introduces a fourth dimension *C* alongside the known
 *M*, *N*, and *K* dimensions. A batch-reduced matrix-matrix multiplication (BRGEMM or BRMM) is an operation where multiple pairs
 of matrices are multiplied, and their results are accumulated into a single output matrix. This operation is commonly used in
 machine learning to efficiently perform repeated matrix multiplications with summation across a batch dimension.
@@ -911,7 +971,8 @@ in the ``matmul_64_48_64_16`` function.
 
 - File: ``neon_6_1.s``
 
-We started by using our ``matmul_64_48_64`` from :ref:`neon_3_loop_over_N` kernel with a batch dimension of one which is in the file ``neon_6_1_batch1.s``.
+We started by using our ``matmul_64_48_64`` from :ref:`neon_3_loop_over_N` kernel and replaced the microkernel with the ``matmul_16_4_1`` as
+it achieves higher performance, resulting in the file ``neon_6_1_no_batch.s``.
 
 .. code-block:: asm
     :linenos:
@@ -1035,6 +1096,8 @@ Transposition
 The final topic of this chapter covers matrix transposition. Transposing a matrix means swapping its rows and columns which is a common
 operation in many matrix computations. We developed a kernel that performs the identity operation on the elements of an :math:`8 \times 8`
 matrix stored in column-major format matrix A and writes the result in row-major format to matrix B.
+
+.. _neon_transpose:
 
 1. Transpose
 ^^^^^^^^^^^^
@@ -1165,4 +1228,4 @@ We benchmarked the performance of our transpose kernel and achieved the followin
     Trans8x8Fixture/BT_tran_8_8/min_warmup_time:1.000_cv           0.59 %          0.59 %            10      0.58%
 
 
-- **tran_8_8** kernel: :math:`101.2` GiB/s
+- **trans_8_8** kernel: :math:`101.2` GiB/s

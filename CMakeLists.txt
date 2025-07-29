@@ -27,7 +27,7 @@ message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
 # =============================================================
 # Extra build options
 # =============================================================
-option(SAVE_JITS_TO_FILE "Saves the jitted kernels into a file if activated." OFF)
+option(SAVE_JITS_TO_FILE "Saves the JITed kernels into a file if activated." OFF)
 
 
 if(SAVE_JITS_TO_FILE)

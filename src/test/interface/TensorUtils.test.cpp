@@ -37,7 +37,9 @@ TEST_CASE("Test interface tensor utils get_sorted_dimensions_sizes", "[tensor][c
   mlc::Tensor tensor3(data2, shape3);
 
   mini_jit::EinsumTree tree("[0,1],[1,2]->[0,2]");
-  tree.parse_tree();
+  mini_jit::EinsumTree::ErrorParse error = tree.parse_tree(false);
+
+  REQUIRE(error == mini_jit::EinsumTree::ErrorParse::None);
 
   std::vector<int64_t> sorted_dimensions_sizes;
   mlc::internal::get_sorted_dimensions_sizes(tree.get_root(), {tensor1, tensor2}, sorted_dimensions_sizes);
@@ -50,4 +52,8 @@ TEST_CASE("Test interface tensor utils get_sorted_dimensions_sizes", "[tensor][c
     CAPTURE(i);
     REQUIRE(expected[i] == sorted_dimensions_sizes[i]);
   }
+
+  delete[] data1;
+  delete[] data2;
+  delete[] data3;
 }

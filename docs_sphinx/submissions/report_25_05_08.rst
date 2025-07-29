@@ -693,7 +693,7 @@ We need to manually calculate the offset. Which in our case, we jump 40 instruct
 3. Test the kernel generation. Report performance in GFLOPS
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Testing our jitted kernel, we get the same performance as out previous implementation.
+Testing our JITed kernel, we get the same performance as out previous implementation.
 
 .. note:: 
 

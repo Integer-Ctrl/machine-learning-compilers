@@ -24,7 +24,7 @@ TEST_CASE("Test einsum tree parser simple example", "[einsumtree][parse][correct
 
   EinsumTree tree(tree_str, sorted_dim_sizes);
 
-  mini_jit::EinsumTree::ErrorParse err = tree.parse_tree_no_optimization();
+  mini_jit::EinsumTree::ErrorParse err = tree.parse_tree_no_optimization(false);
   REQUIRE(err == mini_jit::EinsumTree::ErrorParse::None);
   REQUIRE(tree.get_root() != nullptr);
   INFO(tree.get_root()->to_string());
@@ -47,7 +47,7 @@ TEST_CASE("Test einsum tree parser first example", "[einsumtree][parse][correctn
 
   EinsumTree tree(tree_str, sorted_dim_sizes);
 
-  mini_jit::EinsumTree::ErrorParse err = tree.parse_tree_no_optimization();
+  mini_jit::EinsumTree::ErrorParse err = tree.parse_tree_no_optimization(false);
   REQUIRE(err == mini_jit::EinsumTree::ErrorParse::None);
   REQUIRE(tree.get_root() != nullptr);
   INFO(tree.get_root()->to_string());
@@ -70,7 +70,7 @@ TEST_CASE("Test einsum tree parser second example", "[einsumtree][parse][correct
 
   EinsumTree tree(tree_str, sorted_dim_sizes);
 
-  mini_jit::EinsumTree::ErrorParse err_parse = tree.parse_tree_no_optimization();
+  mini_jit::EinsumTree::ErrorParse err_parse = tree.parse_tree_no_optimization(false);
   REQUIRE(err_parse == mini_jit::EinsumTree::ErrorParse::None);
   REQUIRE(tree.get_root() != nullptr);
   INFO(tree.get_root()->to_string());
@@ -236,7 +236,7 @@ TEST_CASE("Test einsum tree optimize swap", "[einsumtree][optimize][correctness]
 
   EinsumTree tree(tree_str, sorted_dim_sizes);
 
-  mini_jit::EinsumTree::ErrorParse err = tree.parse_tree_no_optimization();
+  mini_jit::EinsumTree::ErrorParse err = tree.parse_tree_no_optimization(false);
   REQUIRE(err == mini_jit::EinsumTree::ErrorParse::None);
   REQUIRE(tree.get_root() != nullptr);
   INFO(tree.get_root()->to_string());
@@ -264,7 +264,7 @@ TEST_CASE("Test einsum tree optimize reorder left", "[einsumtree][optimize][corr
 
   EinsumTree tree(tree_str, sorted_dim_sizes);
 
-  mini_jit::EinsumTree::ErrorParse err = tree.parse_tree_no_optimization();
+  mini_jit::EinsumTree::ErrorParse err = tree.parse_tree_no_optimization(false);
   REQUIRE(err == mini_jit::EinsumTree::ErrorParse::None);
   REQUIRE(tree.get_root() != nullptr);
   INFO(tree.get_root()->to_string());
@@ -300,7 +300,7 @@ TEST_CASE("Test einsum tree optimize reorder right", "[einsumtree][optimize][cor
 
   EinsumTree tree(tree_str, sorted_dim_sizes);
 
-  mini_jit::EinsumTree::ErrorParse err = tree.parse_tree_no_optimization();
+  mini_jit::EinsumTree::ErrorParse err = tree.parse_tree_no_optimization(false);
   REQUIRE(err == mini_jit::EinsumTree::ErrorParse::None);
   REQUIRE(tree.get_root() != nullptr);
   INFO(tree.get_root()->to_string());
@@ -338,7 +338,7 @@ TEST_CASE("Test einsum tree optimize", "[einsumtree][optimize][correctness]")
 
   EinsumTree tree(tree_str, sorted_dim_sizes);
 
-  mini_jit::EinsumTree::ErrorParse err = tree.parse_tree_no_optimization();
+  mini_jit::EinsumTree::ErrorParse err = tree.parse_tree_no_optimization(false);
   REQUIRE(err == mini_jit::EinsumTree::ErrorParse::None);
   REQUIRE(tree.get_root() != nullptr);
   INFO(tree.get_root()->to_string());
@@ -420,7 +420,7 @@ TEST_CASE("Test einsum tree optimize and execute first example", "[einsumtree][e
                                       "   └─ 0,5\n";
   REQUIRE_THAT(expected_optimization, Catch::Matchers::Equals(tree.get_root()->to_string(), Catch::CaseSensitive::Yes));
 
-  tree_no_optimization.parse_tree_no_optimization();
+  tree_no_optimization.parse_tree_no_optimization(false);
   INFO("No Optimization");
   INFO(tree_no_optimization.get_root()->to_string());
 
@@ -483,7 +483,7 @@ TEST_CASE("Test einsum tree optimize and execute second example", "[einsumtree][
                                       "   └─ 1,4,7,8\n";
   REQUIRE_THAT(expected_optimization, Catch::Matchers::Equals(tree.get_root()->to_string(), Catch::CaseSensitive::Yes));
 
-  tree_no_optimization.parse_tree_no_optimization();
+  tree_no_optimization.parse_tree_no_optimization(false);
   INFO("No Optimization");
   INFO(tree_no_optimization.get_root()->to_string());
 
@@ -550,7 +550,7 @@ TEST_CASE("Test einsum tree optimize and execute third example", "[einsumtree][e
 
   REQUIRE_THAT(expected_optimization, Catch::Matchers::Equals(tree.get_root()->to_string(), Catch::CaseSensitive::Yes));
 
-  tree_no_optimization.parse_tree_no_optimization();
+  tree_no_optimization.parse_tree_no_optimization(false);
   INFO("No Optimization");
   INFO(tree_no_optimization.get_root()->to_string());
 

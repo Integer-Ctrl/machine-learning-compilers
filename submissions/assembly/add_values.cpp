@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <iostream>
 
 extern "C"
@@ -16,6 +17,8 @@ int main()
   int32_t *c_ptr = &c;
 
   add_values(a_ptr, b_ptr, c_ptr);
+
+  std::cout << "a / b / return value c: " << a << "/" << b << "/" << c << std::endl;
 
   return 0;
 }

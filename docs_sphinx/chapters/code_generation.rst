@@ -1,22 +1,61 @@
 Code Generation
 ===============
 
+This chapter introduces the code generation of the kernels developed in :doc:`neon` chapter supporting Aarch64 instructions.
+We will take a look at a wrapper of the Aarch64 instructions to generate 32 bit instructions during the runtime that will than be used to
+compose the kernels.
+
+The general workflow of generating JITed code is:
+1. Generate the kernel.
+2. Write the kernel to a new memory page.
+3. Make the memory page executable & flush the instruction cache to load the page.
+4. Use the pointer to the memory page as a function pointer to execute the JITed kernel.
+
+| The files to the Aarch64 wrappers are located in the ``src/main/arm_instructions/`` directory.
+| The files to the composed kernels are located in the ``src/main/kernels/`` directory.
+| All files related to the tasks of this chapter can be found under ``src/main/``.
+
+.. note::
+
+    All files a equivalent tests located in the ``src/test/`` directory with the same name extended by ``.test.``
+
+
 BRGEMM Primitive
 ----------------
+
+First, we will develop software that generates batch-reduce matrix-matrix multiplications (BRGEMMs) i.e. :math:`C\ \)\(+\)\(=\)\(\ \sum_i A_i \cdot B_i`.
+
+- Files:
+    - ``Brgemm.cpp``
+    - ``Kernel.cpp``
 
 Microkernel
 ^^^^^^^^^^^
 
-1. generate
+In this section we take first steps of code generation by wrapping the Aarch64 instructions and writing the first ``matmul_16_6_1`` kernel
+with variable k loop size.
+
+1. Generate
 """""""""""
 
-**Task**: Start implementing the ``generate`` function. Support only the single setting of an FP32 Neon microkernel that computes C+=AB for column-major matrices and M=16, N=6, and K=1. Return an appropriate error code if the parameters of the function differ from this setting.
+**Task**: Start implementing the ``generate`` function. Support only the single setting of an FP32 Neon microkernel that computes C+=AB for
+column-major matrices and M=16, N=6, and K=1. Return an appropriate error code if the parameters of the function differ from this setting.
 
-Each instruction we generate gets a wrapper which is based on the following structure:
+The ``generate`` function will be used to compose the correct matrix multiplication kernel to a given set of parameters: Dimension size of 
+*M*, *N*, *K*, *Batch*, column- or row-major format of matrices *A*, *B*, *C*, and *data type*.
 
-1. First asserts are placed to check if the instruction is used correctly to evade most errors from usage.
+At runtime we can then call the generated kernel and propagate the pointer to the *A*, *B*, *C* matrices along with their respective leading dimension
+and the batch stride of the *A* and *B* matrices.
+
+To compose our kernel we need to write the correct Aarch64 instructions as 32 bit representation i.e. ``uin32_t`` to a consecutive memory space.
+To write the instructions in a more assembly like manner we wrapped each required instruction into a function.
+Thus, each instruction we generate has a wrapper which is based on the following structure:
+
+1. First asserts are placed to check if the instruction is used correctly to evade most errors from misusage.
 
 2. The instruction is build using masking operation and shifts to the starting bit of the opcode "block". 
+
+For example the post variant of the load instructions with an immediate (`LDR (immediate) <https://developer.arm.com/documentation/ddi0602/2025-03/Base-Instructions/LDR--immediate---Load-register--immediate--?lang=en>`_):
 
 .. code-block:: cpp
     :linenos:
@@ -76,10 +115,10 @@ This function then gets wrapped to match the definition of our enum class for ea
             movk w1, #63557, lsl #16
             bfxil x1, x8, #0, #5
     
-    Thus we do speedup the creation of the code generation, as most commands are known at compile time.
+    Thus we do speedup the creation of the code generation, as most inputs are known at compile time.
 
 After writing a lot wrappers around the arm instructions.
-We can translate our previous assembly written kernel using ``c++`` function and generate the matmul_16_6_1 at runtime.
+We can translate our previous assembly kernel using ``c++`` function and generate the ``matmul_16_6_1`` at runtime.
 
 .. code-block:: cpp
     :linenos:
@@ -168,7 +207,7 @@ We can replicate that using a simple ``for loop``.
 **Task**: Add support for the ``k`` parameter by generating a K loop around the microkernel.
 
 Adding support for the k parameter does require adding more wrapped instructions.
-But then we can port our written assembly kernel to ``c++`` and jit the k loop parameter.
+But then we can port our assembly kernel to ``c++`` and jit the k loop parameter.
 
 .. code-block:: cpp
     :emphasize-lines: 46, 130
@@ -364,7 +403,7 @@ We need to manually calculate the offset. Which in our case, we jump 40 instruct
 
 **Task**: Test the kernel generation. Report performance in GFLOPS.
 
-Testing our jitted kernel, we get the same performance as out previous implementation.
+Testing our JITed kernel, we get the same performance as out previous implementation.
 
 .. note:: 
 
@@ -392,16 +431,17 @@ Testing our jitted kernel, we get the same performance as out previous implement
 GEMM
 ^^^^
 
-1. generate
+We will now take a look at the basic GEMM implementation i.e. C+=AB.
+
+1. Generate
 """""""""""
 
 **Task**: Extend the implementation of the ``generate`` function to support all M-N-K combinations for C+=AB as specified above. Assume that all matrices are in column-major format.
 
-To support all combinations of M, N and K, we use one kernel as a base and dynamically generate the rest of the handling for numbers that are not multiples of M, N or K.
-As a base we took the ``matmul_16m_4n_k`` kernel, which reached around ``130 GFLOPS`` as 64_48_64 kernel (i.e. the same as the kernel from the
-previous section, with a batch dimension of one.). 
-The k dimension is always a multiple of 1 therefore we don't need a special case for this dimension. 
-To get full coverage on the remaining dimension, we implemented the following variations:
+To support all combinations of M, N and K, we use one kernel as a base and dynamically generate the rest of the numbers that are not multiples of M, N or K.
+As a base we took the ``matmul_16m_4n_k`` kernel, which reached around ``130 GFLOPS`` as 64_48_64 kernel.
+The k dimension is always a multiple of 1, thus we don't need a special case for this dimension. 
+To get full coverage on the remaining dimension, we iteratively implemented the following variations:
 
 - `matmul_16m_lt4nRest_k`: 
     - M dimension must be multiple of 16 
@@ -438,26 +478,55 @@ Together with the `matmul_16m_4n_k`, we have 6 kernels to cover the complete dim
 
 **Task**: Verify your kernel generation by comparing to a reference implementation for 1≤M≤64, 1≤N≤64 and K∈[1,16,32,64,128], and by setting lda=M, ldb=K, ldc=M.
 
-All GEMM generation and execution using this configuration works with counting upwards and random data.
+We tests all these configurations with counting upwards and random data. The tests can be found in ``Brgemm.test.cpp``. 
+All test configuration habe passed.
 
 3. Verfiy edge cases
 """"""""""""""""""""
 
 **Task**: Verify the kernel generation in cases where lda>M, ldb>K or ldc>M.
 
-All GEMM generation and execution using this configuration works with counting upwards and random data.
+Also for higher leading dimension we tests all these configurations with counting upwards and random data. The tests can also be found in 
+``Brgemm.test.cpp``.  All test configuration habe passed.
 
 4. Performance
 """"""""""""""
 
 **Task**: Benchmark the performance of your generated kernels and report the measured performance for 1≤M≤64, 1≤N≤64, K∈[1,16,32,64,128],
-lda=M, ldb=K and ldc=M. Use a CSV format for output. Follow the structure of the example file `data/perf.csv <"https://github.com/scalable-analyses/pbtc/blob/main/lab/code_gen/data/perf.csv">`.
+lda=M, ldb=K and ldc=M. Use a CSV format for output. Follow the structure of the example file `data/perf.csv <https://github.com/scalable-analyses/pbtc/blob/main/lab/code_gen/data/perf.csv>`_.
 Report the arithmetic mean performance of all settings in GFLOPS.
 
 The benchmark took approximately eight hours in total to run. The following results were produced: :download:`GEMM_benchmarks.csv <../_static/resources/report_25_05_15/GEMM_benchmarks.csv>`
 
+We can visualize the dataset across the three dimension m, n, k:
+
+.. image:: ../_static/images/report_25_05_15/GEMM_plot_m_color_n.png
+    :align: center
+
+.. image:: ../_static/images/report_25_05_15/GEMM_plot_m_color_k.png
+    :align: center
+
+.. image:: ../_static/images/report_25_05_15/GEMM_plot_n_color_m.png
+    :align: center
+
+.. image:: ../_static/images/report_25_05_15/GEMM_plot_n_color_k.png
+    :align: center
+
+.. image:: ../_static/images/report_25_05_15/GEMM_plot_k_color_m.png
+    :align: center
+
+.. image:: ../_static/images/report_25_05_15/GEMM_plot_k_color_n.png
+    :align: center
+
+We see for the m-dimension that multiple of 16 are the best performing matrices sizes.
+We also see that we get usually higher performance with increasing k-dimension and also a higher n-dimension, but a higher k-dimension is more important.
+
+The arithmetic mean of all benchmarks is: **80.1 GFLOPS**
+
 Batch-Reduce GEMM
 ^^^^^^^^^^^^^^^^^
+
+Now we can extend the GEMM implementation by an additional batch-dimension i.e. C+=∑AᵢBᵢ.
 
 1. generate
 """""""""""
@@ -517,7 +586,8 @@ This ``else if`` branch distributes to our extended ``br_matmul_*`` kernels with
 
 All kernels were tested. The tests are located in the file ``src/test/kernels/br_matmul_*.test.cpp``.
 
-The batched MatMul generation was tested for 1≤M≤64, 1≤N≤64, K∈[1,16,32,64,128], 1≤BatchSize≤16, lda=M, ldb=K, and ldc=M. The test is located in the file ``src/test/Brgemm.test.cpp``.
+The batched MatMul generation was tested for 1≤M≤64, 1≤N≤64, K∈[1,16,32,64,128], 1≤BatchSize≤16, lda=M, ldb=K, and ldc=M. 
+The test is located in the file ``src/test/Brgemm.test.cpp``.
 
 3. Performance
 """"""""""""""
@@ -527,13 +597,46 @@ br_size=16, br_stride_a=M*K, br_stride_b=K*N, lda=M, ldb=K, and ldc=M. Report th
 
 The benchmark took approximately eight hours in total to run. The following results were produced: :download:`GEMM_benchmarks.csv <../_static/resources/report_25_05_15/BR_GEMM_benchmarks.csv>`
 
+We can visualize the dataset across the three dimension m, n, k:
+
+.. image:: ../_static/images/report_25_05_15/BR_GEMM_plot_m_color_n.png
+    :align: center
+
+.. image:: ../_static/images/report_25_05_15/BR_GEMM_plot_m_color_k.png
+    :align: center
+
+.. image:: ../_static/images/report_25_05_15/BR_GEMM_plot_n_color_m.png
+    :align: center
+
+.. image:: ../_static/images/report_25_05_15/BR_GEMM_plot_n_color_k.png
+    :align: center
+
+.. image:: ../_static/images/report_25_05_15/BR_GEMM_plot_k_color_m.png
+    :align: center
+
+.. image:: ../_static/images/report_25_05_15/BR_GEMM_plot_k_color_n.png
+    :align: center
+
+Again we see for the m-dimension that multiple of 16 are the best performing matrices sizes.
+We also see that we get usually higher performance with increasing k-dimension and also a higher n-dimension, but a higher k-dimension is more important.
+The batch-dimension does not have a noticeable impact on the performance compared to the benchmarks in the GEMM kernels.
+
+| The arithmetic mean of all benchmarks is: **78.7 GFLOPS**
+| Which indicates a small impact on performance compared to the GEMM kernels.
+
 .. _unary_primitives:
 
 Unary Primitives
 ----------------
 
+Now we further extend our kernel with primitives.
+Primitives are operation which only operate one one input i.e. B:=op(A).
+We will take a look at the Zero, Identity and ReLU primitives and their transpose variants.
+
 Zero Primitive
 ^^^^^^^^^^^^^^
+
+This primitives ignores the input and filles all element of the output with zeros.
 
 1. generate
 """""""""""
@@ -541,6 +644,41 @@ Zero Primitive
 **Task**: Begin implementing the ``mini_jit::Unary::generate`` function by adding support for the zero primitive.
 
 File: ``unary_zero.cpp``
+
+Again we implement a ``generate`` function
+which is used to compose the correct primitive kernel to a given set of parameters: Dimension size of 
+*M*, *N*, column- or row-major format of matrices *B*, *data type*, and *Primitive type*.
+
+At runtime we can then call the generated kernel and propagate the pointer to the *A*, *B* matrices along with their respective leading dimension.
+
+For the zero primitive we zero four register which are then stored to the correct memory space.
+
+.. note::
+
+    This kernel is again used as a base and the we generate the rest of the number not multiple of M and dynamically.
+
+.. code-block:: cpp
+
+    ...
+    // Zero four register so we can fill the matrix with zeros
+    eor(v0, t16b, v0, t16b, v0, t16b),  // Zero the v0 register
+    eor(v1, t16b, v1, t16b, v1, t16b),  // Zero the v1 register
+    eor(v2, t16b, v2, t16b, v2, t16b),  // Zero the v2 register
+    eor(v3, t16b, v3, t16b, v3, t16b),  // Zero the v3 register
+    ...
+
+    ...
+    // x17 iterator for the m_loop
+    mov(x17, m_loop_16),
+    // loop over m
+    sub(x17, x17, 1),
+
+    st1Post(v0, t4s, v1, t4s, v2, t4s, v3, t4s, x1, x9),  // increase x1 after store with value of x2 i.e. x1 += 4 * 16 Byte
+
+    // loop back to m
+    cbnz(x17, -2 * 4),
+    ...
+  
 
 2. Performance
 """"""""""""""
@@ -552,9 +690,9 @@ File: ``unary_zero.cpp``
 .. code-block::
     :emphasize-lines: 4, 8, 12, 16
 
-    ---------------------------------------------------------------------------------------------------------------------------
-    Benchmark                                                                      Time             CPU   Iterations      Bytes
-    ---------------------------------------------------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------------------------------------------------------
+    Benchmark                                                                          Time             CPU   Iterations      Bytes
+    -------------------------------------------------------------------------------------------------------------------------------
     UnaryFixture/BM_unary_zero/M:50/N:50/min_warmup_time:1.000_mean                 97.5 ns         97.2 ns           10 205.828G/s
     UnaryFixture/BM_unary_zero/M:50/N:50/min_warmup_time:1.000_median               97.3 ns         97.0 ns           10 206.267G/s
     UnaryFixture/BM_unary_zero/M:50/N:50/min_warmup_time:1.000_stddev              0.983 ns        0.980 ns           10 2.05822G/s
@@ -579,7 +717,7 @@ File: ``unary_zero.cpp``
 
 **With Transposition**
 
-Transposition is the equivalent operation with swapped M und N dimension.
+Transposition is the equivalent operation with swapped M und N dimension. Thus we get the same performance.
 
 Identity Primitive
 ^^^^^^^^^^^^^^^^^^
@@ -591,6 +729,70 @@ Identity Primitive
 
 Files: ``unary_identity.cpp`` & ``unary_identity_transpose.cpp``
 
+Similar to the zero kernel but now we read the kernel from the *A* matrix and store the loaded values back the the *B* matrix.
+
+.. code-block:: cpp
+
+    ...
+    // x17 iterator for the m_loop
+    mov(x17, m_loop / 16),
+    // loop over m
+    sub(x17, x17, 1),
+
+    ld1Post(v0, t4s, v1, t4s, v2, t4s, v3, t4s, x0, x9),  // increase x0 after load with value of x9 i.e. x0 += 4 * 4 * sizeof(float)
+    st1Post(v0, t4s, v1, t4s, v2, t4s, v3, t4s, x1, x9),  // increase x1 after store with value of x9 i.e. x1 += 4 * 4 * sizeof(float)
+
+    // loop back to m
+    cbnz(x17, -3 * 4),
+    ...
+
+For the transpose kernel we implement a transposition on a generic matrix by transposing 4x4 blocks a storing them back to the correct positions.
+Similar to the idea discussed in :ref:`Neon - Transpose <neon_transpose>`.
+
+For example the transpose of the 4x4 block, where we again implemented transpose for all 16 combinations of :math:`(\le 4) \times (\le 4)`.
+The function call to ``ops`` generates the correct operations on the loaded registers i.e. for the identity operation these does not append any instructions,
+because we already load and store the transposed matrix.
+
+.. code-block:: cpp
+
+    ... 
+    kernel.add({
+        //    // Load
+        ldr(q0, x4),      //    ldr q0, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(q1, x4),      //    ldr q1, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(q2, x4),      //    ldr q2, [x4]
+        add(x4, x4, x2),  //    add x4, x4, x2
+        ldr(q3, x4),      //    ldr q3, [x4]
+    });
+    ops(kernel, v0);
+    ops(kernel, v1);
+    ops(kernel, v2);
+    ops(kernel, v3);
+    kernel.add({
+        //    // Transpose
+        trn1(v4, t4s, v0, t4s, v1, t4s),   //    trn1 v4.4s, v0.4s, v1.4s
+        trn2(v5, t4s, v0, t4s, v1, t4s),   //    trn2 v5.4s, v0.4s, v1.4s
+        trn1(v6, t4s, v2, t4s, v3, t4s),   //    trn1 v6.4s, v2.4s, v3.4s
+        trn2(v7, t4s, v2, t4s, v3, t4s),   //    trn2 v7.4s, v2.4s, v3.4s
+                                           //
+        zip1(v8, t2d, v4, t2d, v6, t2d),   //    zip1  v8.2d, v4.2d, v6.2d
+        zip1(v9, t2d, v5, t2d, v7, t2d),   //    zip1  v9.2d, v5.2d, v7.2d
+        zip2(v10, t2d, v4, t2d, v6, t2d),  //    zip2 v10.2d, v4.2d, v6.2d
+        zip2(v11, t2d, v5, t2d, v7, t2d),  //    zip2 v11.2d, v5.2d, v7.2d
+
+        //    // Store
+        str(q8, x5),      //    str q8, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(q9, x5),      //    str q9, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(q10, x5),     //    str q10, [x5]
+        add(x5, x5, x3),  //    add x5, x5, x3
+        str(q11, x5),     //    str q11, [x5]
+    });
+
+
 2. Performance
 """"""""""""""
 
@@ -601,9 +803,9 @@ Files: ``unary_identity.cpp`` & ``unary_identity_transpose.cpp``
 .. code-block::
     :emphasize-lines: 4, 8, 12, 16
 
-    ---------------------------------------------------------------------------------------------------------------------------
-    Benchmark                                                                      Time             CPU   Iterations      Bytes
-    ---------------------------------------------------------------------------------------------------------------------------
+    -------------------------------------------------------------------------------------------------------------------------------
+    Benchmark                                                                          Time             CPU   Iterations      Bytes
+    -------------------------------------------------------------------------------------------------------------------------------
     UnaryFixture/BM_unary_identity/M:50/N:50/min_warmup_time:1.000_mean              129 ns          129 ns           10 155.397G/s
     UnaryFixture/BM_unary_identity/M:50/N:50/min_warmup_time:1.000_median            129 ns          128 ns           10 155.951G/s
     UnaryFixture/BM_unary_identity/M:50/N:50/min_warmup_time:1.000_stddev           1.53 ns         1.49 ns           10  1.7808G/s
@@ -656,15 +858,47 @@ Files: ``unary_identity.cpp`` & ``unary_identity_transpose.cpp``
 - **BM_unary_identity_transpose/M:512/N:512** kernel: :math:`4.409` GiB/s
 - **BM_unary_identity_transpose/M:2048/N:2048** kernel: :math:`3.817` GiB/s
 
-ReLu Primitive
+ReLU Primitive
 ^^^^^^^^^^^^^^
 
 1. generate
 """""""""""
 
-**Task**: Extend the implementation of the ``mini_jit::Unary::generate`` function to support the ReLu primitive.
+**Task**: Extend the implementation of the ``mini_jit::Unary::generate`` function to support the ReLU primitive.
 
 Files: ``unary_relu.cpp`` & ``unary_relu_transpose.cpp``
+
+Here we do the exact same as the identity kernel in the transpose and none-transpose kernel, but with an additional hard-coded zero vector
+register and and additional fmax between the load and the store operation.
+
+.. code-block:: cpp
+
+    ...
+    // x17 iterator for the m_loop
+    mov(x17, m_loop / 16),
+    // loop over m
+    sub(x17, x17, 1),
+
+    ld1Post(v0, t4s, v1, t4s, v2, t4s, v3, t4s, x0, x9),  // increase x0 after load with value of x9 i.e. x0 += 4 * 4 * sizeof(float)
+    fmax(v0, t4s, v0, t4s, v5, t4s),
+    fmax(v1, t4s, v1, t4s, v5, t4s),
+    fmax(v2, t4s, v2, t4s, v5, t4s),
+    fmax(v3, t4s, v3, t4s, v5, t4s),
+    st1Post(v0, t4s, v1, t4s, v2, t4s, v3, t4s, x1, x9),  // increase x1 after store with value of x9 i.e. x1 += 4 * 4 * sizeof(float)
+
+    // loop back to m
+    cbnz(x17, -7 * 4),
+    ...
+
+In addition, the ``ops`` function of the transpose kernel becomes:
+
+.. code-block:: cpp
+
+    void relu(mini_jit::Kernel &kernel, mini_jit::arm_instructions::VGeneral vRegister)
+    {
+        using namespace mini_jit::arm_instructions;
+        kernel.add(fmax(vRegister, t4s, vRegister, t4s, v31, t4s));
+    }
 
 2. Performance
 """"""""""""""
