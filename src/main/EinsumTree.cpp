@@ -1,8 +1,10 @@
 #include "EinsumTree.h"
 #include "TensorOperation.h"
 #include "release_assert.h"
+#include <algorithm>
 #include <format>
 #include <iostream>
+#include <iterator>
 #include <utility>
 
 mini_jit::EinsumTree::EinsumTree(const std::string &tree_str) : tree_str(tree_str)
