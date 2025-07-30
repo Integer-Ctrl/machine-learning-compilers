@@ -17,7 +17,7 @@ The general workflow of generating JITed code is:
 
 .. note::
 
-    All files a equivalent tests located in the ``src/test/`` directory with the same name extended by ``.test.``
+    The equivalent tests for files can be found in the ``src/test/`` directory with the same name extended by ``.test.``
 
 
 BRGEMM Primitive
